@@ -31,7 +31,7 @@ export interface AnchorRect {
 
 type PopoverState =
     | { type: 'closed' }
-    | { type: 'quick-create'; date: Date; hour: number }
+    | { type: 'quick-create'; date: Date; hour: number; anchorRect?: AnchorRect }
     | { type: 'event-detail'; eventId: string; anchorRect?: AnchorRect }
 
 interface CalendarViewState {
@@ -43,7 +43,7 @@ interface CalendarViewState {
     goNext: () => void
     goPrevious: () => void
     goToDate: (date: Date) => void
-    openQuickCreate: (date: Date, hour: number) => void
+    openQuickCreate: (date: Date, hour: number, e?: GestureResponderEvent) => void
     openEventDetail: (eventId: string, e?: GestureResponderEvent) => void
     closePopover: () => void
 }
@@ -107,7 +107,14 @@ export function useCalendarView(): CalendarViewState {
     const goToDate = useCallback((d: Date) => navigate(viewMode, d), [navigate, viewMode])
 
     const openQuickCreate = useCallback(
-        (d: Date, hour: number) => setPopover({ type: 'quick-create', date: d, hour }),
+        (d: Date, hour: number, e?: GestureResponderEvent) => {
+            let anchorRect: AnchorRect | undefined
+            if (e?.nativeEvent) {
+                const { pageX, pageY } = e.nativeEvent
+                anchorRect = { x: pageX, y: pageY, width: 0, height: 0 }
+            }
+            setPopover({ type: 'quick-create', date: d, hour, anchorRect })
+        },
         [setPopover]
     )
 

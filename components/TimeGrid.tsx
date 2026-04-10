@@ -28,7 +28,7 @@ interface TimeGridProps {
     columns: TimeGridColumn[]
     startHour?: number
     endHour?: number
-    onSlotPress: (date: Date, hour: number) => void
+    onSlotPress: (date: Date, hour: number, e: GestureResponderEvent) => void
     onEventPress: (eventId: string, e: GestureResponderEvent) => void
 }
 
@@ -130,7 +130,7 @@ export function TimeGrid({
                                                 styles.hourSlot,
                                                 { borderBottomColor: theme.borderColor.val },
                                             ]}
-                                            onPress={() => onSlotPress(column.date, hour)}
+                                            onPress={e => onSlotPress(column.date, hour, e)}
                                         />
                                     )
                                 })}

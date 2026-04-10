@@ -22,13 +22,47 @@ interface EventQuickCreateProps {
     isVisible: boolean
     initialDate: Date
     initialHour: number
+    anchorRect?: { x: number; y: number; width: number; height: number }
     onClose: () => void
+}
+
+const POPOVER_WIDTH = 340
+const POPOVER_MARGIN = 12
+
+function computePopoverPosition(anchor?: { x: number; y: number; width: number; height: number }) {
+    const winW = typeof window !== 'undefined' ? window.innerWidth : 800
+    const winH = typeof window !== 'undefined' ? window.innerHeight : 600
+
+    if (!anchor) {
+        return {
+            position: 'absolute' as const,
+            top: Math.max(POPOVER_MARGIN, winH / 2 - 100),
+            left: Math.max(POPOVER_MARGIN, (winW - POPOVER_WIDTH) / 2),
+        }
+    }
+
+    const anchorCenterY = anchor.y + anchor.height / 2
+    let top = anchorCenterY - 100
+    top = Math.max(POPOVER_MARGIN, Math.min(top, winH - 300 - POPOVER_MARGIN))
+
+    const spaceRight = winW - (anchor.x + anchor.width)
+    let left: number
+    if (spaceRight >= POPOVER_WIDTH + POPOVER_MARGIN) {
+        left = anchor.x + anchor.width + POPOVER_MARGIN
+    } else if (anchor.x >= POPOVER_WIDTH + POPOVER_MARGIN) {
+        left = anchor.x - POPOVER_WIDTH - POPOVER_MARGIN
+    } else {
+        left = Math.max(POPOVER_MARGIN, (winW - POPOVER_WIDTH) / 2)
+    }
+
+    return { position: 'absolute' as const, top, left }
 }
 
 export function EventQuickCreate({
     isVisible,
     initialDate,
     initialHour,
+    anchorRect,
     onClose,
 }: EventQuickCreateProps) {
     const theme = useTheme()
@@ -162,6 +196,7 @@ export function EventQuickCreate({
                         borderColor: theme.borderColor.val,
                         shadowColor: theme.shadowColor.val,
                     },
+                    computePopoverPosition(anchorRect),
                 ]}
                 onPress={e => e.stopPropagation()}
             >
@@ -238,12 +273,10 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
         zIndex: 100,
     },
     popover: {
-        width: 340,
+        width: POPOVER_WIDTH,
         borderRadius: 12,
         borderWidth: 1,
         padding: 16,

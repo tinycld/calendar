@@ -39,6 +39,7 @@ function CalendarLayoutInner() {
                 isVisible={popover.type === 'quick-create'}
                 initialDate={popover.type === 'quick-create' ? popover.date : new Date()}
                 initialHour={popover.type === 'quick-create' ? popover.hour : 9}
+                anchorRect={popover.type === 'quick-create' ? popover.anchorRect : undefined}
                 onClose={closePopover}
             />
 
