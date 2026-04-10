@@ -25,14 +25,7 @@ export function CalendarHeader() {
 
     if (isMobile) {
         return (
-            <XStack
-                alignItems="center"
-                paddingHorizontal="$3"
-                paddingVertical="$2"
-                gap="$2"
-                borderBottomWidth={1}
-                borderBottomColor="$borderColor"
-            >
+            <XStack alignItems="center" paddingHorizontal="$3" paddingVertical="$2" gap="$2">
                 <Pressable onPress={() => setDrawerOpen(true)} hitSlop={8}>
                     <Menu size={22} color={theme.color.val} />
                 </Pressable>
@@ -65,14 +58,7 @@ export function CalendarHeader() {
     }
 
     return (
-        <XStack
-            alignItems="center"
-            paddingHorizontal="$4"
-            paddingVertical="$2"
-            gap="$2"
-            borderBottomWidth={1}
-            borderBottomColor="$borderColor"
-        >
+        <XStack alignItems="center" paddingHorizontal="$4" paddingVertical="$2" gap="$2">
             <Button size="$3" variant="outlined" borderColor="$borderColor" onPress={goToday}>
                 <Button.Text>Today</Button.Text>
             </Button>

@@ -1,5 +1,6 @@
 import { Slot } from 'one'
 import { YStack } from 'tamagui'
+import { ScreenHeader } from '~/components/ScreenHeader'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { captureException } from '~/lib/errors'
 import { useMutation } from '~/lib/mutations'
@@ -28,7 +29,9 @@ function CalendarLayoutInner() {
 
     return (
         <YStack flex={1} backgroundColor="$background">
-            <CalendarHeader />
+            <ScreenHeader>
+                <CalendarHeader />
+            </ScreenHeader>
             <YStack flex={1}>
                 <Slot />
             </YStack>
