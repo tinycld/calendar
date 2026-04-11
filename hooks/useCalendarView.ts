@@ -1,4 +1,4 @@
-import { useActiveParams, useRouter } from 'one'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
     createContext,
     createElement,
@@ -62,7 +62,7 @@ export function CalendarViewProvider({ children }: { children: ReactNode }) {
 export function useCalendarView(): CalendarViewState {
     const router = useRouter()
     const orgHref = useOrgHref()
-    const { view, date } = useActiveParams<{ view?: string; date?: string }>()
+    const { view, date } = useLocalSearchParams<{ view?: string; date?: string }>()
     const popoverCtx = useContext(PopoverContext)
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'

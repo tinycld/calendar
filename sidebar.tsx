@@ -1,5 +1,5 @@
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { CalendarDays, Columns3, Grid3X3, List } from 'lucide-react-native'
-import { useActiveParams, useRouter } from 'one'
 import { useMemo } from 'react'
 import { StyleSheet, View } from 'react-native'
 import {
@@ -37,7 +37,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
     const orgHref = useOrgHref()
     const { calendars, visibleIds, toggleCalendar, setCalendarColor, showOnlyCalendar } =
         useVisibleCalendars()
-    const { view, date } = useActiveParams<{ view?: string; date?: string }>()
+    const { view, date } = useLocalSearchParams<{ view?: string; date?: string }>()
     const isMobile = useBreakpoint() === 'mobile'
     const { setDrawerOpen } = useWorkspaceLayout()
 

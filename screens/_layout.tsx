@@ -1,4 +1,4 @@
-import { Slot } from 'one'
+import { Slot } from 'expo-router'
 import { YStack } from 'tamagui'
 import { ScreenHeader } from '~/components/ScreenHeader'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'

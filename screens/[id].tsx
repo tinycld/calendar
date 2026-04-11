@@ -1,7 +1,7 @@
 import { eq } from '@tanstack/db'
 import { useLiveQuery } from '@tanstack/react-db'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
-import { useParams, useRouter } from 'one'
 import { newRecordId } from 'pbtsdb'
 import { Pressable } from 'react-native'
 import { Button, ScrollView, SizableText, useTheme, XStack, YStack } from 'tamagui'
@@ -38,7 +38,7 @@ function combineDateAndTime(dateStr: string, timeStr: string): string {
 }
 
 export default function EventEditorScreen() {
-    const { id } = useParams<{ id: string }>()
+    const { id } = useLocalSearchParams<{ id: string }>()
     const router = useRouter()
     const theme = useTheme()
     const breakpoint = useBreakpoint()

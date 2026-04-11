@@ -1,5 +1,5 @@
+import { useRouter } from 'expo-router'
 import { Users, X } from 'lucide-react-native'
-import { useRouter } from 'one'
 import { newRecordId } from 'pbtsdb'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Button, SizableText, useTheme, XStack, YStack } from 'tamagui'

@@ -1,5 +1,5 @@
+import { useRouter } from 'expo-router'
 import { Clock, MapPin, Pencil, Trash2, Users, X } from 'lucide-react-native'
-import { useRouter } from 'one'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { useTheme } from 'tamagui'
