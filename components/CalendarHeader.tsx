@@ -1,6 +1,6 @@
+import { Button, useThemeColor } from 'heroui-native'
 import { ChevronDown, ChevronLeft, ChevronRight, Menu } from 'lucide-react-native'
-import { Pressable } from 'react-native'
-import { Button, SizableText, useTheme, XGroup, XStack } from 'tamagui'
+import { Pressable, Text, View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { useWorkspaceLayout } from '~/components/workspace/useWorkspaceLayout'
 import { formatDateLabel } from '../hooks/useCalendarNavigation'
@@ -16,7 +16,13 @@ const VIEW_LABELS: Record<ViewMode, string> = {
 
 export function CalendarHeader() {
     const { viewMode, setViewMode, focusDate, goToday, goNext, goPrevious } = useCalendarView()
-    const theme = useTheme()
+    const [fgColor, mutedColor, borderColor, accentColor, accentFgColor] = useThemeColor([
+        'foreground',
+        'muted',
+        'border',
+        'accent',
+        'accent-foreground',
+    ])
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'
     const { setDrawerOpen } = useWorkspaceLayout()
@@ -25,9 +31,17 @@ export function CalendarHeader() {
 
     if (isMobile) {
         return (
-            <XStack alignItems="center" paddingHorizontal="$3" paddingVertical="$2" gap="$2">
+            <View
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    gap: 8,
+                }}
+            >
                 <Pressable onPress={() => setDrawerOpen(true)} hitSlop={8}>
-                    <Menu size={22} color={theme.color.val} />
+                    <Menu size={22} color={fgColor} />
                 </Pressable>
 
                 <Pressable
@@ -35,60 +49,86 @@ export function CalendarHeader() {
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
                     hitSlop={4}
                 >
-                    <SizableText size="$5" fontWeight="600" color="$color">
+                    <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor }}>
                         {dateLabel}
-                    </SizableText>
-                    <ChevronDown size={16} color={theme.color8.val} />
+                    </Text>
+                    <ChevronDown size={16} color={mutedColor} />
                 </Pressable>
 
-                <XStack flex={1} />
+                <View style={{ flex: 1 }} />
 
-                <Button size="$2" variant="outlined" borderColor="$borderColor" onPress={goToday}>
-                    <Button.Text>Today</Button.Text>
+                <Button onPress={goToday} variant="outline" size="sm">
+                    Today
                 </Button>
 
                 <Pressable onPress={goPrevious} hitSlop={8}>
-                    <ChevronLeft size={20} color={theme.color.val} />
+                    <ChevronLeft size={20} color={fgColor} />
                 </Pressable>
                 <Pressable onPress={goNext} hitSlop={8}>
-                    <ChevronRight size={20} color={theme.color.val} />
+                    <ChevronRight size={20} color={fgColor} />
                 </Pressable>
-            </XStack>
+            </View>
         )
     }
 
     return (
-        <XStack alignItems="center" paddingHorizontal="$4" paddingVertical="$2" gap="$2">
-            <Button size="$3" variant="outlined" borderColor="$borderColor" onPress={goToday}>
-                <Button.Text>Today</Button.Text>
+        <View
+            style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                gap: 8,
+            }}
+        >
+            <Button onPress={goToday} variant="outline" size="sm">
+                Today
             </Button>
 
             <Pressable onPress={goPrevious} hitSlop={8}>
-                <ChevronLeft size={20} color={theme.color.val} />
+                <ChevronLeft size={20} color={fgColor} />
             </Pressable>
             <Pressable onPress={goNext} hitSlop={8}>
-                <ChevronRight size={20} color={theme.color.val} />
+                <ChevronRight size={20} color={fgColor} />
             </Pressable>
 
-            <SizableText size="$6" fontWeight="600" color="$color" flex={1}>
+            <Text style={{ fontSize: 20, fontWeight: '600', color: fgColor, flex: 1 }}>
                 {dateLabel}
-            </SizableText>
+            </Text>
 
-            <XGroup>
-                {DESKTOP_VIEW_MODES.map(mode => (
-                    <XGroup.Item key={mode}>
-                        <Button
-                            size="$3"
-                            theme={viewMode === mode ? 'accent' : undefined}
-                            variant={viewMode === mode ? undefined : 'outlined'}
-                            borderColor={viewMode === mode ? undefined : '$borderColor'}
-                            onPress={() => setViewMode(mode)}
+            <View
+                style={{
+                    flexDirection: 'row',
+                    borderWidth: 1,
+                    borderColor,
+                    borderRadius: 6,
+                    overflow: 'hidden',
+                }}
+            >
+                {DESKTOP_VIEW_MODES.map((mode, i) => (
+                    <Button
+                        key={mode}
+                        onPress={() => setViewMode(mode)}
+                        variant="ghost"
+                        size="sm"
+                        style={{
+                            borderRadius: 0,
+                            backgroundColor: viewMode === mode ? accentColor : undefined,
+                            borderLeftWidth: i > 0 ? 1 : 0,
+                            borderLeftColor: borderColor,
+                        }}
+                    >
+                        <Text
+                            style={{
+                                fontSize: 14,
+                                color: viewMode === mode ? accentFgColor : fgColor,
+                            }}
                         >
-                            <Button.Text>{VIEW_LABELS[mode]}</Button.Text>
-                        </Button>
-                    </XGroup.Item>
+                            {VIEW_LABELS[mode]}
+                        </Text>
+                    </Button>
                 ))}
-            </XGroup>
-        </XStack>
+            </View>
+        </View>
     )
 }
