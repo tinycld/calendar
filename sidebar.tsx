@@ -1,7 +1,7 @@
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useGlobalSearchParams, useRouter } from 'expo-router'
 import { CalendarDays, Columns3, Grid3X3, List } from 'lucide-react-native'
 import { useMemo } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { YStack } from 'tamagui'
 import {
     SidebarActionButton,
     SidebarDivider,
@@ -37,7 +37,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
     const orgHref = useOrgHref()
     const { calendars, visibleIds, toggleCalendar, setCalendarColor, showOnlyCalendar } =
         useVisibleCalendars()
-    const { view, date } = useLocalSearchParams<{ view?: string; date?: string }>()
+    const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
     const isMobile = useBreakpoint() === 'mobile'
     const { setDrawerOpen } = useWorkspaceLayout()
 
@@ -45,7 +45,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
 
     const handleDateSelect = (d: Date) => {
         router.push(orgHref('calendar', { view: view ?? 'week', date: toDateString(d) }))
-        if (isMobile) setDrawerOpen(false)
+        if (isMobile) setTimeout(() => setDrawerOpen(false), 500)
     }
 
     const handleCreate = () => {
@@ -54,24 +54,24 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
 
     const handleViewModeSelect = (mode: ViewMode) => {
         router.push(orgHref('calendar', { view: mode, date: date ?? toDateString(new Date()) }))
-        setDrawerOpen(false)
     }
 
     return (
         <SidebarNav>
             {isMobile && (
                 <>
-                    <View style={styles.viewModeSection}>
+                    <YStack paddingHorizontal={8} paddingVertical={4}>
                         {VIEW_MODE_OPTIONS.map(opt => (
                             <SidebarItem
                                 key={opt.mode}
                                 label={opt.label}
                                 icon={opt.icon}
                                 isActive={view === opt.mode}
+                                closesDrawer
                                 onPress={() => handleViewModeSelect(opt.mode)}
                             />
                         ))}
-                    </View>
+                    </YStack>
                     <SidebarDivider />
                 </>
             )}
@@ -92,10 +92,3 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
         </SidebarNav>
     )
 }
-
-const styles = StyleSheet.create({
-    viewModeSection: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-    },
-})
