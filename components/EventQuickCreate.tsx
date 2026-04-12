@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router'
 import { Users, X } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable } from 'react-native'
 import { Button, SizableText, useTheme, XStack, YStack } from 'tamagui'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { captureException } from '~/lib/errors'
-import { useMutation } from '~/lib/mutations'
+import { mutation, useMutation } from '~/lib/mutations'
 import { useOrgHref } from '~/lib/org-routes'
 import { useStore } from '~/lib/pocketbase'
 import { useCurrentUserOrg } from '~/lib/use-current-user-org'
@@ -47,7 +47,7 @@ export function EventQuickCreate({
     })
 
     const createEvent = useMutation({
-        mutationFn: function* (data: z.infer<typeof quickCreateSchema>) {
+        mutationFn: mutation(function* (data: z.infer<typeof quickCreateSchema>) {
             if (!userOrg) throw new Error('No organization context')
             const defaultCalendar = mineCalendars[0] ?? calendars[0]
             if (!defaultCalendar) throw new Error('No calendar available')
@@ -74,7 +74,7 @@ export function EventQuickCreate({
                 visibility: 'default',
                 ical_uid: '',
             })
-        },
+        }),
         onSuccess: () => {
             reset()
             onClose()
@@ -101,15 +101,32 @@ export function EventQuickCreate({
 
     if (isMobile) {
         return (
-            <Pressable style={mobileStyles.overlay} onPress={onClose}>
+            <Pressable
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    justifyContent: 'flex-end',
+                    zIndex: 100,
+                    backgroundColor: 'rgba(0,0,0,0.3)',
+                }}
+                onPress={onClose}
+            >
                 <Pressable
-                    style={[
-                        mobileStyles.sheet,
-                        {
-                            backgroundColor: theme.background.val,
-                            shadowColor: theme.shadowColor.val,
-                        },
-                    ]}
+                    style={{
+                        width: '100%',
+                        borderTopLeftRadius: 16,
+                        borderTopRightRadius: 16,
+                        padding: 20,
+                        backgroundColor: theme.background.val,
+                        shadowColor: theme.shadowColor.val,
+                        shadowOffset: { width: 0, height: -2 },
+                        shadowOpacity: 0.15,
+                        shadowRadius: 8,
+                        elevation: 8,
+                    }}
                     onPress={e => e.stopPropagation()}
                 >
                     <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
@@ -140,11 +157,19 @@ export function EventQuickCreate({
                             </SizableText>
                         </YStack>
 
-                        <Pressable style={mobileStyles.addGuestsRow} onPress={onMoreOptions}>
+                        <Pressable
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 10,
+                                paddingVertical: 8,
+                            }}
+                            onPress={onMoreOptions}
+                        >
                             <Users size={18} color={theme.color8.val} />
-                            <Text style={{ color: theme.color8.val, fontSize: 14 }}>
+                            <SizableText size="$3" color="$color8">
                                 Add guests
-                            </Text>
+                            </SizableText>
                         </Pressable>
                     </YStack>
                 </Pressable>
@@ -153,26 +178,43 @@ export function EventQuickCreate({
     }
 
     return (
-        <Pressable style={styles.overlay} onPress={onClose}>
+        <Pressable
+            style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 100,
+            }}
+            onPress={onClose}
+        >
             <Pressable
-                style={[
-                    styles.popover,
-                    {
-                        backgroundColor: theme.background.val,
-                        borderColor: theme.borderColor.val,
-                        shadowColor: theme.shadowColor.val,
-                    },
-                ]}
+                style={{
+                    width: 340,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    padding: 16,
+                    backgroundColor: theme.background.val,
+                    borderColor: theme.borderColor.val,
+                    shadowColor: theme.shadowColor.val,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 12,
+                    elevation: 8,
+                }}
                 onPress={e => e.stopPropagation()}
             >
-                <View style={styles.header}>
+                <XStack justifyContent="space-between" alignItems="center">
                     <SizableText size="$4" fontWeight="600" color="$color">
                         New Event
                     </SizableText>
                     <Pressable onPress={onClose} hitSlop={8}>
                         <X size={18} color={theme.color8.val} />
                     </Pressable>
-                </View>
+                </XStack>
 
                 <YStack gap="$3" paddingVertical="$2">
                     <TextInput control={control} name="title" placeholder="Add title" autoFocus />
@@ -187,7 +229,7 @@ export function EventQuickCreate({
                     </YStack>
                 </YStack>
 
-                <View style={styles.footer}>
+                <XStack justifyContent="space-between" alignItems="center" marginTop={8}>
                     <Pressable onPress={onMoreOptions}>
                         <SizableText size="$2" color="$accentBackground">
                             More options
@@ -196,71 +238,8 @@ export function EventQuickCreate({
                     <Button theme="accent" size="$3" onPress={onSave}>
                         <Button.Text fontWeight="600">Save</Button.Text>
                     </Button>
-                </View>
+                </XStack>
             </Pressable>
         </Pressable>
     )
 }
-
-const mobileStyles = StyleSheet.create({
-    overlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        justifyContent: 'flex-end',
-        zIndex: 100,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-    },
-    sheet: {
-        width: '100%',
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-        padding: 20,
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 8,
-    },
-    addGuestsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        paddingVertical: 8,
-    },
-})
-
-const styles = StyleSheet.create({
-    overlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 100,
-    },
-    popover: {
-        width: 340,
-        borderRadius: 12,
-        borderWidth: 1,
-        padding: 16,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 8,
-    },
-})

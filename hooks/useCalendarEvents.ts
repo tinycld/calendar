@@ -10,7 +10,7 @@ import {
     useRef,
     useState,
 } from 'react'
-import { useMutation } from '~/lib/mutations'
+import { mutation, useMutation } from '~/lib/mutations'
 import { useStore } from '~/lib/pocketbase'
 import { useCurrentUserOrg } from '~/lib/use-current-user-org'
 import { useOrgInfo } from '~/lib/use-org-info'
@@ -106,7 +106,7 @@ export function VisibleCalendarsProvider({ children }: { children: ReactNode }) 
     }, [])
 
     const colorMutation = useMutation({
-        mutationFn: function* ({
+        mutationFn: mutation(function* ({
             membershipId,
             color,
         }: {
@@ -116,7 +116,7 @@ export function VisibleCalendarsProvider({ children }: { children: ReactNode }) 
             yield membersCollection.update(membershipId, draft => {
                 draft.color = color
             })
-        },
+        }),
     })
 
     const setCalendarColor = useCallback(

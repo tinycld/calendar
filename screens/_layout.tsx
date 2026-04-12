@@ -3,7 +3,7 @@ import { YStack } from 'tamagui'
 import { ScreenHeader } from '~/components/ScreenHeader'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { captureException } from '~/lib/errors'
-import { useMutation } from '~/lib/mutations'
+import { mutation, useMutation } from '~/lib/mutations'
 import { useStore } from '~/lib/pocketbase'
 import { CalendarFAB } from '../components/CalendarFAB'
 import { CalendarHeader } from '../components/CalendarHeader'
@@ -21,9 +21,9 @@ function CalendarLayoutInner() {
     const { event, calendar } = useEventDetail(eventId)
 
     const deleteEvent = useMutation({
-        mutationFn: function* (eventId: string) {
+        mutationFn: mutation(function* (eventId: string) {
             yield eventsCollection.delete(eventId)
-        },
+        }),
         onError: error => captureException('CalendarDeleteEvent', error),
     })
 

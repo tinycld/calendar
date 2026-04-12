@@ -7,7 +7,7 @@ import { Pressable } from 'react-native'
 import { Button, ScrollView, SizableText, useTheme, XStack, YStack } from 'tamagui'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { handleMutationErrorsWithForm } from '~/lib/errors'
-import { useMutation } from '~/lib/mutations'
+import { mutation, useMutation } from '~/lib/mutations'
 import { useStore } from '~/lib/pocketbase'
 import { useCurrentUserOrg } from '~/lib/use-current-user-org'
 import { useOrgInfo } from '~/lib/use-org-info'
@@ -109,7 +109,7 @@ export default function EventEditorScreen() {
     const startDateValue = watch('startDate')
 
     const createEvent = useMutation({
-        mutationFn: function* (data: z.infer<typeof eventSchema>) {
+        mutationFn: mutation(function* (data: z.infer<typeof eventSchema>) {
             if (!userOrg) throw new Error('No organization context')
             yield eventsCollection.insert({
                 id: newRecordId(),
@@ -128,13 +128,13 @@ export default function EventEditorScreen() {
                 visibility: data.visibility,
                 ical_uid: '',
             })
-        },
+        }),
         onSuccess: () => router.back(),
         onError: handleMutationErrorsWithForm({ setError, getValues }),
     })
 
     const updateEvent = useMutation({
-        mutationFn: function* (data: z.infer<typeof eventSchema>) {
+        mutationFn: mutation(function* (data: z.infer<typeof eventSchema>) {
             yield eventsCollection.update(baseId, draft => {
                 draft.title = data.title.trim()
                 draft.description = data.description
@@ -148,7 +148,7 @@ export default function EventEditorScreen() {
                 draft.busy_status = data.busy_status
                 draft.visibility = data.visibility
             })
-        },
+        }),
         onSuccess: () => router.back(),
         onError: handleMutationErrorsWithForm({ setError, getValues }),
     })
@@ -174,9 +174,9 @@ export default function EventEditorScreen() {
         )
     }
 
-    const mutation = isNew ? createEvent : updateEvent
-    const onSubmit = handleSubmit(data => mutation.mutate(data))
-    const canSubmit = !mutation.isPending && !!userOrg && !isLoadingEvent
+    const activeMutation = isNew ? createEvent : updateEvent
+    const onSubmit = handleSubmit(data => activeMutation.mutate(data))
+    const canSubmit = !activeMutation.isPending && !!userOrg && !isLoadingEvent
 
     const isDesktop = breakpoint === 'desktop'
     const guests = event?.guests ?? []
@@ -213,7 +213,7 @@ export default function EventEditorScreen() {
                         opacity={canSubmit ? 1 : 0.5}
                     >
                         <Button.Text fontWeight="600">
-                            {mutation.isPending ? 'Saving...' : 'Save'}
+                            {activeMutation.isPending ? 'Saving...' : 'Save'}
                         </Button.Text>
                     </Button>
                 </XStack>
