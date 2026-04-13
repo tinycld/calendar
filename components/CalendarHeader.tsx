@@ -1,8 +1,9 @@
-import { Button, useThemeColor } from 'heroui-native'
 import { ChevronDown, ChevronLeft, ChevronRight, Menu } from 'lucide-react-native'
 import { Pressable, Text, View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { useWorkspaceLayout } from '~/components/workspace/useWorkspaceLayout'
+import { useThemeColor } from '~/lib/use-app-theme'
+import { Button, ButtonText } from '~/ui/button'
 import { formatDateLabel } from '../hooks/useCalendarNavigation'
 import { useCalendarView, type ViewMode } from '../hooks/useCalendarView'
 
@@ -16,13 +17,11 @@ const VIEW_LABELS: Record<ViewMode, string> = {
 
 export function CalendarHeader() {
     const { viewMode, setViewMode, focusDate, goToday, goNext, goPrevious } = useCalendarView()
-    const [fgColor, mutedColor, borderColor, accentColor, accentFgColor] = useThemeColor([
-        'foreground',
-        'muted',
-        'border',
-        'accent',
-        'accent-foreground',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const borderColor = useThemeColor('border')
+    const accentColor = useThemeColor('accent')
+    const accentFgColor = useThemeColor('accent-foreground')
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'
     const { setDrawerOpen } = useWorkspaceLayout()
@@ -58,7 +57,7 @@ export function CalendarHeader() {
                 <View style={{ flex: 1 }} />
 
                 <Button onPress={goToday} variant="outline" size="sm">
-                    Today
+                    <ButtonText>Today</ButtonText>
                 </Button>
 
                 <Pressable onPress={goPrevious} hitSlop={8}>
@@ -82,7 +81,7 @@ export function CalendarHeader() {
             }}
         >
             <Button onPress={goToday} variant="outline" size="sm">
-                Today
+                <ButtonText>Today</ButtonText>
             </Button>
 
             <Pressable onPress={goPrevious} hitSlop={8}>

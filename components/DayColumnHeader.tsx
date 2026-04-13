@@ -1,5 +1,5 @@
-import { useThemeColor } from 'heroui-native'
 import { Text, View } from 'react-native'
+import { useThemeColor } from '~/lib/use-app-theme'
 import { getShortDayName } from '../hooks/useCalendarNavigation'
 
 interface DayColumnHeaderProps {
@@ -8,12 +8,10 @@ interface DayColumnHeaderProps {
 }
 
 export function DayColumnHeader({ date, isToday }: DayColumnHeaderProps) {
-    const [accentColor, accentFgColor, mutedColor, fgColor] = useThemeColor([
-        'accent',
-        'accent-foreground',
-        'muted',
-        'foreground',
-    ])
+    const accentColor = useThemeColor('accent')
+    const accentFgColor = useThemeColor('accent-foreground')
+    const mutedColor = useThemeColor('muted')
+    const fgColor = useThemeColor('foreground')
     const dayName = getShortDayName(date)
     const dateNum = date.getDate()
 

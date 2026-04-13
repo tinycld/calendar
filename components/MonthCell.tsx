@@ -1,5 +1,5 @@
-import { useThemeColor } from 'heroui-native'
 import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native'
+import { useThemeColor } from '~/lib/use-app-theme'
 import { useCalendarMap } from '../hooks/useCalendarEvents'
 import { formatShortTime } from '../hooks/useCalendarNavigation'
 import type { MonthCellLayout } from '../layout'
@@ -25,13 +25,11 @@ export function MonthCell({
     onDatePress,
     onEventPress,
 }: MonthCellProps) {
-    const [fgColor, mutedColor, accentColor, accentFgColor, borderColor] = useThemeColor([
-        'foreground',
-        'muted',
-        'accent',
-        'accent-foreground',
-        'border',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const accentColor = useThemeColor('accent')
+    const accentFgColor = useThemeColor('accent-foreground')
+    const borderColor = useThemeColor('border')
     const calendarMap = useCalendarMap()
     const dateNum = date.getDate()
     const layouts = cellLayout?.layouts ?? []

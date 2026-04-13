@@ -1,6 +1,7 @@
-import { Dialog, useThemeColor } from 'heroui-native'
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
+import { useThemeColor } from '~/lib/use-app-theme'
+import { Modal, ModalBackdrop, ModalContent } from '~/ui/modal'
 import { PlainInput } from '~/ui/PlainInput'
 import {
     buildRRule,
@@ -27,12 +28,10 @@ interface RecurrencePickerProps {
 }
 
 export function RecurrencePicker({ value, onChange, eventStartDate }: RecurrencePickerProps) {
-    const [fgColor, mutedColor, borderColor, bgColor] = useThemeColor([
-        'foreground',
-        'muted',
-        'border',
-        'background',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const borderColor = useThemeColor('border')
+    const bgColor = useThemeColor('background')
     const [showCustom, setShowCustom] = useState(false)
     const [showPresets, setShowPresets] = useState(false)
     const presets = getContextualPresets(eventStartDate)
@@ -101,54 +100,48 @@ function PresetDialog({
     currentValue: string
     onSelect: (value: string) => void
 }) {
-    const [fgColor, accentColor, accentFgColor] = useThemeColor([
-        'foreground',
-        'accent',
-        'accent-foreground',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const accentColor = useThemeColor('accent')
+    const accentFgColor = useThemeColor('accent-foreground')
 
     return (
-        <Dialog isOpen={open} onOpenChange={onOpenChange}>
-            <Dialog.Portal>
-                <Dialog.Overlay />
-                <Dialog.Content className="w-[320px] p-3">
-                    <Text
-                        style={{ fontSize: 18, fontWeight: '600', color: fgColor, marginBottom: 8 }}
-                    >
-                        Repeat
-                    </Text>
-                    <View style={{ gap: 4, paddingTop: 8 }}>
-                        {presets.map(preset => {
-                            const isSelected = preset.value === currentValue
-                            return (
-                                <Pressable
-                                    key={preset.value || 'none'}
-                                    onPress={() => onSelect(preset.value)}
+        <Modal isOpen={open} onClose={() => onOpenChange(false)}>
+            <ModalBackdrop />
+            <ModalContent className="w-[320px] p-3">
+                <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor, marginBottom: 8 }}>
+                    Repeat
+                </Text>
+                <View style={{ gap: 4, paddingTop: 8 }}>
+                    {presets.map(preset => {
+                        const isSelected = preset.value === currentValue
+                        return (
+                            <Pressable
+                                key={preset.value || 'none'}
+                                onPress={() => onSelect(preset.value)}
+                                style={{
+                                    paddingHorizontal: 12,
+                                    paddingVertical: 10,
+                                    borderRadius: 6,
+                                    ...(isSelected && {
+                                        backgroundColor: `${accentColor}20`,
+                                    }),
+                                }}
+                            >
+                                <Text
                                     style={{
-                                        paddingHorizontal: 12,
-                                        paddingVertical: 10,
-                                        borderRadius: 6,
-                                        ...(isSelected && {
-                                            backgroundColor: `${accentColor}20`,
-                                        }),
+                                        fontSize: 14,
+                                        color: isSelected ? accentFgColor : fgColor,
+                                        fontWeight: isSelected ? '600' : '400',
                                     }}
                                 >
-                                    <Text
-                                        style={{
-                                            fontSize: 14,
-                                            color: isSelected ? accentFgColor : fgColor,
-                                            fontWeight: isSelected ? '600' : '400',
-                                        }}
-                                    >
-                                        {preset.label}
-                                    </Text>
-                                </Pressable>
-                            )
-                        })}
-                    </View>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog>
+                                    {preset.label}
+                                </Text>
+                            </Pressable>
+                        )
+                    })}
+                </View>
+            </ModalContent>
+        </Modal>
     )
 }
 
@@ -219,12 +212,10 @@ function CustomRecurrenceDialog({
     initialValue?: string
     onSave: (rrule: string) => void
 }) {
-    const [fgColor, borderColor, accentColor, accentFgColor] = useThemeColor([
-        'foreground',
-        'border',
-        'accent',
-        'accent-foreground',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const borderColor = useThemeColor('border')
+    const accentColor = useThemeColor('accent')
+    const accentFgColor = useThemeColor('accent-foreground')
     const [state, setState] = useState<CustomState>(() =>
         initCustomState(eventStartDate, initialValue)
     )
@@ -267,205 +258,193 @@ function CustomRecurrenceDialog({
     }
 
     return (
-        <Dialog isOpen={open} onOpenChange={onOpenChange}>
-            <Dialog.Portal>
-                <Dialog.Overlay />
-                <Dialog.Content className="w-[360px] p-4">
-                    <Text
-                        style={{
-                            fontSize: 18,
-                            fontWeight: '600',
-                            color: fgColor,
-                            marginBottom: 16,
-                        }}
-                    >
-                        Custom recurrence
-                    </Text>
+        <Modal isOpen={open} onClose={() => onOpenChange(false)}>
+            <ModalBackdrop />
+            <ModalContent className="w-[360px] p-4">
+                <Text
+                    style={{
+                        fontSize: 18,
+                        fontWeight: '600',
+                        color: fgColor,
+                        marginBottom: 16,
+                    }}
+                >
+                    Custom recurrence
+                </Text>
 
-                    <View style={{ gap: 12 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Text style={{ fontSize: 14, color: fgColor }}>Repeat every</Text>
-                            <Pressable
-                                onPress={() => {
-                                    updateState({ interval: Math.min(state.interval + 1, 99) })
-                                }}
-                                onLongPress={() => {
-                                    updateState({ interval: Math.max(state.interval - 1, 1) })
-                                }}
-                                style={{
-                                    borderWidth: 1,
-                                    borderRadius: 6,
-                                    width: 44,
-                                    height: 36,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderColor,
-                                }}
-                            >
-                                <Text style={{ fontSize: 14, color: fgColor, textAlign: 'center' }}>
-                                    {state.interval}
-                                </Text>
-                            </Pressable>
-                            <View
-                                style={{
-                                    flexDirection: 'row',
-                                    gap: 4,
-                                    flexWrap: 'wrap',
-                                    flex: 1,
-                                }}
-                            >
-                                {FREQ_OPTIONS.map(opt => {
-                                    const isSelected = state.freq === opt.value
-                                    return (
-                                        <Pressable
-                                            key={opt.value}
-                                            onPress={() => updateState({ freq: opt.value })}
-                                            style={{
-                                                paddingHorizontal: 10,
-                                                paddingVertical: 4,
-                                                borderRadius: 6,
-                                                borderWidth: 1,
-                                                borderColor: isSelected ? accentColor : borderColor,
-                                                backgroundColor: isSelected
-                                                    ? accentColor
-                                                    : undefined,
-                                            }}
-                                        >
-                                            <Text
-                                                style={{
-                                                    fontSize: 12,
-                                                    color: isSelected ? accentFgColor : fgColor,
-                                                }}
-                                            >
-                                                {state.interval > 1 ? `${opt.label}s` : opt.label}
-                                            </Text>
-                                        </Pressable>
-                                    )
-                                })}
-                            </View>
-                        </View>
-
-                        <WeekDaySelector
-                            isVisible={state.freq === 'WEEKLY'}
-                            selectedDays={state.byDay}
-                            onToggle={day => {
-                                const has = state.byDay.includes(day)
-                                if (has) {
-                                    if (state.byDay.length > 1) {
-                                        updateState({
-                                            byDay: state.byDay.filter(d => d !== day),
-                                        })
-                                    }
-                                } else {
-                                    updateState({ byDay: [...state.byDay, day] })
-                                }
-                            }}
-                        />
-
-                        <MonthlyModeSelector
-                            isVisible={state.freq === 'MONTHLY'}
-                            monthlyMode={state.monthlyMode}
-                            eventStartDate={eventStartDate}
-                            onChange={mode => updateState({ monthlyMode: mode })}
-                        />
-
-                        <View style={{ gap: 8 }}>
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>
-                                Ends
-                            </Text>
-                            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                                {(['never', 'on', 'after'] as const).map(type => {
-                                    const isSelected = state.endType === type
-                                    const label =
-                                        type === 'never'
-                                            ? 'Never'
-                                            : type === 'on'
-                                              ? 'On date'
-                                              : 'After'
-                                    return (
-                                        <Pressable
-                                            key={type}
-                                            onPress={() => updateState({ endType: type })}
-                                            style={{
-                                                paddingHorizontal: 10,
-                                                paddingVertical: 4,
-                                                borderRadius: 6,
-                                                borderWidth: 1,
-                                                borderColor: isSelected ? accentColor : borderColor,
-                                                backgroundColor: isSelected
-                                                    ? accentColor
-                                                    : undefined,
-                                            }}
-                                        >
-                                            <Text
-                                                style={{
-                                                    fontSize: 12,
-                                                    color: isSelected ? accentFgColor : fgColor,
-                                                }}
-                                            >
-                                                {label}
-                                            </Text>
-                                        </Pressable>
-                                    )
-                                })}
-                            </View>
-
-                            <EndDateInput
-                                isVisible={state.endType === 'on'}
-                                value={state.untilDate}
-                                onChange={val => updateState({ untilDate: val })}
-                            />
-
-                            <EndCountInput
-                                isVisible={state.endType === 'after'}
-                                value={state.count}
-                                onIncrement={() =>
-                                    updateState({ count: Math.min(state.count + 1, 999) })
-                                }
-                                onDecrement={() =>
-                                    updateState({ count: Math.max(state.count - 1, 1) })
-                                }
-                            />
-                        </View>
-                    </View>
-
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            justifyContent: 'flex-end',
-                            gap: 8,
-                            paddingTop: 8,
-                        }}
-                    >
+                <View style={{ gap: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ fontSize: 14, color: fgColor }}>Repeat every</Text>
                         <Pressable
-                            onPress={() => onOpenChange(false)}
+                            onPress={() => {
+                                updateState({ interval: Math.min(state.interval + 1, 99) })
+                            }}
+                            onLongPress={() => {
+                                updateState({ interval: Math.max(state.interval - 1, 1) })
+                            }}
                             style={{
-                                paddingHorizontal: 12,
-                                paddingVertical: 6,
-                                borderRadius: 6,
                                 borderWidth: 1,
+                                borderRadius: 6,
+                                width: 44,
+                                height: 36,
+                                alignItems: 'center',
+                                justifyContent: 'center',
                                 borderColor,
                             }}
                         >
-                            <Text style={{ fontSize: 14, color: fgColor }}>Cancel</Text>
-                        </Pressable>
-                        <Pressable
-                            onPress={handleDone}
-                            style={{
-                                paddingHorizontal: 12,
-                                paddingVertical: 6,
-                                borderRadius: 6,
-                                backgroundColor: accentColor,
-                            }}
-                        >
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: accentFgColor }}>
-                                Done
+                            <Text style={{ fontSize: 14, color: fgColor, textAlign: 'center' }}>
+                                {state.interval}
                             </Text>
                         </Pressable>
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                gap: 4,
+                                flexWrap: 'wrap',
+                                flex: 1,
+                            }}
+                        >
+                            {FREQ_OPTIONS.map(opt => {
+                                const isSelected = state.freq === opt.value
+                                return (
+                                    <Pressable
+                                        key={opt.value}
+                                        onPress={() => updateState({ freq: opt.value })}
+                                        style={{
+                                            paddingHorizontal: 10,
+                                            paddingVertical: 4,
+                                            borderRadius: 6,
+                                            borderWidth: 1,
+                                            borderColor: isSelected ? accentColor : borderColor,
+                                            backgroundColor: isSelected ? accentColor : undefined,
+                                        }}
+                                    >
+                                        <Text
+                                            style={{
+                                                fontSize: 12,
+                                                color: isSelected ? accentFgColor : fgColor,
+                                            }}
+                                        >
+                                            {state.interval > 1 ? `${opt.label}s` : opt.label}
+                                        </Text>
+                                    </Pressable>
+                                )
+                            })}
+                        </View>
                     </View>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog>
+
+                    <WeekDaySelector
+                        isVisible={state.freq === 'WEEKLY'}
+                        selectedDays={state.byDay}
+                        onToggle={day => {
+                            const has = state.byDay.includes(day)
+                            if (has) {
+                                if (state.byDay.length > 1) {
+                                    updateState({
+                                        byDay: state.byDay.filter(d => d !== day),
+                                    })
+                                }
+                            } else {
+                                updateState({ byDay: [...state.byDay, day] })
+                            }
+                        }}
+                    />
+
+                    <MonthlyModeSelector
+                        isVisible={state.freq === 'MONTHLY'}
+                        monthlyMode={state.monthlyMode}
+                        eventStartDate={eventStartDate}
+                        onChange={mode => updateState({ monthlyMode: mode })}
+                    />
+
+                    <View style={{ gap: 8 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>
+                            Ends
+                        </Text>
+                        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                            {(['never', 'on', 'after'] as const).map(type => {
+                                const isSelected = state.endType === type
+                                const label =
+                                    type === 'never' ? 'Never' : type === 'on' ? 'On date' : 'After'
+                                return (
+                                    <Pressable
+                                        key={type}
+                                        onPress={() => updateState({ endType: type })}
+                                        style={{
+                                            paddingHorizontal: 10,
+                                            paddingVertical: 4,
+                                            borderRadius: 6,
+                                            borderWidth: 1,
+                                            borderColor: isSelected ? accentColor : borderColor,
+                                            backgroundColor: isSelected ? accentColor : undefined,
+                                        }}
+                                    >
+                                        <Text
+                                            style={{
+                                                fontSize: 12,
+                                                color: isSelected ? accentFgColor : fgColor,
+                                            }}
+                                        >
+                                            {label}
+                                        </Text>
+                                    </Pressable>
+                                )
+                            })}
+                        </View>
+
+                        <EndDateInput
+                            isVisible={state.endType === 'on'}
+                            value={state.untilDate}
+                            onChange={val => updateState({ untilDate: val })}
+                        />
+
+                        <EndCountInput
+                            isVisible={state.endType === 'after'}
+                            value={state.count}
+                            onIncrement={() =>
+                                updateState({ count: Math.min(state.count + 1, 999) })
+                            }
+                            onDecrement={() => updateState({ count: Math.max(state.count - 1, 1) })}
+                        />
+                    </View>
+                </View>
+
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        justifyContent: 'flex-end',
+                        gap: 8,
+                        paddingTop: 8,
+                    }}
+                >
+                    <Pressable
+                        onPress={() => onOpenChange(false)}
+                        style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor,
+                        }}
+                    >
+                        <Text style={{ fontSize: 14, color: fgColor }}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                        onPress={handleDone}
+                        style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: 6,
+                            backgroundColor: accentColor,
+                        }}
+                    >
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: accentFgColor }}>
+                            Done
+                        </Text>
+                    </Pressable>
+                </View>
+            </ModalContent>
+        </Modal>
     )
 }
 
@@ -478,7 +457,9 @@ function WeekDaySelector({
     selectedDays: string[]
     onToggle: (day: string) => void
 }) {
-    const [fgColor, borderColor, accentColor] = useThemeColor(['foreground', 'border', 'accent'])
+    const fgColor = useThemeColor('foreground')
+    const borderColor = useThemeColor('border')
+    const accentColor = useThemeColor('accent')
 
     if (!isVisible) return null
 
@@ -531,12 +512,10 @@ function MonthlyModeSelector({
     eventStartDate: Date
     onChange: (mode: 'dayOfMonth' | 'dayOfWeek') => void
 }) {
-    const [fgColor, borderColor, accentColor, accentFgColor] = useThemeColor([
-        'foreground',
-        'border',
-        'accent',
-        'accent-foreground',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const borderColor = useThemeColor('border')
+    const accentColor = useThemeColor('accent')
+    const accentFgColor = useThemeColor('accent-foreground')
 
     if (!isVisible) return null
 
@@ -605,11 +584,9 @@ function EndDateInput({
     value: string
     onChange: (val: string) => void
 }) {
-    const [fgColor, mutedColor, borderColor] = useThemeColor([
-        'foreground',
-        'field-placeholder',
-        'border',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('field-placeholder')
+    const borderColor = useThemeColor('border')
 
     if (!isVisible) return null
 
@@ -647,7 +624,8 @@ function EndCountInput({
     onIncrement: () => void
     onDecrement: () => void
 }) {
-    const [fgColor, borderColor] = useThemeColor(['foreground', 'border'])
+    const fgColor = useThemeColor('foreground')
+    const borderColor = useThemeColor('border')
 
     if (!isVisible) return null
 

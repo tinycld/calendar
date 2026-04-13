@@ -24,13 +24,11 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
     const [displayMonth, setDisplayMonth] = useState(
         () => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
     )
-    const [fgColor, mutedColor, accentColor, accentFgColor, activeIndicatorColor] = useThemeColor([
-        'foreground',
-        'muted',
-        'accent',
-        'accent-foreground',
-        'active-indicator',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const accentColor = useThemeColor('accent')
+    const accentFgColor = useThemeColor('accent-foreground')
+    const activeIndicatorColor = useThemeColor('active-indicator')
 
     const grid = getMonthGrid(displayMonth)
 

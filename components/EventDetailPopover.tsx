@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router'
-import { useThemeColor } from 'heroui-native'
 import { Clock, MapPin, Pencil, Trash2, Users, X } from 'lucide-react-native'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { useOrgHref } from '~/lib/org-routes'
+import { useThemeColor } from '~/lib/use-app-theme'
 import type { AnchorRect } from '../hooks/useCalendarView'
 import { describeRRule, parseEventId } from '../lib/recurrence'
 import type { CalendarEvents } from '../types'
@@ -60,7 +60,9 @@ function MobileEventDetail({
     onClose,
     onDelete,
 }: Omit<EventDetailPopoverProps, 'isVisible'> & { event: CalendarEvents }) {
-    const [fgColor, mutedColor, bgColor] = useThemeColor(['foreground', 'muted', 'background'])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const bgColor = useThemeColor('background')
     const router = useRouter()
     const orgHref = useOrgHref()
     const colors = getCalendarColorResolved(calendarColorKey)
@@ -284,13 +286,11 @@ export function EventDetailPopover({
     onClose,
     onDelete,
 }: EventDetailPopoverProps) {
-    const [fgColor, mutedColor, bgColor, borderColor, shadowColor] = useThemeColor([
-        'foreground',
-        'muted',
-        'background',
-        'border',
-        'overlay-backdrop',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const bgColor = useThemeColor('background')
+    const borderColor = useThemeColor('border')
+    const shadowColor = useThemeColor('overlay-backdrop')
     const router = useRouter()
     const orgHref = useOrgHref()
     const isMobile = useBreakpoint() === 'mobile'

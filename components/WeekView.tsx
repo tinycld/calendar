@@ -1,7 +1,7 @@
-import { useThemeColor } from 'heroui-native'
 import { useMemo } from 'react'
 import { View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
+import { useThemeColor } from '~/lib/use-app-theme'
 import { useCalendarEvents } from '../hooks/useCalendarEvents'
 import { addDays, eventOverlapsRange, isToday, startOfWeek } from '../hooks/useCalendarNavigation'
 import { useCalendarView } from '../hooks/useCalendarView'

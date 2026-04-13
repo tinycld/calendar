@@ -1,4 +1,3 @@
-import { useThemeColor } from 'heroui-native'
 import { useMemo } from 'react'
 import {
     FlatList,
@@ -8,6 +7,7 @@ import {
     Text,
     View,
 } from 'react-native'
+import { useThemeColor } from '~/lib/use-app-theme'
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
 import {
     addDays,
@@ -45,11 +45,9 @@ function EventCard({
     onPress: (id: string, e: GestureResponderEvent) => void
 }) {
     const calendarMap = useCalendarMap()
-    const [fgColor, mutedColor, surfaceBg] = useThemeColor([
-        'foreground',
-        'muted',
-        'surface-secondary',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const surfaceBg = useThemeColor('surface-secondary')
     const cal = calendarMap.get(event.calendar)
     const colors = getCalendarColorResolved(cal?.color ?? 'blue')
 
@@ -101,13 +99,11 @@ function DaySection({
     onEventPress: (id: string, e: GestureResponderEvent) => void
     onEmptyPress: (date: Date) => void
 }) {
-    const [fgColor, mutedColor, accentColor, bgColor, borderColor] = useThemeColor([
-        'foreground',
-        'muted',
-        'accent',
-        'background',
-        'border',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const accentColor = useThemeColor('accent')
+    const bgColor = useThemeColor('background')
+    const borderColor = useThemeColor('border')
 
     return (
         <View

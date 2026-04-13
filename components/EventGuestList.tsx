@@ -1,6 +1,6 @@
-import { useThemeColor } from 'heroui-native'
 import { Check, HelpCircle, X as XIcon } from 'lucide-react-native'
 import { Text, View } from 'react-native'
+import { useThemeColor } from '~/lib/use-app-theme'
 import type { EventGuest } from '../types'
 
 function getInitials(name: string): string {
@@ -14,11 +14,9 @@ function getInitials(name: string): string {
 }
 
 function RsvpIcon({ rsvp }: { rsvp: EventGuest['rsvp'] }) {
-    const [successColor, dangerColor, warningColor] = useThemeColor([
-        'success',
-        'danger',
-        'warning',
-    ])
+    const successColor = useThemeColor('success')
+    const dangerColor = useThemeColor('danger')
+    const warningColor = useThemeColor('warning')
     if (rsvp === 'accepted') return <Check size={14} color={successColor} />
     if (rsvp === 'declined') return <XIcon size={14} color={dangerColor} />
     if (rsvp === 'tentative') return <HelpCircle size={14} color={warningColor} />
@@ -26,12 +24,10 @@ function RsvpIcon({ rsvp }: { rsvp: EventGuest['rsvp'] }) {
 }
 
 export function EventGuestList({ guests }: EventGuestListProps) {
-    const [fgColor, mutedColor, accentColor, accentFgColor] = useThemeColor([
-        'foreground',
-        'muted',
-        'accent',
-        'accent-foreground',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const accentColor = useThemeColor('accent')
+    const accentFgColor = useThemeColor('accent-foreground')
 
     if (guests.length === 0) {
         return (

@@ -1,4 +1,3 @@
-import { useThemeColor } from 'heroui-native'
 import type React from 'react'
 import { useCallback, useMemo } from 'react'
 import {
@@ -9,6 +8,7 @@ import {
     Text,
     View,
 } from 'react-native'
+import { useThemeColor } from '~/lib/use-app-theme'
 import { useCalendarMap } from '../hooks/useCalendarEvents'
 import { getTimeLabel, isToday } from '../hooks/useCalendarNavigation'
 import { type LayoutEvent, layoutTimedEvents } from '../layout'
@@ -58,7 +58,8 @@ export function TimeGrid({
     onSlotPress,
     onEventPress,
 }: TimeGridProps) {
-    const [mutedColor, borderColor] = useThemeColor(['muted', 'border'])
+    const mutedColor = useThemeColor('muted')
+    const borderColor = useThemeColor('border')
     const calendarMap = useCalendarMap()
     const totalHours = endHour - startHour + 1
 

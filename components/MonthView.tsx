@@ -1,6 +1,6 @@
-import { useThemeColor } from 'heroui-native'
 import { useMemo } from 'react'
 import { type GestureResponderEvent, Pressable, Text, View } from 'react-native'
+import { useThemeColor } from '~/lib/use-app-theme'
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
 import { addDays, eventOverlapsRange } from '../hooks/useCalendarNavigation'
 import { useCalendarView } from '../hooks/useCalendarView'
@@ -18,7 +18,8 @@ const DATE_HEADER_HEIGHT = 28
 export function MonthView() {
     const { focusDate, openEventDetail, setViewMode, goToDate } = useCalendarView()
     const calendarMap = useCalendarMap()
-    const [mutedColor, borderColor] = useThemeColor(['muted', 'border'])
+    const mutedColor = useThemeColor('muted')
+    const borderColor = useThemeColor('border')
 
     const grid = useMemo(() => getMonthGrid(focusDate), [focusDate])
 

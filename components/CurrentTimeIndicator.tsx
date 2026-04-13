@@ -1,5 +1,5 @@
-import { useThemeColor } from 'heroui-native'
 import { View } from 'react-native'
+import { useThemeColor } from '~/lib/use-app-theme'
 
 interface CurrentTimeIndicatorProps {
     topOffset: number

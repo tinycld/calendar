@@ -1,7 +1,6 @@
 import { eq } from '@tanstack/db'
 import { useLiveQuery } from '@tanstack/react-db'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Button, useThemeColor } from 'heroui-native'
 import { ArrowLeft } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb'
 import { Pressable, ScrollView, Text, View } from 'react-native'
@@ -9,8 +8,10 @@ import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { handleMutationErrorsWithForm } from '~/lib/errors'
 import { mutation, useMutation } from '~/lib/mutations'
 import { useStore } from '~/lib/pocketbase'
+import { useThemeColor } from '~/lib/use-app-theme'
 import { useCurrentUserOrg } from '~/lib/use-current-user-org'
 import { useOrgInfo } from '~/lib/use-org-info'
+import { Button, ButtonText } from '~/ui/button'
 import { useForm, z, zodResolver } from '~/ui/form'
 import { EventForm } from '../components/EventForm'
 import { EventGuestList } from '../components/EventGuestList'
@@ -40,7 +41,9 @@ function combineDateAndTime(dateStr: string, timeStr: string): string {
 export default function EventEditorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>()
     const router = useRouter()
-    const [fgColor, mutedColor, bgColor] = useThemeColor(['foreground', 'muted', 'background'])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const bgColor = useThemeColor('background')
     const breakpoint = useBreakpoint()
     const { orgSlug } = useOrgInfo()
     const userOrg = useCurrentUserOrg(orgSlug)
@@ -223,7 +226,7 @@ export default function EventEditorScreen() {
                         </Text>
                     </View>
                     <Button onPress={onSubmit} isDisabled={!canSubmit} size="sm">
-                        {activeMutation.isPending ? 'Saving...' : 'Save'}
+                        <ButtonText>{activeMutation.isPending ? 'Saving...' : 'Save'}</ButtonText>
                     </Button>
                 </View>
 

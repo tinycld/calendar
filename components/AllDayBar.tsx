@@ -17,7 +17,8 @@ interface AllDayBarProps {
 
 export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayBarProps) {
     const calendarMap = useCalendarMap()
-    const [sidebarBg, borderColor] = useThemeColor(['sidebar-background', 'border'])
+    const sidebarBg = useThemeColor('sidebar-background')
+    const borderColor = useThemeColor('border')
 
     const { layouts, eventMap, maxRow } = useMemo(() => {
         const layoutEvents: LayoutEvent[] = events.map(e => ({

@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router'
-import { BottomSheet, Button, useThemeColor } from 'heroui-native'
 import { Users, X } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb'
 import { Pressable, Text, View } from 'react-native'
@@ -8,8 +7,17 @@ import { captureException } from '~/lib/errors'
 import { mutation, useMutation } from '~/lib/mutations'
 import { useOrgHref } from '~/lib/org-routes'
 import { useStore } from '~/lib/pocketbase'
+import { useThemeColor } from '~/lib/use-app-theme'
 import { useCurrentUserOrg } from '~/lib/use-current-user-org'
 import { useOrgInfo } from '~/lib/use-org-info'
+import {
+    Actionsheet,
+    ActionsheetBackdrop,
+    ActionsheetContent,
+    ActionsheetDragIndicator,
+    ActionsheetDragIndicatorWrapper,
+} from '~/ui/actionsheet'
+import { Button, ButtonText } from '~/ui/button'
 import { TextInput, useForm, z, zodResolver } from '~/ui/form'
 import { useVisibleCalendars } from '../hooks/useCalendarEvents'
 import { getTimeLabel } from '../hooks/useCalendarNavigation'
@@ -136,54 +144,50 @@ function MobileQuickCreate({
     }
 
     return (
-        <BottomSheet isOpen={isVisible} onOpenChange={open => !open && onClose()}>
-            <BottomSheet.Portal>
-                <BottomSheet.Overlay />
-                <BottomSheet.Content keyboardBehavior="interactive" keyboardBlurBehavior="restore">
-                    <View style={{ padding: 20, gap: 12 }}>
-                        <View
-                            style={{
-                                flexDirection: 'row',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                            }}
-                        >
-                            <Pressable onPress={onClose}>
-                                <Text style={{ fontSize: 14, color: mutedColor }}>Cancel</Text>
-                            </Pressable>
-                            <Button onPress={onSave} size="sm">
-                                Save
-                            </Button>
-                        </View>
-
-                        <TextInput
-                            control={control}
-                            name="title"
-                            placeholder="Add title"
-                            autoFocus
-                        />
-
-                        <View style={{ gap: 4 }}>
-                            <Text style={{ fontSize: 12, color: mutedColor }}>{dayLabel}</Text>
-                            <Text style={{ fontSize: 12, color: mutedColor }}>{timeLabel}</Text>
-                        </View>
-
-                        <Pressable
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 10,
-                                paddingVertical: 8,
-                            }}
-                            onPress={onMoreOptions}
-                        >
-                            <Users size={18} color={mutedColor} />
-                            <Text style={{ fontSize: 14, color: mutedColor }}>Add guests</Text>
+        <Actionsheet isOpen={isVisible} onClose={onClose}>
+            <ActionsheetBackdrop />
+            <ActionsheetContent>
+                <ActionsheetDragIndicatorWrapper>
+                    <ActionsheetDragIndicator />
+                </ActionsheetDragIndicatorWrapper>
+                <View style={{ padding: 20, gap: 12, width: '100%' }}>
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                        }}
+                    >
+                        <Pressable onPress={onClose}>
+                            <Text style={{ fontSize: 14, color: mutedColor }}>Cancel</Text>
                         </Pressable>
+                        <Button onPress={onSave} size="sm">
+                            <ButtonText>Save</ButtonText>
+                        </Button>
                     </View>
-                </BottomSheet.Content>
-            </BottomSheet.Portal>
-        </BottomSheet>
+
+                    <TextInput control={control} name="title" placeholder="Add title" autoFocus />
+
+                    <View style={{ gap: 4 }}>
+                        <Text style={{ fontSize: 12, color: mutedColor }}>{dayLabel}</Text>
+                        <Text style={{ fontSize: 12, color: mutedColor }}>{timeLabel}</Text>
+                    </View>
+
+                    <Pressable
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 10,
+                            paddingVertical: 8,
+                        }}
+                        onPress={onMoreOptions}
+                    >
+                        <Users size={18} color={mutedColor} />
+                        <Text style={{ fontSize: 14, color: mutedColor }}>Add guests</Text>
+                    </Pressable>
+                </View>
+            </ActionsheetContent>
+        </Actionsheet>
     )
 }
 
@@ -193,14 +197,12 @@ function DesktopQuickCreate({
     initialHour,
     onClose,
 }: EventQuickCreateProps) {
-    const [fgColor, mutedColor, bgColor, borderColor, accentColor, shadowColor] = useThemeColor([
-        'foreground',
-        'muted',
-        'background',
-        'border',
-        'accent',
-        'overlay-backdrop',
-    ])
+    const fgColor = useThemeColor('foreground')
+    const mutedColor = useThemeColor('muted')
+    const bgColor = useThemeColor('background')
+    const borderColor = useThemeColor('border')
+    const accentColor = useThemeColor('accent')
+    const shadowColor = useThemeColor('overlay-backdrop')
     const router = useRouter()
     const orgHref = useOrgHref()
     const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
