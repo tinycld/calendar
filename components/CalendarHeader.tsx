@@ -18,7 +18,7 @@ const VIEW_LABELS: Record<ViewMode, string> = {
 export function CalendarHeader() {
     const { viewMode, setViewMode, focusDate, goToday, goNext, goPrevious } = useCalendarView()
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const borderColor = useThemeColor('border')
     const accentColor = useThemeColor('accent')
     const accentFgColor = useThemeColor('accent-foreground')

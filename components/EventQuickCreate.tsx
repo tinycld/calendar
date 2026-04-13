@@ -129,7 +129,7 @@ function MobileQuickCreate({
     initialHour,
     onClose,
 }: EventQuickCreateProps) {
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const router = useRouter()
     const orgHref = useOrgHref()
     const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
@@ -198,7 +198,7 @@ function DesktopQuickCreate({
     onClose,
 }: EventQuickCreateProps) {
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const bgColor = useThemeColor('background')
     const borderColor = useThemeColor('border')
     const accentColor = useThemeColor('accent')

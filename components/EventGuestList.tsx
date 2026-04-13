@@ -25,7 +25,7 @@ function RsvpIcon({ rsvp }: { rsvp: EventGuest['rsvp'] }) {
 
 export function EventGuestList({ guests }: EventGuestListProps) {
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const accentColor = useThemeColor('accent')
     const accentFgColor = useThemeColor('accent-foreground')
 

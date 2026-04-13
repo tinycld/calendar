@@ -29,7 +29,7 @@ interface RecurrencePickerProps {
 
 export function RecurrencePicker({ value, onChange, eventStartDate }: RecurrencePickerProps) {
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const borderColor = useThemeColor('border')
     const bgColor = useThemeColor('background')
     const [showCustom, setShowCustom] = useState(false)

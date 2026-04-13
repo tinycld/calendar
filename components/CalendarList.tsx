@@ -92,7 +92,7 @@ function CalendarSection({
     onShowOnly: (calendarId: string) => void
 }) {
     const [expanded, setExpanded] = useState(true)
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const ChevronIcon = expanded ? ChevronDown : ChevronRight
 
     return (

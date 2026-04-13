@@ -58,7 +58,7 @@ export function TimeGrid({
     onSlotPress,
     onEventPress,
 }: TimeGridProps) {
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const borderColor = useThemeColor('border')
     const calendarMap = useCalendarMap()
     const totalHours = endHour - startHour + 1

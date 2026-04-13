@@ -18,7 +18,7 @@ const DATE_HEADER_HEIGHT = 28
 export function MonthView() {
     const { focusDate, openEventDetail, setViewMode, goToDate } = useCalendarView()
     const calendarMap = useCalendarMap()
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const borderColor = useThemeColor('border')
 
     const grid = useMemo(() => getMonthGrid(focusDate), [focusDate])

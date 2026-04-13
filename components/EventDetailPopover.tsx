@@ -61,7 +61,7 @@ function MobileEventDetail({
     onDelete,
 }: Omit<EventDetailPopoverProps, 'isVisible'> & { event: CalendarEvents }) {
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const bgColor = useThemeColor('background')
     const router = useRouter()
     const orgHref = useOrgHref()
@@ -287,7 +287,7 @@ export function EventDetailPopover({
     onDelete,
 }: EventDetailPopoverProps) {
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const bgColor = useThemeColor('background')
     const borderColor = useThemeColor('border')
     const shadowColor = useThemeColor('overlay-backdrop')

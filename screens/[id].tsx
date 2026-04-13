@@ -42,7 +42,7 @@ export default function EventEditorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>()
     const router = useRouter()
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const bgColor = useThemeColor('background')
     const breakpoint = useBreakpoint()
     const { orgSlug } = useOrgInfo()

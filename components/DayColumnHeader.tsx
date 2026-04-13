@@ -10,7 +10,7 @@ interface DayColumnHeaderProps {
 export function DayColumnHeader({ date, isToday }: DayColumnHeaderProps) {
     const accentColor = useThemeColor('accent')
     const accentFgColor = useThemeColor('accent-foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const fgColor = useThemeColor('foreground')
     const dayName = getShortDayName(date)
     const dateNum = date.getDate()

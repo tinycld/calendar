@@ -46,7 +46,7 @@ function EventCard({
 }) {
     const calendarMap = useCalendarMap()
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const surfaceBg = useThemeColor('surface-secondary')
     const cal = calendarMap.get(event.calendar)
     const colors = getCalendarColorResolved(cal?.color ?? 'blue')
@@ -100,7 +100,7 @@ function DaySection({
     onEmptyPress: (date: Date) => void
 }) {
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const accentColor = useThemeColor('accent')
     const bgColor = useThemeColor('background')
     const borderColor = useThemeColor('border')

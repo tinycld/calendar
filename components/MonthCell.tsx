@@ -26,7 +26,7 @@ export function MonthCell({
     onEventPress,
 }: MonthCellProps) {
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted')
+    const mutedColor = useThemeColor('muted-foreground')
     const accentColor = useThemeColor('accent')
     const accentFgColor = useThemeColor('accent-foreground')
     const borderColor = useThemeColor('border')
