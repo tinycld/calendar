@@ -1,6 +1,6 @@
+import { useThemeColor } from 'heroui-native'
 import { useMemo } from 'react'
-import { StyleSheet, View } from 'react-native'
-import { useTheme } from 'tamagui'
+import { View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { useCalendarEvents } from '../hooks/useCalendarEvents'
 import { addDays, eventOverlapsRange, isToday, startOfWeek } from '../hooks/useCalendarNavigation'
@@ -21,8 +21,8 @@ function getEventsForDay(events: CalendarEvents[], date: Date): CalendarEvents[]
 
 export function WeekView() {
     const { focusDate, openQuickCreate, openEventDetail } = useCalendarView()
-    const theme = useTheme()
     const isMobile = useBreakpoint() === 'mobile'
+    const borderColor = useThemeColor('border')
     const dayCount = isMobile ? 3 : 7
 
     const rangeStart = useMemo(
@@ -48,11 +48,17 @@ export function WeekView() {
     }, [events, days])
 
     return (
-        <View style={styles.container}>
-            <View style={[styles.headerRow, { borderBottomColor: theme.borderColor.val }]}>
-                <View style={styles.gutterSpacer} />
+        <View style={{ flex: 1 }}>
+            <View
+                style={{
+                    flexDirection: 'row',
+                    borderBottomWidth: 1,
+                    borderBottomColor: borderColor,
+                }}
+            >
+                <View style={{ width: 50 }} />
                 {days.map(date => (
-                    <View key={date.toISOString()} style={styles.headerCell}>
+                    <View key={date.toISOString()} style={{ flex: 1, alignItems: 'center' }}>
                         <DayColumnHeader date={date} isToday={isToday(date)} />
                     </View>
                 ))}
@@ -71,20 +77,3 @@ export function WeekView() {
         </View>
     )
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    headerRow: {
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-    },
-    gutterSpacer: {
-        width: 50,
-    },
-    headerCell: {
-        flex: 1,
-        alignItems: 'center',
-    },
-})

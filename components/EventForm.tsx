@@ -1,7 +1,7 @@
 import { MapPin } from 'lucide-react-native'
 import type { Control, FieldErrors } from 'react-hook-form'
 import { Controller } from 'react-hook-form'
-import { YStack } from 'tamagui'
+import { View } from 'react-native'
 import {
     FormErrorSummary,
     NumberInput,
@@ -48,7 +48,7 @@ export function EventForm({
     )
 
     return (
-        <YStack gap="$4">
+        <View style={{ gap: 16 }}>
             <FormErrorSummary errors={errors} isEnabled={isSubmitted} />
 
             <TextInput control={control} name="title" label="Title" placeholder="Event title" />
@@ -131,6 +131,6 @@ export function EventForm({
                 placeholder="Add description"
                 numberOfLines={4}
             />
-        </YStack>
+        </View>
     )
 }

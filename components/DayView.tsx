@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { YStack } from 'tamagui'
+import { View } from 'react-native'
 import { useCalendarEvents } from '../hooks/useCalendarEvents'
 import { isToday } from '../hooks/useCalendarNavigation'
 import { useCalendarView } from '../hooks/useCalendarView'
@@ -23,7 +23,7 @@ export function DayView() {
     )
 
     return (
-        <YStack flex={1}>
+        <View style={{ flex: 1 }}>
             <DayColumnHeader date={focusDate} isToday={isToday(focusDate)} />
             <AllDayBar
                 events={allDayEvents}
@@ -36,6 +36,6 @@ export function DayView() {
                 onSlotPress={openQuickCreate}
                 onEventPress={openEventDetail}
             />
-        </YStack>
+        </View>
     )
 }

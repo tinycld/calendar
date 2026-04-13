@@ -1,13 +1,12 @@
-import { getTokenValue } from 'tamagui'
 import type { CalendarColorKey } from '../types'
 
 const CALENDAR_COLORS: Record<CalendarColorKey, { bg: string; text: string }> = {
-    blue: { bg: '$blue10', text: '$white1' },
-    green: { bg: '$green10', text: '$white1' },
-    red: { bg: '$red10', text: '$white1' },
-    teal: { bg: '$teal10', text: '$white1' },
-    purple: { bg: '$purple10', text: '$white1' },
-    orange: { bg: '$orange10', text: '$white1' },
+    blue: { bg: '#3b82f6', text: '#ffffff' },
+    green: { bg: '#22c55e', text: '#ffffff' },
+    red: { bg: '#ef4444', text: '#ffffff' },
+    teal: { bg: '#14b8a6', text: '#ffffff' },
+    purple: { bg: '#a855f7', text: '#ffffff' },
+    orange: { bg: '#f97316', text: '#ffffff' },
     tomato: { bg: '#D50000', text: '#ffffff' },
     flamingo: { bg: '#E67C73', text: '#ffffff' },
     tangerine: { bg: '#F4511E', text: '#ffffff' },
@@ -35,16 +34,6 @@ export function getCalendarColor(colorKey: string) {
     return CALENDAR_COLORS[colorKey as CalendarColorKey] ?? CALENDAR_COLORS[DEFAULT_COLOR]
 }
 
-function resolveColor(value: string, fallback: string) {
-    if (!value.startsWith('$')) return value
-    const resolved = getTokenValue(value as never, 'color')
-    return typeof resolved === 'string' ? resolved : fallback
-}
-
 export function getCalendarColorResolved(colorKey: string) {
-    const tokens = getCalendarColor(colorKey)
-    return {
-        bg: resolveColor(tokens.bg, '#3b82f6'),
-        text: resolveColor(tokens.text, '#ffffff'),
-    }
+    return getCalendarColor(colorKey)
 }

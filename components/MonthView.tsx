@@ -1,6 +1,6 @@
+import { useThemeColor } from 'heroui-native'
 import { useMemo } from 'react'
-import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native'
-import { useTheme } from 'tamagui'
+import { type GestureResponderEvent, Pressable, Text, View } from 'react-native'
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
 import { addDays, eventOverlapsRange } from '../hooks/useCalendarNavigation'
 import { useCalendarView } from '../hooks/useCalendarView'
@@ -17,8 +17,8 @@ const DATE_HEADER_HEIGHT = 28
 
 export function MonthView() {
     const { focusDate, openEventDetail, setViewMode, goToDate } = useCalendarView()
-    const theme = useTheme()
     const calendarMap = useCalendarMap()
+    const [mutedColor, borderColor] = useThemeColor(['muted', 'border'])
 
     const grid = useMemo(() => getMonthGrid(focusDate), [focusDate])
 
@@ -65,11 +65,17 @@ export function MonthView() {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={[styles.headerRow, { borderBottomColor: theme.borderColor.val }]}>
+        <View style={{ flex: 1, overflow: 'hidden' }}>
+            <View
+                style={{
+                    flexDirection: 'row',
+                    borderBottomWidth: 1,
+                    borderBottomColor: borderColor,
+                }}
+            >
                 {DAY_LABELS.map(label => (
-                    <View key={label} style={styles.headerCell}>
-                        <Text style={[styles.headerText, { color: theme.color8.val }]}>
+                    <View key={label} style={{ flex: 1, alignItems: 'center', paddingVertical: 8 }}>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: mutedColor }}>
                             {label}
                         </Text>
                     </View>
@@ -80,7 +86,16 @@ export function MonthView() {
                 const cellLayoutMap = rowLayouts[rowIndex]
 
                 return (
-                    <View key={row[0].date.toISOString()} style={styles.row}>
+                    <View
+                        key={row[0].date.toISOString()}
+                        style={{
+                            flex: 1,
+                            flexDirection: 'row',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            minHeight: 0,
+                        }}
+                    >
                         <MultiDayBars
                             cellLayoutMap={cellLayoutMap}
                             eventMap={eventMap}
@@ -146,9 +161,18 @@ function MultiDayBars({ cellLayoutMap, eventMap, calendarMap, onEventPress }: Mu
                         zIndex: 2,
                     }}
                 >
-                    <View style={[styles.multiDayBar, { backgroundColor: colors.bg }]}>
+                    <View
+                        style={{
+                            flex: 1,
+                            borderRadius: 3,
+                            paddingHorizontal: 4,
+                            paddingVertical: 1,
+                            overflow: 'hidden',
+                            backgroundColor: colors.bg,
+                        }}
+                    >
                         <Text
-                            style={[styles.multiDayText, { color: colors.text }]}
+                            style={{ fontSize: 10, fontWeight: '600', color: colors.text }}
                             numberOfLines={1}
                         >
                             {layout.isStart ? event.title : ''}
@@ -161,41 +185,3 @@ function MultiDayBars({ cellLayoutMap, eventMap, calendarMap, onEventPress }: Mu
 
     return <>{bars}</>
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        overflow: 'hidden',
-    },
-    headerRow: {
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-    },
-    headerCell: {
-        flex: 1,
-        alignItems: 'center',
-        paddingVertical: 8,
-    },
-    headerText: {
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    row: {
-        flex: 1,
-        flexDirection: 'row',
-        position: 'relative',
-        overflow: 'hidden',
-        minHeight: 0,
-    },
-    multiDayBar: {
-        flex: 1,
-        borderRadius: 3,
-        paddingHorizontal: 4,
-        paddingVertical: 1,
-        overflow: 'hidden',
-    },
-    multiDayText: {
-        fontSize: 10,
-        fontWeight: '600',
-    },
-})

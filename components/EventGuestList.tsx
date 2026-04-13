@@ -1,11 +1,7 @@
+import { useThemeColor } from 'heroui-native'
 import { Check, HelpCircle, X as XIcon } from 'lucide-react-native'
-import { StyleSheet, Text, View } from 'react-native'
-import { SizableText, useTheme, YStack } from 'tamagui'
+import { Text, View } from 'react-native'
 import type { EventGuest } from '../types'
-
-interface EventGuestListProps {
-    guests: EventGuest[]
-}
 
 function getInitials(name: string): string {
     const trimmed = name.trim()
@@ -18,56 +14,90 @@ function getInitials(name: string): string {
 }
 
 function RsvpIcon({ rsvp }: { rsvp: EventGuest['rsvp'] }) {
-    const theme = useTheme()
-    if (rsvp === 'accepted') return <Check size={14} color={theme.green10.val} />
-    if (rsvp === 'declined') return <XIcon size={14} color={theme.red8.val} />
-    if (rsvp === 'tentative') return <HelpCircle size={14} color={theme.orange10.val} />
+    const [successColor, dangerColor, warningColor] = useThemeColor([
+        'success',
+        'danger',
+        'warning',
+    ])
+    if (rsvp === 'accepted') return <Check size={14} color={successColor} />
+    if (rsvp === 'declined') return <XIcon size={14} color={dangerColor} />
+    if (rsvp === 'tentative') return <HelpCircle size={14} color={warningColor} />
     return null
 }
 
 export function EventGuestList({ guests }: EventGuestListProps) {
-    const theme = useTheme()
+    const [fgColor, mutedColor, accentColor, accentFgColor] = useThemeColor([
+        'foreground',
+        'muted',
+        'accent',
+        'accent-foreground',
+    ])
 
     if (guests.length === 0) {
         return (
-            <YStack padding="$4">
-                <SizableText size="$3" color="$color8">
-                    No guests
-                </SizableText>
-            </YStack>
+            <View style={{ padding: 16 }}>
+                <Text style={{ fontSize: 14, color: mutedColor }}>No guests</Text>
+            </View>
         )
     }
 
     return (
-        <YStack gap="$2">
-            <SizableText size="$4" fontWeight="600" color="$color" paddingHorizontal="$1">
+        <View style={{ gap: 8 }}>
+            <Text
+                style={{
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: fgColor,
+                    paddingHorizontal: 4,
+                }}
+            >
                 Guests ({guests.length})
-            </SizableText>
+            </Text>
 
             {guests.map(guest => (
-                <View key={guest.email} style={styles.guestRow}>
-                    <View style={[styles.avatar, { backgroundColor: theme.accentBackground.val }]}>
-                        <Text style={[styles.avatarText, { color: theme.accentColor.val }]}>
+                <View
+                    key={guest.email}
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 10,
+                        paddingVertical: 6,
+                        paddingHorizontal: 4,
+                    }}
+                >
+                    <View
+                        style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 16,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: accentColor,
+                        }}
+                    >
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: accentFgColor }}>
                             {getInitials(guest.name)}
                         </Text>
                     </View>
-                    <View style={styles.guestInfo}>
-                        <View style={styles.nameRow}>
+                    <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                             <Text
-                                style={[styles.guestName, { color: theme.color.val }]}
+                                style={{
+                                    fontSize: 14,
+                                    fontWeight: '500',
+                                    color: fgColor,
+                                }}
                                 numberOfLines={1}
                             >
                                 {guest.name}
                             </Text>
                             {guest.role === 'organizer' && (
-                                <Text style={[styles.roleTag, { color: theme.color8.val }]}>
-                                    Organizer
-                                </Text>
+                                <Text style={{ fontSize: 11, color: mutedColor }}>Organizer</Text>
                             )}
                         </View>
-                        <View style={styles.emailRow}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                             <Text
-                                style={[styles.guestEmail, { color: theme.color8.val }]}
+                                style={{ fontSize: 12, color: mutedColor, flex: 1 }}
                                 numberOfLines={1}
                             >
                                 {guest.email}
@@ -77,51 +107,10 @@ export function EventGuestList({ guests }: EventGuestListProps) {
                     </View>
                 </View>
             ))}
-        </YStack>
+        </View>
     )
 }
 
-const styles = StyleSheet.create({
-    guestRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        paddingVertical: 6,
-        paddingHorizontal: 4,
-    },
-    avatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    avatarText: {
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    guestInfo: {
-        flex: 1,
-    },
-    nameRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    guestName: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    roleTag: {
-        fontSize: 11,
-    },
-    emailRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    guestEmail: {
-        fontSize: 12,
-        flex: 1,
-    },
-})
+interface EventGuestListProps {
+    guests: EventGuest[]
+}

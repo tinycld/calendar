@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router'
+import { BottomSheet, Button, useThemeColor } from 'heroui-native'
 import { Users, X } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb'
-import { Pressable } from 'react-native'
-import { Button, SizableText, useTheme, XStack, YStack } from 'tamagui'
+import { Pressable, Text, View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { captureException } from '~/lib/errors'
 import { mutation, useMutation } from '~/lib/mutations'
@@ -31,10 +31,30 @@ export function EventQuickCreate({
     initialHour,
     onClose,
 }: EventQuickCreateProps) {
-    const theme = useTheme()
-    const router = useRouter()
-    const orgHref = useOrgHref()
     const isMobile = useBreakpoint() === 'mobile'
+
+    if (isMobile) {
+        return (
+            <MobileQuickCreate
+                isVisible={isVisible}
+                initialDate={initialDate}
+                initialHour={initialHour}
+                onClose={onClose}
+            />
+        )
+    }
+
+    return (
+        <DesktopQuickCreate
+            isVisible={isVisible}
+            initialDate={initialDate}
+            initialHour={initialHour}
+            onClose={onClose}
+        />
+    )
+}
+
+function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () => void) {
     const { orgSlug } = useOrgInfo()
     const userOrg = useCurrentUserOrg(orgSlug)
     const { mineCalendars, calendars } = useVisibleCalendars()
@@ -82,8 +102,6 @@ export function EventQuickCreate({
         onError: error => captureException('EventQuickCreate', error),
     })
 
-    if (!isVisible) return null
-
     const dayLabel = initialDate.toLocaleDateString('en-US', {
         weekday: 'long',
         month: 'long',
@@ -94,53 +112,50 @@ export function EventQuickCreate({
 
     const onSave = handleSubmit(data => createEvent.mutate(data))
 
+    return { control, onSave, dayLabel, timeLabel }
+}
+
+function MobileQuickCreate({
+    isVisible,
+    initialDate,
+    initialHour,
+    onClose,
+}: EventQuickCreateProps) {
+    const mutedColor = useThemeColor('muted')
+    const router = useRouter()
+    const orgHref = useOrgHref()
+    const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
+        initialDate,
+        initialHour,
+        onClose
+    )
+
     const onMoreOptions = () => {
         onClose()
         router.push(orgHref('calendar/[id]', { id: 'new' }))
     }
 
-    if (isMobile) {
-        return (
-            <Pressable
-                style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    justifyContent: 'flex-end',
-                    zIndex: 100,
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                }}
-                onPress={onClose}
-            >
-                <Pressable
-                    style={{
-                        width: '100%',
-                        borderTopLeftRadius: 16,
-                        borderTopRightRadius: 16,
-                        padding: 20,
-                        backgroundColor: theme.background.val,
-                        shadowColor: theme.shadowColor.val,
-                        shadowOffset: { width: 0, height: -2 },
-                        shadowOpacity: 0.15,
-                        shadowRadius: 8,
-                        elevation: 8,
-                    }}
-                    onPress={e => e.stopPropagation()}
-                >
-                    <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
-                        <Pressable onPress={onClose}>
-                            <SizableText size="$3" color="$color8">
-                                Cancel
-                            </SizableText>
-                        </Pressable>
-                        <Button theme="accent" size="$3" onPress={onSave}>
-                            <Button.Text fontWeight="600">Save</Button.Text>
-                        </Button>
-                    </XStack>
+    return (
+        <BottomSheet isOpen={isVisible} onOpenChange={open => !open && onClose()}>
+            <BottomSheet.Portal>
+                <BottomSheet.Overlay />
+                <BottomSheet.Content keyboardBehavior="interactive" keyboardBlurBehavior="restore">
+                    <View style={{ padding: 20, gap: 12 }}>
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Pressable onPress={onClose}>
+                                <Text style={{ fontSize: 14, color: mutedColor }}>Cancel</Text>
+                            </Pressable>
+                            <Button onPress={onSave} size="sm">
+                                Save
+                            </Button>
+                        </View>
 
-                    <YStack gap="$3">
                         <TextInput
                             control={control}
                             name="title"
@@ -148,14 +163,10 @@ export function EventQuickCreate({
                             autoFocus
                         />
 
-                        <YStack gap="$1">
-                            <SizableText size="$2" color="$color8">
-                                {dayLabel}
-                            </SizableText>
-                            <SizableText size="$2" color="$color8">
-                                {timeLabel}
-                            </SizableText>
-                        </YStack>
+                        <View style={{ gap: 4 }}>
+                            <Text style={{ fontSize: 12, color: mutedColor }}>{dayLabel}</Text>
+                            <Text style={{ fontSize: 12, color: mutedColor }}>{timeLabel}</Text>
+                        </View>
 
                         <Pressable
                             style={{
@@ -166,15 +177,43 @@ export function EventQuickCreate({
                             }}
                             onPress={onMoreOptions}
                         >
-                            <Users size={18} color={theme.color8.val} />
-                            <SizableText size="$3" color="$color8">
-                                Add guests
-                            </SizableText>
+                            <Users size={18} color={mutedColor} />
+                            <Text style={{ fontSize: 14, color: mutedColor }}>Add guests</Text>
                         </Pressable>
-                    </YStack>
-                </Pressable>
-            </Pressable>
-        )
+                    </View>
+                </BottomSheet.Content>
+            </BottomSheet.Portal>
+        </BottomSheet>
+    )
+}
+
+function DesktopQuickCreate({
+    isVisible,
+    initialDate,
+    initialHour,
+    onClose,
+}: EventQuickCreateProps) {
+    const [fgColor, mutedColor, bgColor, borderColor, accentColor, shadowColor] = useThemeColor([
+        'foreground',
+        'muted',
+        'background',
+        'border',
+        'accent',
+        'overlay-backdrop',
+    ])
+    const router = useRouter()
+    const orgHref = useOrgHref()
+    const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
+        initialDate,
+        initialHour,
+        onClose
+    )
+
+    if (!isVisible) return null
+
+    const onMoreOptions = () => {
+        onClose()
+        router.push(orgHref('calendar/[id]', { id: 'new' }))
     }
 
     return (
@@ -197,9 +236,9 @@ export function EventQuickCreate({
                     borderRadius: 12,
                     borderWidth: 1,
                     padding: 16,
-                    backgroundColor: theme.background.val,
-                    borderColor: theme.borderColor.val,
-                    shadowColor: theme.shadowColor.val,
+                    backgroundColor: bgColor,
+                    borderColor,
+                    shadowColor,
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.15,
                     shadowRadius: 12,
@@ -207,38 +246,45 @@ export function EventQuickCreate({
                 }}
                 onPress={e => e.stopPropagation()}
             >
-                <XStack justifyContent="space-between" alignItems="center">
-                    <SizableText size="$4" fontWeight="600" color="$color">
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: fgColor }}>
                         New Event
-                    </SizableText>
+                    </Text>
                     <Pressable onPress={onClose} hitSlop={8}>
-                        <X size={18} color={theme.color8.val} />
+                        <X size={18} color={mutedColor} />
                     </Pressable>
-                </XStack>
+                </View>
 
-                <YStack gap="$3" paddingVertical="$2">
+                <View style={{ gap: 12, paddingVertical: 8 }}>
                     <TextInput control={control} name="title" placeholder="Add title" autoFocus />
 
-                    <YStack gap="$1">
-                        <SizableText size="$2" color="$color8">
-                            {dayLabel}
-                        </SizableText>
-                        <SizableText size="$2" color="$color8">
-                            {timeLabel}
-                        </SizableText>
-                    </YStack>
-                </YStack>
+                    <View style={{ gap: 4 }}>
+                        <Text style={{ fontSize: 12, color: mutedColor }}>{dayLabel}</Text>
+                        <Text style={{ fontSize: 12, color: mutedColor }}>{timeLabel}</Text>
+                    </View>
+                </View>
 
-                <XStack justifyContent="space-between" alignItems="center" marginTop={8}>
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginTop: 8,
+                    }}
+                >
                     <Pressable onPress={onMoreOptions}>
-                        <SizableText size="$2" color="$accentBackground">
-                            More options
-                        </SizableText>
+                        <Text style={{ fontSize: 12, color: accentColor }}>More options</Text>
                     </Pressable>
-                    <Button theme="accent" size="$3" onPress={onSave}>
-                        <Button.Text fontWeight="600">Save</Button.Text>
+                    <Button onPress={onSave} size="sm">
+                        Save
                     </Button>
-                </XStack>
+                </View>
             </Pressable>
         </Pressable>
     )

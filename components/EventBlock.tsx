@@ -1,4 +1,4 @@
-import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native'
+import { type GestureResponderEvent, Pressable, Text, View } from 'react-native'
 
 interface EventBlockProps {
     title: string
@@ -38,12 +38,27 @@ export function EventBlock({
                 zIndex: 5,
             }}
         >
-            <View style={[styles.block, { backgroundColor: bgColor }]}>
-                <Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
+            <View
+                style={{
+                    flex: 1,
+                    borderRadius: 4,
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    overflow: 'hidden',
+                    backgroundColor: bgColor,
+                }}
+            >
+                <Text
+                    style={{ fontSize: 12, fontWeight: '600', color: textColor }}
+                    numberOfLines={1}
+                >
                     {title}
                 </Text>
                 {showTwoLines && (
-                    <Text style={[styles.time, { color: textColor }]} numberOfLines={1}>
+                    <Text
+                        style={{ fontSize: 11, opacity: 0.9, color: textColor }}
+                        numberOfLines={1}
+                    >
                         {timeLabel}
                     </Text>
                 )}
@@ -51,21 +66,3 @@ export function EventBlock({
         </Pressable>
     )
 }
-
-const styles = StyleSheet.create({
-    block: {
-        flex: 1,
-        borderRadius: 4,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        overflow: 'hidden',
-    },
-    title: {
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    time: {
-        fontSize: 11,
-        opacity: 0.9,
-    },
-})

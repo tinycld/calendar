@@ -1,7 +1,6 @@
-import { Menu } from '@tamagui/menu'
+import { Menu, useThemeColor } from 'heroui-native'
 import { Check, MoreVertical } from 'lucide-react-native'
-import { Pressable, View as RNView, StyleSheet } from 'react-native'
-import { Separator, useTheme, View } from 'tamagui'
+import { Pressable, View } from 'react-native'
 import type { CalendarColorKey } from '../types'
 import { CALENDAR_COLOR_GRID, getCalendarColorResolved } from './calendar-colors'
 
@@ -12,62 +11,60 @@ interface CalendarMenuProps {
 }
 
 export function CalendarMenu({ currentColor, onColorChange, onShowOnly }: CalendarMenuProps) {
-    const theme = useTheme()
+    const mutedColor = useThemeColor('muted')
 
     return (
         <Menu>
-            <Menu.Trigger asChild>
+            <Menu.Trigger>
                 <View>
-                    <Pressable style={styles.triggerButton} hitSlop={8}>
-                        <MoreVertical size={14} color={theme.color8.val} />
+                    <Pressable style={{ padding: 4, borderRadius: 4 }} hitSlop={8}>
+                        <MoreVertical size={14} color={mutedColor} />
                     </Pressable>
                 </View>
             </Menu.Trigger>
 
-            <Menu.Portal zIndex={100}>
-                <Menu.Content
-                    borderRadius={8}
-                    minWidth={220}
-                    backgroundColor="$background"
-                    borderColor="$borderColor"
-                    borderWidth={1}
-                    paddingVertical="$1"
-                    shadowColor="#000"
-                    shadowOffset={{ width: 0, height: 4 }}
-                    shadowOpacity={0.15}
-                    shadowRadius={12}
-                >
-                    <Menu.Item onSelect={onShowOnly} gap="$2">
-                        <Menu.ItemTitle size="$3">Display this only</Menu.ItemTitle>
+            <Menu.Portal>
+                <Menu.Overlay />
+                <Menu.Content presentation="popover" className="min-w-[220px]">
+                    <Menu.Item onPress={onShowOnly}>
+                        <Menu.ItemTitle>Display this only</Menu.ItemTitle>
                     </Menu.Item>
 
-                    <Separator marginVertical="$1" />
+                    <View className="h-px mx-1 my-1 bg-separator" />
 
-                    <View paddingHorizontal="$3" paddingVertical="$2" gap={6}>
+                    <View style={{ paddingHorizontal: 12, paddingVertical: 8, gap: 6 }}>
                         {CALENDAR_COLOR_GRID.map(row => (
-                            <View key={row.join('-')} flexDirection="row" gap={6}>
+                            <View key={row.join('-')} style={{ flexDirection: 'row', gap: 6 }}>
                                 {row.map(colorKey => {
                                     const { bg } = getCalendarColorResolved(colorKey)
                                     return (
-                                        <Menu.Item
+                                        <Pressable
                                             key={colorKey}
-                                            onSelect={() => onColorChange(colorKey)}
-                                            padding={2}
-                                            borderRadius={14}
-                                            minWidth="auto"
-                                            width={28}
-                                            height={28}
-                                            alignItems="center"
-                                            justifyContent="center"
+                                            onPress={() => onColorChange(colorKey)}
+                                            style={{
+                                                padding: 2,
+                                                borderRadius: 14,
+                                                width: 28,
+                                                height: 28,
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            }}
                                         >
-                                            <RNView
-                                                style={[styles.colorDot, { backgroundColor: bg }]}
+                                            <View
+                                                style={{
+                                                    width: 24,
+                                                    height: 24,
+                                                    borderRadius: 12,
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    backgroundColor: bg,
+                                                }}
                                             >
                                                 {currentColor === colorKey && (
                                                     <Check size={12} color="#ffffff" />
                                                 )}
-                                            </RNView>
-                                        </Menu.Item>
+                                            </View>
+                                        </Pressable>
                                     )
                                 })}
                             </View>
@@ -78,17 +75,3 @@ export function CalendarMenu({ currentColor, onColorChange, onShowOnly }: Calend
         </Menu>
     )
 }
-
-const styles = StyleSheet.create({
-    triggerButton: {
-        padding: 4,
-        borderRadius: 4,
-    },
-    colorDot: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-})

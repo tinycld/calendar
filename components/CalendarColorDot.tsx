@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native'
+import { View } from 'react-native'
 import { getCalendarColorResolved } from './calendar-colors'
 
 interface CalendarColorDotProps {
@@ -9,20 +9,6 @@ interface CalendarColorDotProps {
 export function CalendarColorDot({ colorKey, size = 10 }: CalendarColorDotProps) {
     const { bg } = getCalendarColorResolved(colorKey)
     return (
-        <View
-            style={[
-                styles.dot,
-                {
-                    width: size,
-                    height: size,
-                    borderRadius: size / 2,
-                    backgroundColor: bg,
-                },
-            ]}
-        />
+        <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg }} />
     )
 }
-
-const styles = StyleSheet.create({
-    dot: {},
-})

@@ -1,5 +1,5 @@
+import { useThemeColor } from 'heroui-native'
 import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native'
-import { useTheme } from 'tamagui'
 import { useCalendarMap } from '../hooks/useCalendarEvents'
 import { formatShortTime } from '../hooks/useCalendarNavigation'
 import type { MonthCellLayout } from '../layout'
@@ -25,7 +25,13 @@ export function MonthCell({
     onDatePress,
     onEventPress,
 }: MonthCellProps) {
-    const theme = useTheme()
+    const [fgColor, mutedColor, accentColor, accentFgColor, borderColor] = useThemeColor([
+        'foreground',
+        'muted',
+        'accent',
+        'accent-foreground',
+        'border',
+    ])
     const calendarMap = useCalendarMap()
     const dateNum = date.getDate()
     const layouts = cellLayout?.layouts ?? []
@@ -33,28 +39,35 @@ export function MonthCell({
 
     return (
         <Pressable
-            style={[styles.cell, { borderColor: theme.borderColor.val }]}
+            style={{
+                flex: 1,
+                borderRightWidth: StyleSheet.hairlineWidth,
+                borderBottomWidth: StyleSheet.hairlineWidth,
+                borderColor,
+                padding: 2,
+                overflow: 'hidden',
+            }}
             onPress={() => onDatePress(date)}
         >
             <View
-                style={[
-                    styles.dateCircle,
-                    isToday && {
-                        backgroundColor: theme.accentBackground.val,
-                    },
-                ]}
+                style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    alignSelf: 'flex-end',
+                    marginBottom: 2,
+                    marginRight: 2,
+                    backgroundColor: isToday ? accentColor : undefined,
+                }}
             >
                 <Text
-                    style={[
-                        styles.dateText,
-                        {
-                            color: isToday
-                                ? theme.accentColor.val
-                                : isCurrentMonth
-                                  ? theme.color.val
-                                  : theme.color8.val,
-                        },
-                    ]}
+                    style={{
+                        fontSize: 12,
+                        fontWeight: '500',
+                        color: isToday ? accentFgColor : isCurrentMonth ? fgColor : mutedColor,
+                    }}
                 >
                     {dateNum}
                 </Text>
@@ -72,9 +85,21 @@ export function MonthCell({
                 if (event.all_day) {
                     return (
                         <Pressable key={event.id} onPress={e => onEventPress(event.id, e)}>
-                            <View style={[styles.allDayPill, { backgroundColor: colors.bg }]}>
+                            <View
+                                style={{
+                                    borderRadius: 3,
+                                    paddingHorizontal: 4,
+                                    paddingVertical: 1,
+                                    marginBottom: 1,
+                                    backgroundColor: colors.bg,
+                                }}
+                            >
                                 <Text
-                                    style={[styles.allDayText, { color: colors.text }]}
+                                    style={{
+                                        fontSize: 11,
+                                        fontWeight: '600',
+                                        color: colors.text,
+                                    }}
                                     numberOfLines={1}
                                 >
                                     {event.title}
@@ -88,13 +113,25 @@ export function MonthCell({
 
                 return (
                     <Pressable key={event.id} onPress={e => onEventPress(event.id, e)}>
-                        <View style={styles.timedEvent}>
-                            <View style={[styles.eventDot, { backgroundColor: colors.bg }]} />
-                            <Text style={[styles.eventTime, { color: theme.color8.val }]}>
-                                {timeStr}
-                            </Text>
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 3,
+                                paddingVertical: 1,
+                            }}
+                        >
+                            <View
+                                style={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: 3,
+                                    backgroundColor: colors.bg,
+                                }}
+                            />
+                            <Text style={{ fontSize: 10, color: mutedColor }}>{timeStr}</Text>
                             <Text
-                                style={[styles.eventTitle, { color: theme.color.val }]}
+                                style={{ fontSize: 11, color: fgColor, flex: 1 }}
                                 numberOfLines={1}
                             >
                                 {event.title}
@@ -106,7 +143,15 @@ export function MonthCell({
 
             {overflowCount > 0 && (
                 <Pressable onPress={() => onDatePress(date)}>
-                    <Text style={[styles.moreText, { color: theme.color8.val }]}>
+                    <Text
+                        style={{
+                            fontSize: 11,
+                            fontWeight: '600',
+                            color: mutedColor,
+                            paddingVertical: 2,
+                            textAlign: 'center',
+                        }}
+                    >
                         +{overflowCount} more
                     </Text>
                 </Pressable>
@@ -114,61 +159,3 @@ export function MonthCell({
         </Pressable>
     )
 }
-
-const styles = StyleSheet.create({
-    cell: {
-        flex: 1,
-        borderRightWidth: StyleSheet.hairlineWidth,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        padding: 2,
-        overflow: 'hidden',
-    },
-    dateCircle: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        alignSelf: 'flex-end',
-        marginBottom: 2,
-        marginRight: 2,
-    },
-    dateText: {
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    allDayPill: {
-        borderRadius: 3,
-        paddingHorizontal: 4,
-        paddingVertical: 1,
-        marginBottom: 1,
-    },
-    allDayText: {
-        fontSize: 11,
-        fontWeight: '600',
-    },
-    timedEvent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 3,
-        paddingVertical: 1,
-    },
-    eventDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-    },
-    eventTime: {
-        fontSize: 10,
-    },
-    eventTitle: {
-        fontSize: 11,
-        flex: 1,
-    },
-    moreText: {
-        fontSize: 11,
-        fontWeight: '600',
-        paddingVertical: 2,
-        textAlign: 'center',
-    },
-})

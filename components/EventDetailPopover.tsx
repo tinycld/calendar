@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router'
+import { useThemeColor } from 'heroui-native'
 import { Clock, MapPin, Pencil, Trash2, Users, X } from 'lucide-react-native'
 import { useLayoutEffect, useRef, useState } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
-import { useTheme } from 'tamagui'
+import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { useOrgHref } from '~/lib/org-routes'
 import type { AnchorRect } from '../hooks/useCalendarView'
@@ -60,7 +60,7 @@ function MobileEventDetail({
     onClose,
     onDelete,
 }: Omit<EventDetailPopoverProps, 'isVisible'> & { event: CalendarEvents }) {
-    const theme = useTheme()
+    const [fgColor, mutedColor, bgColor] = useThemeColor(['foreground', 'muted', 'background'])
     const router = useRouter()
     const orgHref = useOrgHref()
     const colors = getCalendarColorResolved(calendarColorKey)
@@ -73,14 +73,22 @@ function MobileEventDetail({
     }
 
     return (
-        <View style={[mobileStyles.container, { backgroundColor: theme.background.val }]}>
-            <View style={mobileStyles.topBar}>
+        <View style={{ flex: 1, backgroundColor: bgColor }}>
+            <View
+                style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                }}
+            >
                 <Pressable onPress={onClose} hitSlop={8}>
-                    <X size={22} color={theme.color.val} />
+                    <X size={22} color={fgColor} />
                 </Pressable>
-                <View style={mobileStyles.topBarActions}>
+                <View style={{ flexDirection: 'row', gap: 20 }}>
                     <Pressable onPress={onEdit} hitSlop={8}>
-                        <Pencil size={20} color={theme.color8.val} />
+                        <Pencil size={20} color={mutedColor} />
                     </Pressable>
                     <Pressable
                         hitSlop={8}
@@ -89,46 +97,89 @@ function MobileEventDetail({
                             onClose()
                         }}
                     >
-                        <Trash2 size={20} color={theme.color8.val} />
+                        <Trash2 size={20} color={mutedColor} />
                     </Pressable>
                 </View>
             </View>
 
-            <ScrollView style={mobileStyles.body} contentContainerStyle={mobileStyles.bodyContent}>
-                <View style={mobileStyles.titleRow}>
-                    <View style={[mobileStyles.colorDot, { backgroundColor: colors.bg }]} />
-                    <Text style={[mobileStyles.title, { color: theme.color.val }]}>
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+            >
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                        marginBottom: 20,
+                    }}
+                >
+                    <View
+                        style={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: 8,
+                            backgroundColor: colors.bg,
+                        }}
+                    />
+                    <Text style={{ fontSize: 22, fontWeight: '700', color: fgColor, flex: 1 }}>
                         {event.title}
                     </Text>
                 </View>
 
-                <View style={mobileStyles.detailRow}>
-                    <Clock size={18} color={theme.color8.val} />
-                    <Text style={[mobileStyles.detailText, { color: theme.color.val }]}>
-                        {dateTimeStr}
-                    </Text>
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'flex-start',
+                        gap: 12,
+                        marginBottom: 12,
+                    }}
+                >
+                    <Clock size={18} color={mutedColor} />
+                    <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>{dateTimeStr}</Text>
                 </View>
 
                 {event.recurrence ? (
-                    <Text style={[mobileStyles.recurrence, { color: theme.color8.val }]}>
+                    <Text
+                        style={{
+                            fontSize: 14,
+                            color: mutedColor,
+                            marginBottom: 12,
+                            paddingLeft: 30,
+                        }}
+                    >
                         {getRecurrenceLabel(event)}
                     </Text>
                 ) : null}
 
                 {event.location ? (
-                    <View style={mobileStyles.detailRow}>
-                        <MapPin size={18} color={theme.color8.val} />
-                        <Text style={[mobileStyles.detailText, { color: theme.color.val }]}>
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'flex-start',
+                            gap: 12,
+                            marginBottom: 12,
+                        }}
+                    >
+                        <MapPin size={18} color={mutedColor} />
+                        <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>
                             {event.location}
                         </Text>
                     </View>
                 ) : null}
 
                 {event.guests.length > 0 ? (
-                    <View style={mobileStyles.guestSection}>
-                        <View style={mobileStyles.detailRow}>
-                            <Users size={18} color={theme.color8.val} />
-                            <Text style={[mobileStyles.detailText, { color: theme.color.val }]}>
+                    <View style={{ marginBottom: 8 }}>
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'flex-start',
+                                gap: 12,
+                                marginBottom: 12,
+                            }}
+                        >
+                            <Users size={18} color={mutedColor} />
+                            <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>
                                 {event.guests.length} guest
                                 {event.guests.length !== 1 ? 's' : ''}
                             </Text>
@@ -138,12 +189,20 @@ function MobileEventDetail({
                 ) : null}
 
                 {event.description ? (
-                    <Text style={[mobileStyles.description, { color: theme.color.val }]}>
+                    <Text
+                        style={{
+                            fontSize: 15,
+                            color: fgColor,
+                            marginTop: 8,
+                            marginBottom: 12,
+                            lineHeight: 22,
+                        }}
+                    >
                         {event.description}
                     </Text>
                 ) : null}
 
-                <Text style={[mobileStyles.calendarLabel, { color: theme.color8.val }]}>
+                <Text style={{ fontSize: 13, color: mutedColor, marginTop: 16 }}>
                     {calendarName}
                 </Text>
             </ScrollView>
@@ -225,7 +284,13 @@ export function EventDetailPopover({
     onClose,
     onDelete,
 }: EventDetailPopoverProps) {
-    const theme = useTheme()
+    const [fgColor, mutedColor, bgColor, borderColor, shadowColor] = useThemeColor([
+        'foreground',
+        'muted',
+        'background',
+        'border',
+        'overlay-backdrop',
+    ])
     const router = useRouter()
     const orgHref = useOrgHref()
     const isMobile = useBreakpoint() === 'mobile'
@@ -237,7 +302,16 @@ export function EventDetailPopover({
 
     if (isMobile) {
         return (
-            <View style={mobileStyles.overlay}>
+            <View
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 100,
+                }}
+            >
                 <MobileEventDetail
                     event={event}
                     calendarName={calendarName}
@@ -263,8 +337,8 @@ export function EventDetailPopover({
         onClose()
     }
 
-    const arrowBorderColor = theme.borderColor.val
-    const arrowBgColor = theme.background.val
+    const arrowBorderColor = borderColor
+    const arrowBgColor = bgColor
 
     const arrowStyle =
         arrowSide === 'left'
@@ -313,69 +387,144 @@ export function EventDetailPopover({
               }
 
     return (
-        <Pressable style={styles.overlay} onPress={onClose}>
+        <Pressable
+            style={{
+                position: 'fixed' as 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 100,
+            }}
+            onPress={onClose}
+        >
             <View
                 ref={popoverRef}
-                style={[
-                    styles.popover,
-                    {
-                        backgroundColor: theme.background.val,
-                        borderColor: theme.borderColor.val,
-                        shadowColor: theme.shadowColor.val,
-                        top: position.top,
-                        left: position.left,
-                    },
-                ]}
+                style={{
+                    position: 'absolute',
+                    width: POPOVER_WIDTH,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    padding: 16,
+                    backgroundColor: bgColor,
+                    borderColor,
+                    shadowColor,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 12,
+                    elevation: 8,
+                    top: position.top,
+                    left: position.left,
+                }}
                 onStartShouldSetResponder={() => true}
                 onResponderRelease={e => e.stopPropagation()}
             >
                 <Pressable onPress={e => e.stopPropagation()} style={{ flex: 1 }}>
                     {anchorRect ? (
                         <>
-                            <View style={[styles.arrow, arrowBorderStyle]} />
-                            <View style={[styles.arrow, arrowStyle]} />
+                            <View
+                                style={{
+                                    position: 'absolute',
+                                    width: 0,
+                                    height: 0,
+                                    borderStyle: 'solid',
+                                    ...arrowBorderStyle,
+                                }}
+                            />
+                            <View
+                                style={{
+                                    position: 'absolute',
+                                    width: 0,
+                                    height: 0,
+                                    borderStyle: 'solid',
+                                    ...arrowStyle,
+                                }}
+                            />
                         </>
                     ) : null}
 
-                    <View style={styles.actions}>
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            justifyContent: 'flex-end',
+                            gap: 16,
+                            marginBottom: 12,
+                        }}
+                    >
                         <Pressable onPress={onEdit} hitSlop={8}>
-                            <Pencil size={18} color={theme.color8.val} />
+                            <Pencil size={18} color={mutedColor} />
                         </Pressable>
                         <Pressable onPress={handleDelete} hitSlop={8}>
-                            <Trash2 size={18} color={theme.color8.val} />
+                            <Trash2 size={18} color={mutedColor} />
                         </Pressable>
                         <Pressable onPress={onClose} hitSlop={8}>
-                            <X size={18} color={theme.color8.val} />
+                            <X size={18} color={mutedColor} />
                         </Pressable>
                     </View>
 
-                    <View style={styles.titleRow}>
-                        <View style={[styles.colorBar, { backgroundColor: colors.bg }]} />
-                        <Text style={[styles.title, { color: theme.color.val }]}>
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 10,
+                            marginBottom: 12,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: 4,
+                                height: 24,
+                                borderRadius: 2,
+                                backgroundColor: colors.bg,
+                            }}
+                        />
+                        <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor, flex: 1 }}>
                             {event.title}
                         </Text>
                     </View>
 
-                    <View style={styles.detailRow}>
-                        <Clock size={16} color={theme.color8.val} />
-                        <Text style={[styles.detailText, { color: theme.color.val }]}>
-                            {dateTimeStr}
-                        </Text>
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'flex-start',
+                            gap: 10,
+                            marginBottom: 8,
+                            paddingLeft: 2,
+                        }}
+                    >
+                        <Clock size={16} color={mutedColor} />
+                        <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>{dateTimeStr}</Text>
                     </View>
 
                     {event.location ? (
-                        <View style={styles.detailRow}>
-                            <MapPin size={16} color={theme.color8.val} />
-                            <Text style={[styles.detailText, { color: theme.color.val }]}>
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'flex-start',
+                                gap: 10,
+                                marginBottom: 8,
+                                paddingLeft: 2,
+                            }}
+                        >
+                            <MapPin size={16} color={mutedColor} />
+                            <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>
                                 {event.location}
                             </Text>
                         </View>
                     ) : null}
 
                     {event.guests.length > 0 ? (
-                        <View style={styles.detailRow}>
-                            <Users size={16} color={theme.color8.val} />
-                            <Text style={[styles.detailText, { color: theme.color.val }]}>
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'flex-start',
+                                gap: 10,
+                                marginBottom: 8,
+                                paddingLeft: 2,
+                            }}
+                        >
+                            <Users size={16} color={mutedColor} />
+                            <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>
                                 {event.guests.length} guest{event.guests.length !== 1 ? 's' : ''}
                             </Text>
                         </View>
@@ -383,14 +532,27 @@ export function EventDetailPopover({
 
                     {event.description ? (
                         <Text
-                            style={[styles.description, { color: theme.color8.val }]}
+                            style={{
+                                fontSize: 13,
+                                color: mutedColor,
+                                marginTop: 4,
+                                marginBottom: 8,
+                                paddingLeft: 2,
+                            }}
                             numberOfLines={3}
                         >
                             {event.description}
                         </Text>
                     ) : null}
 
-                    <Text style={[styles.calendarLabel, { color: theme.color8.val }]}>
+                    <Text
+                        style={{
+                            fontSize: 12,
+                            color: mutedColor,
+                            marginTop: 8,
+                            paddingLeft: 2,
+                        }}
+                    >
                         {calendarName}
                     </Text>
                 </Pressable>
@@ -398,151 +560,3 @@ export function EventDetailPopover({
         </Pressable>
     )
 }
-
-const mobileStyles = StyleSheet.create({
-    overlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 100,
-    },
-    container: {
-        flex: 1,
-    },
-    topBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    topBarActions: {
-        flexDirection: 'row',
-        gap: 20,
-    },
-    body: {
-        flex: 1,
-    },
-    bodyContent: {
-        paddingHorizontal: 20,
-        paddingBottom: 40,
-    },
-    titleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 20,
-    },
-    colorDot: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-    },
-    title: {
-        fontSize: 22,
-        fontWeight: '700',
-        flex: 1,
-    },
-    detailRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 12,
-        marginBottom: 12,
-    },
-    detailText: {
-        fontSize: 15,
-        flex: 1,
-    },
-    recurrence: {
-        fontSize: 14,
-        marginBottom: 12,
-        paddingLeft: 30,
-    },
-    guestSection: {
-        marginBottom: 8,
-    },
-    description: {
-        fontSize: 15,
-        marginTop: 8,
-        marginBottom: 12,
-        lineHeight: 22,
-    },
-    calendarLabel: {
-        fontSize: 13,
-        marginTop: 16,
-    },
-})
-
-const styles = StyleSheet.create({
-    overlay: {
-        position: 'fixed' as 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 100,
-    },
-    popover: {
-        position: 'absolute',
-        width: POPOVER_WIDTH,
-        borderRadius: 12,
-        borderWidth: 1,
-        padding: 16,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    arrow: {
-        position: 'absolute',
-        width: 0,
-        height: 0,
-        borderStyle: 'solid',
-    },
-    actions: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 16,
-        marginBottom: 12,
-    },
-    titleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        marginBottom: 12,
-    },
-    colorBar: {
-        width: 4,
-        height: 24,
-        borderRadius: 2,
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: '600',
-        flex: 1,
-    },
-    detailRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 10,
-        marginBottom: 8,
-        paddingLeft: 2,
-    },
-    detailText: {
-        fontSize: 14,
-        flex: 1,
-    },
-    description: {
-        fontSize: 13,
-        marginTop: 4,
-        marginBottom: 8,
-        paddingLeft: 2,
-    },
-    calendarLabel: {
-        fontSize: 12,
-        marginTop: 8,
-        paddingLeft: 2,
-    },
-})

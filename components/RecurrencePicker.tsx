@@ -1,6 +1,6 @@
+import { Dialog, useThemeColor } from 'heroui-native'
 import { useState } from 'react'
-import { Pressable, StyleSheet } from 'react-native'
-import { Button, Dialog, SizableText, useTheme, XStack, YStack } from 'tamagui'
+import { Pressable, Text, View } from 'react-native'
 import { PlainInput } from '~/ui/PlainInput'
 import {
     buildRRule,
@@ -27,7 +27,12 @@ interface RecurrencePickerProps {
 }
 
 export function RecurrencePicker({ value, onChange, eventStartDate }: RecurrencePickerProps) {
-    const theme = useTheme()
+    const [fgColor, mutedColor, borderColor, bgColor] = useThemeColor([
+        'foreground',
+        'muted',
+        'border',
+        'background',
+    ])
     const [showCustom, setShowCustom] = useState(false)
     const [showPresets, setShowPresets] = useState(false)
     const presets = getContextualPresets(eventStartDate)
@@ -46,23 +51,22 @@ export function RecurrencePicker({ value, onChange, eventStartDate }: Recurrence
     }
 
     return (
-        <YStack gap="$1.5" marginBottom="$3">
-            <SizableText size="$3" fontWeight="600" color="$color">
-                Recurrence
-            </SizableText>
+        <View style={{ gap: 6, marginBottom: 12 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Recurrence</Text>
             <Pressable
                 onPress={() => setShowPresets(true)}
-                style={[
-                    styles.pickerButton,
-                    {
-                        borderColor: theme.borderColor.val,
-                        backgroundColor: theme.background.val,
-                    },
-                ]}
+                style={{
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    borderColor,
+                    backgroundColor: bgColor,
+                }}
             >
-                <SizableText size="$3" color={value ? '$color' : '$color8'}>
+                <Text style={{ fontSize: 14, color: value ? fgColor : mutedColor }}>
                     {displayLabel}
-                </SizableText>
+                </Text>
             </Pressable>
 
             <PresetDialog
@@ -80,7 +84,7 @@ export function RecurrencePicker({ value, onChange, eventStartDate }: Recurrence
                 initialValue={isPresetValue ? undefined : value}
                 onSave={onChange}
             />
-        </YStack>
+        </View>
     )
 }
 
@@ -97,53 +101,51 @@ function PresetDialog({
     currentValue: string
     onSelect: (value: string) => void
 }) {
-    const theme = useTheme()
+    const [fgColor, accentColor, accentFgColor] = useThemeColor([
+        'foreground',
+        'accent',
+        'accent-foreground',
+    ])
 
     return (
-        <Dialog modal open={open} onOpenChange={onOpenChange}>
+        <Dialog isOpen={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
-                <Dialog.Overlay
-                    key="overlay"
-                    opacity={0.3}
-                    backgroundColor="$shadow6"
-                    enterStyle={{ opacity: 0 }}
-                    exitStyle={{ opacity: 0 }}
-                />
-                <Dialog.Content
-                    key="content"
-                    bordered
-                    elevate
-                    padding="$3"
-                    gap="$1"
-                    width={320}
-                    backgroundColor="$background"
-                >
-                    <Dialog.Title size="$5">Repeat</Dialog.Title>
-                    <YStack gap="$1" paddingTop="$2">
+                <Dialog.Overlay />
+                <Dialog.Content className="w-[320px] p-3">
+                    <Text
+                        style={{ fontSize: 18, fontWeight: '600', color: fgColor, marginBottom: 8 }}
+                    >
+                        Repeat
+                    </Text>
+                    <View style={{ gap: 4, paddingTop: 8 }}>
                         {presets.map(preset => {
                             const isSelected = preset.value === currentValue
                             return (
                                 <Pressable
                                     key={preset.value || 'none'}
                                     onPress={() => onSelect(preset.value)}
-                                    style={[
-                                        styles.presetRow,
-                                        isSelected && {
-                                            backgroundColor: `${theme.accentBackground?.val}20`,
-                                        },
-                                    ]}
+                                    style={{
+                                        paddingHorizontal: 12,
+                                        paddingVertical: 10,
+                                        borderRadius: 6,
+                                        ...(isSelected && {
+                                            backgroundColor: `${accentColor}20`,
+                                        }),
+                                    }}
                                 >
-                                    <SizableText
-                                        size="$3"
-                                        color={isSelected ? '$accentColor' : '$color'}
-                                        fontWeight={isSelected ? '600' : '400'}
+                                    <Text
+                                        style={{
+                                            fontSize: 14,
+                                            color: isSelected ? accentFgColor : fgColor,
+                                            fontWeight: isSelected ? '600' : '400',
+                                        }}
                                     >
                                         {preset.label}
-                                    </SizableText>
+                                    </Text>
                                 </Pressable>
                             )
                         })}
-                    </YStack>
+                    </View>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog>
@@ -217,7 +219,12 @@ function CustomRecurrenceDialog({
     initialValue?: string
     onSave: (rrule: string) => void
 }) {
-    const theme = useTheme()
+    const [fgColor, borderColor, accentColor, accentFgColor] = useThemeColor([
+        'foreground',
+        'border',
+        'accent',
+        'accent-foreground',
+    ])
     const [state, setState] = useState<CustomState>(() =>
         initCustomState(eventStartDate, initialValue)
     )
@@ -260,31 +267,24 @@ function CustomRecurrenceDialog({
     }
 
     return (
-        <Dialog modal open={open} onOpenChange={onOpenChange}>
+        <Dialog isOpen={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
-                <Dialog.Overlay
-                    key="overlay"
-                    opacity={0.3}
-                    backgroundColor="$shadow6"
-                    enterStyle={{ opacity: 0 }}
-                    exitStyle={{ opacity: 0 }}
-                />
-                <Dialog.Content
-                    key="content"
-                    bordered
-                    elevate
-                    padding="$4"
-                    gap="$4"
-                    width={360}
-                    backgroundColor="$background"
-                >
-                    <Dialog.Title size="$5">Custom recurrence</Dialog.Title>
+                <Dialog.Overlay />
+                <Dialog.Content className="w-[360px] p-4">
+                    <Text
+                        style={{
+                            fontSize: 18,
+                            fontWeight: '600',
+                            color: fgColor,
+                            marginBottom: 16,
+                        }}
+                    >
+                        Custom recurrence
+                    </Text>
 
-                    <YStack gap="$3">
-                        <XStack alignItems="center" gap="$2">
-                            <SizableText size="$3" color="$color">
-                                Repeat every
-                            </SizableText>
+                    <View style={{ gap: 12 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Text style={{ fontSize: 14, color: fgColor }}>Repeat every</Text>
                             <Pressable
                                 onPress={() => {
                                     updateState({ interval: Math.min(state.interval + 1, 99) })
@@ -292,34 +292,58 @@ function CustomRecurrenceDialog({
                                 onLongPress={() => {
                                     updateState({ interval: Math.max(state.interval - 1, 1) })
                                 }}
-                                style={[styles.numberBox, { borderColor: theme.borderColor.val }]}
+                                style={{
+                                    borderWidth: 1,
+                                    borderRadius: 6,
+                                    width: 44,
+                                    height: 36,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderColor,
+                                }}
                             >
-                                <SizableText size="$3" color="$color" textAlign="center">
+                                <Text style={{ fontSize: 14, color: fgColor, textAlign: 'center' }}>
                                     {state.interval}
-                                </SizableText>
+                                </Text>
                             </Pressable>
-                            <XStack gap="$1" flexWrap="wrap" flex={1}>
+                            <View
+                                style={{
+                                    flexDirection: 'row',
+                                    gap: 4,
+                                    flexWrap: 'wrap',
+                                    flex: 1,
+                                }}
+                            >
                                 {FREQ_OPTIONS.map(opt => {
                                     const isSelected = state.freq === opt.value
                                     return (
-                                        <Button
+                                        <Pressable
                                             key={opt.value}
-                                            size="$2"
-                                            theme={isSelected ? 'accent' : undefined}
-                                            borderColor={
-                                                isSelected ? '$accentBackground' : '$borderColor'
-                                            }
-                                            borderWidth={1}
                                             onPress={() => updateState({ freq: opt.value })}
+                                            style={{
+                                                paddingHorizontal: 10,
+                                                paddingVertical: 4,
+                                                borderRadius: 6,
+                                                borderWidth: 1,
+                                                borderColor: isSelected ? accentColor : borderColor,
+                                                backgroundColor: isSelected
+                                                    ? accentColor
+                                                    : undefined,
+                                            }}
                                         >
-                                            <Button.Text size="$2">
+                                            <Text
+                                                style={{
+                                                    fontSize: 12,
+                                                    color: isSelected ? accentFgColor : fgColor,
+                                                }}
+                                            >
                                                 {state.interval > 1 ? `${opt.label}s` : opt.label}
-                                            </Button.Text>
-                                        </Button>
+                                            </Text>
+                                        </Pressable>
                                     )
                                 })}
-                            </XStack>
-                        </XStack>
+                            </View>
+                        </View>
 
                         <WeekDaySelector
                             isVisible={state.freq === 'WEEKLY'}
@@ -345,11 +369,11 @@ function CustomRecurrenceDialog({
                             onChange={mode => updateState({ monthlyMode: mode })}
                         />
 
-                        <YStack gap="$2">
-                            <SizableText size="$3" fontWeight="600" color="$color">
+                        <View style={{ gap: 8 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>
                                 Ends
-                            </SizableText>
-                            <XStack gap="$2" flexWrap="wrap">
+                            </Text>
+                            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
                                 {(['never', 'on', 'after'] as const).map(type => {
                                     const isSelected = state.endType === type
                                     const label =
@@ -359,21 +383,32 @@ function CustomRecurrenceDialog({
                                               ? 'On date'
                                               : 'After'
                                     return (
-                                        <Button
+                                        <Pressable
                                             key={type}
-                                            size="$2"
-                                            theme={isSelected ? 'accent' : undefined}
-                                            borderColor={
-                                                isSelected ? '$accentBackground' : '$borderColor'
-                                            }
-                                            borderWidth={1}
                                             onPress={() => updateState({ endType: type })}
+                                            style={{
+                                                paddingHorizontal: 10,
+                                                paddingVertical: 4,
+                                                borderRadius: 6,
+                                                borderWidth: 1,
+                                                borderColor: isSelected ? accentColor : borderColor,
+                                                backgroundColor: isSelected
+                                                    ? accentColor
+                                                    : undefined,
+                                            }}
                                         >
-                                            <Button.Text size="$2">{label}</Button.Text>
-                                        </Button>
+                                            <Text
+                                                style={{
+                                                    fontSize: 12,
+                                                    color: isSelected ? accentFgColor : fgColor,
+                                                }}
+                                            >
+                                                {label}
+                                            </Text>
+                                        </Pressable>
                                     )
                                 })}
-                            </XStack>
+                            </View>
 
                             <EndDateInput
                                 isVisible={state.endType === 'on'}
@@ -391,17 +426,43 @@ function CustomRecurrenceDialog({
                                     updateState({ count: Math.max(state.count - 1, 1) })
                                 }
                             />
-                        </YStack>
-                    </YStack>
+                        </View>
+                    </View>
 
-                    <XStack justifyContent="flex-end" gap="$2" paddingTop="$2">
-                        <Button size="$3" onPress={() => onOpenChange(false)}>
-                            <Button.Text>Cancel</Button.Text>
-                        </Button>
-                        <Button size="$3" theme="accent" onPress={handleDone}>
-                            <Button.Text fontWeight="600">Done</Button.Text>
-                        </Button>
-                    </XStack>
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            justifyContent: 'flex-end',
+                            gap: 8,
+                            paddingTop: 8,
+                        }}
+                    >
+                        <Pressable
+                            onPress={() => onOpenChange(false)}
+                            style={{
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 6,
+                                borderWidth: 1,
+                                borderColor,
+                            }}
+                        >
+                            <Text style={{ fontSize: 14, color: fgColor }}>Cancel</Text>
+                        </Pressable>
+                        <Pressable
+                            onPress={handleDone}
+                            style={{
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 6,
+                                backgroundColor: accentColor,
+                            }}
+                        >
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: accentFgColor }}>
+                                Done
+                            </Text>
+                        </Pressable>
+                    </View>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog>
@@ -417,46 +478,45 @@ function WeekDaySelector({
     selectedDays: string[]
     onToggle: (day: string) => void
 }) {
-    const theme = useTheme()
+    const [fgColor, borderColor, accentColor] = useThemeColor(['foreground', 'border', 'accent'])
 
     if (!isVisible) return null
 
     return (
-        <YStack gap="$1.5">
-            <SizableText size="$3" fontWeight="600" color="$color">
-                Repeat on
-            </SizableText>
-            <XStack gap="$1.5" justifyContent="center">
+        <View style={{ gap: 6 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Repeat on</Text>
+            <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'center' }}>
                 {DAY_CODES.map((code, i) => {
                     const isSelected = selectedDays.includes(code)
                     return (
                         <Pressable
                             key={code}
                             onPress={() => onToggle(code)}
-                            style={[
-                                styles.dayCircle,
-                                {
-                                    backgroundColor: isSelected
-                                        ? theme.accentBackground.val
-                                        : 'transparent',
-                                    borderColor: isSelected
-                                        ? theme.accentBackground.val
-                                        : theme.borderColor.val,
-                                },
-                            ]}
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 18,
+                                borderWidth: 1,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: isSelected ? accentColor : 'transparent',
+                                borderColor: isSelected ? accentColor : borderColor,
+                            }}
                         >
-                            <SizableText
-                                size="$2"
-                                color={isSelected ? 'white' : '$color'}
-                                fontWeight={isSelected ? '600' : '400'}
+                            <Text
+                                style={{
+                                    fontSize: 12,
+                                    color: isSelected ? 'white' : fgColor,
+                                    fontWeight: isSelected ? '600' : '400',
+                                }}
                             >
                                 {DAY_LABELS[i]}
-                            </SizableText>
+                            </Text>
                         </Pressable>
                     )
                 })}
-            </XStack>
-        </YStack>
+            </View>
+        </View>
     )
 }
 
@@ -471,6 +531,13 @@ function MonthlyModeSelector({
     eventStartDate: Date
     onChange: (mode: 'dayOfMonth' | 'dayOfWeek') => void
 }) {
+    const [fgColor, borderColor, accentColor, accentFgColor] = useThemeColor([
+        'foreground',
+        'border',
+        'accent',
+        'accent-foreground',
+    ])
+
     if (!isVisible) return null
 
     const dayOfMonth = eventStartDate.getDate()
@@ -481,35 +548,51 @@ function MonthlyModeSelector({
     const ordinal = ordinals[position] ?? `${position}th`
 
     return (
-        <YStack gap="$1.5">
-            <SizableText size="$3" fontWeight="600" color="$color">
-                Monthly on
-            </SizableText>
-            <XStack gap="$2">
-                <Button
-                    size="$2"
-                    theme={monthlyMode === 'dayOfMonth' ? 'accent' : undefined}
-                    borderColor={
-                        monthlyMode === 'dayOfMonth' ? '$accentBackground' : '$borderColor'
-                    }
-                    borderWidth={1}
+        <View style={{ gap: 6 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Monthly on</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Pressable
                     onPress={() => onChange('dayOfMonth')}
+                    style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 6,
+                        borderWidth: 1,
+                        borderColor: monthlyMode === 'dayOfMonth' ? accentColor : borderColor,
+                        backgroundColor: monthlyMode === 'dayOfMonth' ? accentColor : undefined,
+                    }}
                 >
-                    <Button.Text size="$2">Day {dayOfMonth}</Button.Text>
-                </Button>
-                <Button
-                    size="$2"
-                    theme={monthlyMode === 'dayOfWeek' ? 'accent' : undefined}
-                    borderColor={monthlyMode === 'dayOfWeek' ? '$accentBackground' : '$borderColor'}
-                    borderWidth={1}
+                    <Text
+                        style={{
+                            fontSize: 12,
+                            color: monthlyMode === 'dayOfMonth' ? accentFgColor : fgColor,
+                        }}
+                    >
+                        Day {dayOfMonth}
+                    </Text>
+                </Pressable>
+                <Pressable
                     onPress={() => onChange('dayOfWeek')}
+                    style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 6,
+                        borderWidth: 1,
+                        borderColor: monthlyMode === 'dayOfWeek' ? accentColor : borderColor,
+                        backgroundColor: monthlyMode === 'dayOfWeek' ? accentColor : undefined,
+                    }}
                 >
-                    <Button.Text size="$2">
+                    <Text
+                        style={{
+                            fontSize: 12,
+                            color: monthlyMode === 'dayOfWeek' ? accentFgColor : fgColor,
+                        }}
+                    >
                         {ordinal} {dayName}
-                    </Button.Text>
-                </Button>
-            </XStack>
-        </YStack>
+                    </Text>
+                </Pressable>
+            </View>
+        </View>
     )
 }
 
@@ -522,32 +605,34 @@ function EndDateInput({
     value: string
     onChange: (val: string) => void
 }) {
-    const theme = useTheme()
+    const [fgColor, mutedColor, borderColor] = useThemeColor([
+        'foreground',
+        'field-placeholder',
+        'border',
+    ])
 
     if (!isVisible) return null
 
     return (
-        <XStack alignItems="center" gap="$2">
-            <SizableText size="$3" color="$color">
-                End date:
-            </SizableText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={{ fontSize: 14, color: fgColor }}>End date:</Text>
             <PlainInput
                 value={value}
                 onChangeText={onChange}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor={theme.color8.val}
+                placeholderTextColor={mutedColor}
                 style={{
                     borderWidth: 1,
-                    borderColor: theme.borderColor.val,
+                    borderColor,
                     borderRadius: 6,
                     paddingHorizontal: 10,
                     paddingVertical: 6,
-                    color: theme.color.val,
+                    color: fgColor,
                     fontSize: 14,
                     flex: 1,
                 }}
             />
-        </XStack>
+        </View>
     )
 }
 
@@ -562,57 +647,50 @@ function EndCountInput({
     onIncrement: () => void
     onDecrement: () => void
 }) {
+    const [fgColor, borderColor] = useThemeColor(['foreground', 'border'])
+
     if (!isVisible) return null
 
     return (
-        <XStack alignItems="center" gap="$2">
-            <SizableText size="$3" color="$color">
-                After
-            </SizableText>
-            <XStack alignItems="center" gap="$1">
-                <Button size="$2" onPress={onDecrement}>
-                    <Button.Text>-</Button.Text>
-                </Button>
-                <SizableText size="$3" color="$color" textAlign="center" width={40}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={{ fontSize: 14, color: fgColor }}>After</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Pressable
+                    onPress={onDecrement}
+                    style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 6,
+                        borderWidth: 1,
+                        borderColor,
+                    }}
+                >
+                    <Text style={{ fontSize: 12, color: fgColor }}>-</Text>
+                </Pressable>
+                <Text
+                    style={{
+                        fontSize: 14,
+                        color: fgColor,
+                        textAlign: 'center',
+                        width: 40,
+                    }}
+                >
                     {value}
-                </SizableText>
-                <Button size="$2" onPress={onIncrement}>
-                    <Button.Text>+</Button.Text>
-                </Button>
-            </XStack>
-            <SizableText size="$3" color="$color">
-                occurrences
-            </SizableText>
-        </XStack>
+                </Text>
+                <Pressable
+                    onPress={onIncrement}
+                    style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 6,
+                        borderWidth: 1,
+                        borderColor,
+                    }}
+                >
+                    <Text style={{ fontSize: 12, color: fgColor }}>+</Text>
+                </Pressable>
+            </View>
+            <Text style={{ fontSize: 14, color: fgColor }}>occurrences</Text>
+        </View>
     )
 }
-
-const styles = StyleSheet.create({
-    pickerButton: {
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-    },
-    presetRow: {
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderRadius: 6,
-    },
-    numberBox: {
-        borderWidth: 1,
-        borderRadius: 6,
-        width: 44,
-        height: 36,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    dayCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-})

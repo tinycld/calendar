@@ -1,3 +1,4 @@
+import { useThemeColor } from 'heroui-native'
 import { useMemo } from 'react'
 import {
     FlatList,
@@ -7,7 +8,6 @@ import {
     Text,
     View,
 } from 'react-native'
-import { useTheme } from 'tamagui'
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
 import {
     addDays,
@@ -44,27 +44,44 @@ function EventCard({
     event: CalendarEvents
     onPress: (id: string, e: GestureResponderEvent) => void
 }) {
-    const theme = useTheme()
     const calendarMap = useCalendarMap()
+    const [fgColor, mutedColor, surfaceBg] = useThemeColor([
+        'foreground',
+        'muted',
+        'surface-secondary',
+    ])
     const cal = calendarMap.get(event.calendar)
     const colors = getCalendarColorResolved(cal?.color ?? 'blue')
 
     return (
         <Pressable
-            style={[styles.eventCard, { backgroundColor: theme.color2.val }]}
+            style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden' }}
             onPress={e => onPress(event.id, e)}
         >
-            <View style={[styles.colorStrip, { backgroundColor: colors.bg }]} />
-            <View style={styles.eventContent}>
-                <Text style={[styles.eventTitle, { color: theme.color.val }]} numberOfLines={1}>
+            <View style={{ width: 4, backgroundColor: colors.bg }} />
+            <View
+                style={{
+                    flex: 1,
+                    paddingVertical: 8,
+                    paddingHorizontal: 10,
+                    backgroundColor: surfaceBg,
+                }}
+            >
+                <Text
+                    style={{
+                        fontSize: 14,
+                        fontWeight: '600',
+                        color: fgColor,
+                        marginBottom: 2,
+                    }}
+                    numberOfLines={1}
+                >
                     {event.title}
                 </Text>
-                <Text style={[styles.eventTime, { color: theme.color8.val }]}>
-                    {formatTimeRange(event)}
-                </Text>
+                <Text style={{ fontSize: 12, color: mutedColor }}>{formatTimeRange(event)}</Text>
                 {event.location ? (
                     <Text
-                        style={[styles.eventLocation, { color: theme.color8.val }]}
+                        style={{ fontSize: 12, color: mutedColor, marginTop: 1 }}
                         numberOfLines={1}
                     >
                         {event.location}
@@ -84,38 +101,66 @@ function DaySection({
     onEventPress: (id: string, e: GestureResponderEvent) => void
     onEmptyPress: (date: Date) => void
 }) {
-    const theme = useTheme()
+    const [fgColor, mutedColor, accentColor, bgColor, borderColor] = useThemeColor([
+        'foreground',
+        'muted',
+        'accent',
+        'background',
+        'border',
+    ])
 
     return (
-        <View style={[styles.dayRow, { borderBottomColor: theme.borderColor.val }]}>
-            <View style={styles.dateSide}>
-                <Text style={[styles.dayName, row.today && { color: theme.accentBackground.val }]}>
+        <View
+            style={{
+                flexDirection: 'row',
+                borderBottomWidth: StyleSheet.hairlineWidth,
+                borderBottomColor: borderColor,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                gap: 16,
+            }}
+        >
+            <View style={{ width: 44, alignItems: 'center' }}>
+                <Text
+                    style={{
+                        fontSize: 11,
+                        fontWeight: '600',
+                        textTransform: 'uppercase',
+                        marginBottom: 2,
+                        color: row.today ? accentColor : mutedColor,
+                    }}
+                >
                     {getShortDayName(row.date)}
                 </Text>
                 <View
-                    style={[
-                        styles.dateCircle,
-                        row.today && { backgroundColor: theme.accentBackground.val },
-                    ]}
+                    style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: row.today ? accentColor : undefined,
+                    }}
                 >
                     <Text
-                        style={[
-                            styles.dateNum,
-                            { color: row.today ? theme.background.val : theme.color.val },
-                        ]}
+                        style={{
+                            fontSize: 18,
+                            fontWeight: '500',
+                            color: row.today ? bgColor : fgColor,
+                        }}
                     >
                         {row.date.getDate()}
                     </Text>
                 </View>
             </View>
-            <View style={styles.eventsSide}>
+            <View style={{ flex: 1, gap: 6, justifyContent: 'center' }}>
                 {row.events.length > 0 ? (
                     row.events.map(event => (
                         <EventCard key={event.id} event={event} onPress={onEventPress} />
                     ))
                 ) : (
                     <Pressable onPress={() => onEmptyPress(row.date)}>
-                        <Text style={[styles.emptyText, { color: theme.color8.val }]}>
+                        <Text style={{ fontSize: 13, fontStyle: 'italic', color: mutedColor }}>
                             Nothing planned
                         </Text>
                     </Pressable>
@@ -170,75 +215,7 @@ export function ScheduleView() {
                     onEmptyPress={handleEmptyPress}
                 />
             )}
-            style={styles.list}
+            style={{ flex: 1 }}
         />
     )
 }
-
-const styles = StyleSheet.create({
-    list: {
-        flex: 1,
-    },
-    dayRow: {
-        flexDirection: 'row',
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        gap: 16,
-    },
-    dateSide: {
-        width: 44,
-        alignItems: 'center',
-    },
-    dayName: {
-        fontSize: 11,
-        fontWeight: '600',
-        textTransform: 'uppercase',
-        marginBottom: 2,
-    },
-    dateCircle: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    dateNum: {
-        fontSize: 18,
-        fontWeight: '500',
-    },
-    eventsSide: {
-        flex: 1,
-        gap: 6,
-        justifyContent: 'center',
-    },
-    eventCard: {
-        flexDirection: 'row',
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
-    colorStrip: {
-        width: 4,
-    },
-    eventContent: {
-        flex: 1,
-        paddingVertical: 8,
-        paddingHorizontal: 10,
-    },
-    eventTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 2,
-    },
-    eventTime: {
-        fontSize: 12,
-    },
-    eventLocation: {
-        fontSize: 12,
-        marginTop: 1,
-    },
-    emptyText: {
-        fontSize: 13,
-        fontStyle: 'italic',
-    },
-})

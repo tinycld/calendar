@@ -1,3 +1,4 @@
+import { useThemeColor } from 'heroui-native'
 import type React from 'react'
 import { useCallback, useMemo } from 'react'
 import {
@@ -8,7 +9,6 @@ import {
     Text,
     View,
 } from 'react-native'
-import { useTheme } from 'tamagui'
 import { useCalendarMap } from '../hooks/useCalendarEvents'
 import { getTimeLabel, isToday } from '../hooks/useCalendarNavigation'
 import { type LayoutEvent, layoutTimedEvents } from '../layout'
@@ -58,7 +58,7 @@ export function TimeGrid({
     onSlotPress,
     onEventPress,
 }: TimeGridProps) {
-    const theme = useTheme()
+    const [mutedColor, borderColor] = useThemeColor(['muted', 'border'])
     const calendarMap = useCalendarMap()
     const totalHours = endHour - startHour + 1
 
@@ -77,15 +77,23 @@ export function TimeGrid({
         const labels: React.JSX.Element[] = []
         for (let h = startHour; h <= endHour; h++) {
             labels.push(
-                <View key={h} style={[styles.timeLabel, { height: HOUR_HEIGHT }]}>
-                    <Text style={[styles.timeLabelText, { color: theme.color8.val }]}>
+                <View
+                    key={h}
+                    style={{
+                        height: HOUR_HEIGHT,
+                        justifyContent: 'flex-start',
+                        alignItems: 'flex-end',
+                        paddingRight: 8,
+                    }}
+                >
+                    <Text style={{ fontSize: 11, marginTop: -6, color: mutedColor }}>
                         {h === startHour ? '' : getTimeLabel(h)}
                     </Text>
                 </View>
             )
         }
         return labels
-    }, [startHour, endHour, theme.color8.val])
+    }, [startHour, endHour, mutedColor])
 
     const columnLayouts = useMemo(
         () =>
@@ -103,33 +111,34 @@ export function TimeGrid({
         ((now.getHours() * 60 + now.getMinutes() - startHour * 60) / 60) * HOUR_HEIGHT
 
     return (
-        <ScrollView ref={scrollRef} style={styles.scrollView} showsVerticalScrollIndicator>
-            <View style={styles.gridContainer}>
-                <View style={styles.gutterColumn}>{renderTimeLabels()}</View>
+        <ScrollView ref={scrollRef} style={{ flex: 1 }} showsVerticalScrollIndicator>
+            <View style={{ flexDirection: 'row' }}>
+                <View style={{ width: 50 }}>{renderTimeLabels()}</View>
 
-                <View style={styles.columnsContainer}>
+                <View style={{ flex: 1, flexDirection: 'row' }}>
                     {columnLayouts.map(({ column, layoutMap }, colIndex) => {
                         const todayColumn = isToday(column.date)
                         return (
                             <View
                                 key={column.date.toISOString()}
-                                style={[
-                                    styles.column,
-                                    colIndex < columns.length - 1 && {
-                                        borderRightWidth: 1,
-                                        borderRightColor: theme.borderColor.val,
-                                    },
-                                ]}
+                                style={{
+                                    flex: 1,
+                                    position: 'relative',
+                                    borderRightWidth: colIndex < columns.length - 1 ? 1 : 0,
+                                    borderRightColor:
+                                        colIndex < columns.length - 1 ? borderColor : undefined,
+                                }}
                             >
                                 {Array.from({ length: totalHours }, (_, i) => {
                                     const hour = startHour + i
                                     return (
                                         <Pressable
                                             key={hour}
-                                            style={[
-                                                styles.hourSlot,
-                                                { borderBottomColor: theme.borderColor.val },
-                                            ]}
+                                            style={{
+                                                height: HOUR_HEIGHT,
+                                                borderBottomWidth: StyleSheet.hairlineWidth,
+                                                borderBottomColor: borderColor,
+                                            }}
                                             onPress={() => onSlotPress(column.date, hour)}
                                         />
                                     )
@@ -167,36 +176,3 @@ export function TimeGrid({
         </ScrollView>
     )
 }
-
-const styles = StyleSheet.create({
-    scrollView: {
-        flex: 1,
-    },
-    gridContainer: {
-        flexDirection: 'row',
-    },
-    gutterColumn: {
-        width: 50,
-    },
-    timeLabel: {
-        justifyContent: 'flex-start',
-        alignItems: 'flex-end',
-        paddingRight: 8,
-    },
-    timeLabelText: {
-        fontSize: 11,
-        marginTop: -6,
-    },
-    columnsContainer: {
-        flex: 1,
-        flexDirection: 'row',
-    },
-    column: {
-        flex: 1,
-        position: 'relative',
-    },
-    hourSlot: {
-        height: HOUR_HEIGHT,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-    },
-})

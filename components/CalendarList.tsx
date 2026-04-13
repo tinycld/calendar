@@ -1,7 +1,7 @@
+import { useThemeColor } from 'heroui-native'
 import { Check, ChevronDown, ChevronRight } from 'lucide-react-native'
 import { useState } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { useTheme } from 'tamagui'
+import { Pressable, Text, View } from 'react-native'
 import type { CalendarColorKey, CalendarWithGroup } from '../types'
 import { CalendarMenu } from './CalendarMenu'
 import { getCalendarColorResolved } from './calendar-colors'
@@ -27,23 +27,43 @@ function CalendarCheckbox({
     onColorChange: (calendarId: string, color: CalendarColorKey) => void
     onShowOnly: (calendarId: string) => void
 }) {
-    const theme = useTheme()
+    const fgColor = useThemeColor('foreground')
     const colors = getCalendarColorResolved(calendar.color)
 
     return (
-        <View style={styles.calendarRow}>
-            <Pressable style={styles.checkboxArea} onPress={() => onToggle(calendar.id)}>
+        <View
+            style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingRight: 12,
+                paddingVertical: 5,
+            }}
+        >
+            <Pressable
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 10,
+                    flex: 1,
+                    paddingLeft: 32,
+                }}
+                onPress={() => onToggle(calendar.id)}
+            >
                 <View
-                    style={[
-                        styles.checkbox,
-                        isChecked
-                            ? { backgroundColor: colors.bg }
-                            : { borderColor: colors.bg, borderWidth: 2 },
-                    ]}
+                    style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: 3,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: isChecked ? colors.bg : 'transparent',
+                        borderColor: isChecked ? undefined : colors.bg,
+                        borderWidth: isChecked ? 0 : 2,
+                    }}
                 >
                     {isChecked && <Check size={12} color={colors.text} />}
                 </View>
-                <Text style={[styles.calendarName, { color: theme.color.val }]} numberOfLines={1}>
+                <Text style={{ fontSize: 13, color: fgColor, flex: 1 }} numberOfLines={1}>
                     {calendar.name}
                 </Text>
             </Pressable>
@@ -72,14 +92,23 @@ function CalendarSection({
     onShowOnly: (calendarId: string) => void
 }) {
     const [expanded, setExpanded] = useState(true)
-    const theme = useTheme()
+    const mutedColor = useThemeColor('muted')
     const ChevronIcon = expanded ? ChevronDown : ChevronRight
 
     return (
         <View>
-            <Pressable style={styles.sectionHeader} onPress={() => setExpanded(prev => !prev)}>
-                <ChevronIcon size={14} color={theme.color8.val} />
-                <Text style={[styles.sectionTitle, { color: theme.color8.val }]}>{title}</Text>
+            <Pressable
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                }}
+                onPress={() => setExpanded(prev => !prev)}
+            >
+                <ChevronIcon size={14} color={mutedColor} />
+                <Text style={{ fontSize: 12, fontWeight: '600', color: mutedColor }}>{title}</Text>
             </Pressable>
             {expanded &&
                 calendars.map(cal => (
@@ -107,7 +136,7 @@ export function CalendarList({
     const other = calendars.filter(c => c.group === 'other')
 
     return (
-        <View style={styles.container}>
+        <View style={{ gap: 4 }}>
             <CalendarSection
                 title="My calendars"
                 calendars={mine}
@@ -127,44 +156,3 @@ export function CalendarList({
         </View>
     )
 }
-
-const styles = StyleSheet.create({
-    container: {
-        gap: 4,
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-    },
-    sectionTitle: {
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    calendarRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingRight: 12,
-        paddingVertical: 5,
-    },
-    checkboxArea: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        flex: 1,
-        paddingLeft: 32,
-    },
-    checkbox: {
-        width: 16,
-        height: 16,
-        borderRadius: 3,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    calendarName: {
-        fontSize: 13,
-        flex: 1,
-    },
-})

@@ -1,4 +1,5 @@
-import { SizableText, View, YStack } from 'tamagui'
+import { useThemeColor } from 'heroui-native'
+import { Text, View } from 'react-native'
 import { getShortDayName } from '../hooks/useCalendarNavigation'
 
 interface DayColumnHeaderProps {
@@ -7,30 +8,46 @@ interface DayColumnHeaderProps {
 }
 
 export function DayColumnHeader({ date, isToday }: DayColumnHeaderProps) {
+    const [accentColor, accentFgColor, mutedColor, fgColor] = useThemeColor([
+        'accent',
+        'accent-foreground',
+        'muted',
+        'foreground',
+    ])
     const dayName = getShortDayName(date)
     const dateNum = date.getDate()
 
     return (
-        <YStack alignItems="center" paddingVertical="$2" gap="$1">
-            <SizableText
-                size="$1"
-                fontWeight="600"
-                color={isToday ? '$accentBackground' : '$color8'}
+        <View style={{ alignItems: 'center', paddingVertical: 8, gap: 4 }}>
+            <Text
+                style={{
+                    fontSize: 11,
+                    fontWeight: '600',
+                    color: isToday ? accentColor : mutedColor,
+                }}
             >
                 {dayName}
-            </SizableText>
+            </Text>
             <View
-                width={28}
-                height={28}
-                borderRadius={14}
-                alignItems="center"
-                justifyContent="center"
-                backgroundColor={isToday ? '$accentBackground' : 'transparent'}
+                style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: isToday ? accentColor : 'transparent',
+                }}
             >
-                <SizableText size="$4" fontWeight="600" color={isToday ? '$accentColor' : '$color'}>
+                <Text
+                    style={{
+                        fontSize: 16,
+                        fontWeight: '600',
+                        color: isToday ? accentFgColor : fgColor,
+                    }}
+                >
                     {dateNum}
-                </SizableText>
+                </Text>
             </View>
-        </YStack>
+        </View>
     )
 }

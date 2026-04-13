@@ -1,10 +1,10 @@
 import { eq } from '@tanstack/db'
 import { useLiveQuery } from '@tanstack/react-db'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import { Button, useThemeColor } from 'heroui-native'
 import { ArrowLeft } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb'
-import { Pressable } from 'react-native'
-import { Button, ScrollView, SizableText, useTheme, XStack, YStack } from 'tamagui'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { handleMutationErrorsWithForm } from '~/lib/errors'
 import { mutation, useMutation } from '~/lib/mutations'
@@ -40,7 +40,7 @@ function combineDateAndTime(dateStr: string, timeStr: string): string {
 export default function EventEditorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>()
     const router = useRouter()
-    const theme = useTheme()
+    const [fgColor, mutedColor, bgColor] = useThemeColor(['foreground', 'muted', 'background'])
     const breakpoint = useBreakpoint()
     const { orgSlug } = useOrgInfo()
     const userOrg = useCurrentUserOrg(orgSlug)
@@ -158,19 +158,29 @@ export default function EventEditorScreen() {
 
     if (isNotFound) {
         return (
-            <YStack
-                flex={1}
-                alignItems="center"
-                justifyContent="center"
-                backgroundColor="$background"
+            <View
+                style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: bgColor,
+                }}
             >
-                <SizableText size="$4" color="$color8">
-                    Event not found
-                </SizableText>
-                <Button size="$3" marginTop="$3" onPress={() => router.back()}>
-                    <Button.Text>Go back</Button.Text>
-                </Button>
-            </YStack>
+                <Text style={{ fontSize: 16, color: mutedColor }}>Event not found</Text>
+                <Pressable
+                    onPress={() => router.back()}
+                    style={{
+                        marginTop: 12,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 6,
+                        borderWidth: 1,
+                        borderColor: mutedColor,
+                    }}
+                >
+                    <Text style={{ fontSize: 14, color: fgColor }}>Go back</Text>
+                </Pressable>
+            </View>
         )
     }
 
@@ -194,42 +204,41 @@ export default function EventEditorScreen() {
     const guestContent = <EventGuestList guests={guests} />
 
     return (
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} backgroundColor="$background">
-            <YStack flex={1} padding="$5">
-                <XStack justifyContent="space-between" alignItems="center" marginBottom="$5">
-                    <XStack gap="$3" alignItems="center">
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ backgroundColor: bgColor }}>
+            <View style={{ flex: 1, padding: 20 }}>
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: 20,
+                    }}
+                >
+                    <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
                         <Pressable onPress={() => router.back()}>
-                            <ArrowLeft size={24} color={theme.color.val} />
+                            <ArrowLeft size={24} color={fgColor} />
                         </Pressable>
-                        <SizableText size="$7" fontWeight="bold" color="$color">
+                        <Text style={{ fontSize: 24, fontWeight: 'bold', color: fgColor }}>
                             {event ? 'Edit Event' : 'New Event'}
-                        </SizableText>
-                    </XStack>
-                    <Button
-                        theme="accent"
-                        size="$3"
-                        onPress={onSubmit}
-                        disabled={!canSubmit}
-                        opacity={canSubmit ? 1 : 0.5}
-                    >
-                        <Button.Text fontWeight="600">
-                            {activeMutation.isPending ? 'Saving...' : 'Save'}
-                        </Button.Text>
+                        </Text>
+                    </View>
+                    <Button onPress={onSubmit} isDisabled={!canSubmit} size="sm">
+                        {activeMutation.isPending ? 'Saving...' : 'Save'}
                     </Button>
-                </XStack>
+                </View>
 
                 {isDesktop ? (
-                    <XStack gap="$5" flex={1}>
-                        <YStack flex={2}>{formContent}</YStack>
-                        <YStack flex={1}>{guestContent}</YStack>
-                    </XStack>
+                    <View style={{ flexDirection: 'row', gap: 20, flex: 1 }}>
+                        <View style={{ flex: 2 }}>{formContent}</View>
+                        <View style={{ flex: 1 }}>{guestContent}</View>
+                    </View>
                 ) : (
-                    <YStack gap="$4">
+                    <View style={{ gap: 16 }}>
                         {formContent}
                         {guestContent}
-                    </YStack>
+                    </View>
                 )}
-            </YStack>
+            </View>
         </ScrollView>
     )
 }

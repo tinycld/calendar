@@ -1,5 +1,6 @@
 import { Slot } from 'expo-router'
-import { YStack } from 'tamagui'
+import { useThemeColor } from 'heroui-native'
+import { View } from 'react-native'
 import { ScreenHeader } from '~/components/ScreenHeader'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { captureException } from '~/lib/errors'
@@ -16,6 +17,7 @@ function CalendarLayoutInner() {
     const { popover, closePopover } = useCalendarView()
     const isMobile = useBreakpoint() === 'mobile'
     const [eventsCollection] = useStore('calendar_events')
+    const bgColor = useThemeColor('background')
 
     const eventId = popover.type === 'event-detail' ? popover.eventId : undefined
     const { event, calendar } = useEventDetail(eventId)
@@ -28,13 +30,13 @@ function CalendarLayoutInner() {
     })
 
     return (
-        <YStack flex={1} backgroundColor="$background">
+        <View style={{ flex: 1, backgroundColor: bgColor }}>
             <ScreenHeader>
                 <CalendarHeader />
             </ScreenHeader>
-            <YStack flex={1}>
+            <View style={{ flex: 1 }}>
                 <Slot />
-            </YStack>
+            </View>
 
             <CalendarFAB isVisible={isMobile} />
 
@@ -54,7 +56,7 @@ function CalendarLayoutInner() {
                 onClose={closePopover}
                 onDelete={id => deleteEvent.mutate(id)}
             />
-        </YStack>
+        </View>
     )
 }
 

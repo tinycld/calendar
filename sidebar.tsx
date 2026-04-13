@@ -1,7 +1,7 @@
 import { useGlobalSearchParams, useRouter } from 'expo-router'
 import { CalendarDays, Columns3, Grid3X3, List } from 'lucide-react-native'
 import { useMemo } from 'react'
-import { YStack } from 'tamagui'
+import { View } from 'react-native'
 import {
     SidebarActionButton,
     SidebarDivider,
@@ -60,7 +60,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
         <SidebarNav>
             {isMobile && (
                 <>
-                    <YStack paddingHorizontal={8} paddingVertical={4}>
+                    <View style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
                         {VIEW_MODE_OPTIONS.map(opt => (
                             <SidebarItem
                                 key={opt.mode}
@@ -71,7 +71,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
                                 onPress={() => handleViewModeSelect(opt.mode)}
                             />
                         ))}
-                    </YStack>
+                    </View>
                     <SidebarDivider />
                 </>
             )}

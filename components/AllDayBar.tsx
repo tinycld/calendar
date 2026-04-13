@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native'
-import { useTheme } from 'tamagui'
+import { type GestureResponderEvent, Pressable, Text, View } from 'react-native'
+import { useThemeColor } from '~/lib/use-app-theme'
 import { useCalendarMap } from '../hooks/useCalendarEvents'
 import { type LayoutEvent, layoutAllDayEvents } from '../layout'
 import type { CalendarEvents } from '../types'
@@ -16,9 +16,8 @@ interface AllDayBarProps {
 }
 
 export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayBarProps) {
-    const theme = useTheme()
-
     const calendarMap = useCalendarMap()
+    const [sidebarBg, borderColor] = useThemeColor(['sidebar-background', 'border'])
 
     const { layouts, eventMap, maxRow } = useMemo(() => {
         const layoutEvents: LayoutEvent[] = events.map(e => ({
@@ -39,16 +38,15 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
 
     return (
         <View
-            style={[
-                styles.container,
-                {
-                    backgroundColor: theme.sidebarBackground.val,
-                    borderBottomColor: theme.borderColor.val,
-                },
-            ]}
+            style={{
+                flexDirection: 'row',
+                borderBottomWidth: 1,
+                backgroundColor: sidebarBg,
+                borderBottomColor: borderColor,
+            }}
         >
-            <View style={styles.gutterSpacer} />
-            <View style={[styles.columnsArea, { height: containerHeight }]}>
+            <View style={{ width: 50 }} />
+            <View style={{ flex: 1, position: 'relative', height: containerHeight }}>
                 {layouts.map(layout => {
                     const event = eventMap.get(layout.id)
                     if (!event) return null
@@ -67,9 +65,18 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
                                 paddingHorizontal: 1,
                             }}
                         >
-                            <View style={[styles.pill, { backgroundColor: colors.bg }]}>
+                            <View
+                                style={{
+                                    flex: 1,
+                                    borderRadius: 3,
+                                    paddingHorizontal: 4,
+                                    paddingVertical: 1,
+                                    overflow: 'hidden',
+                                    backgroundColor: colors.bg,
+                                }}
+                            >
                                 <Text
-                                    style={[styles.pillText, { color: colors.text }]}
+                                    style={{ fontSize: 12, fontWeight: '600', color: colors.text }}
                                     numberOfLines={1}
                                 >
                                     {event.title}
@@ -82,28 +89,3 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
         </View>
     )
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-    },
-    gutterSpacer: {
-        width: 50,
-    },
-    columnsArea: {
-        flex: 1,
-        position: 'relative',
-    },
-    pill: {
-        flex: 1,
-        borderRadius: 3,
-        paddingHorizontal: 4,
-        paddingVertical: 1,
-        overflow: 'hidden',
-    },
-    pillText: {
-        fontSize: 12,
-        fontWeight: '600',
-    },
-})
