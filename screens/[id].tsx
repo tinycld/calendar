@@ -1,5 +1,4 @@
 import { eq } from '@tanstack/db'
-import { useLiveQuery } from '@tanstack/react-db'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb'
@@ -7,7 +6,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { handleMutationErrorsWithForm } from '~/lib/errors'
 import { mutation, useMutation } from '~/lib/mutations'
-import { useStore } from '~/lib/pocketbase'
+import { useOrgLiveQuery, useStore } from '~/lib/pocketbase'
 import { useThemeColor } from '~/lib/use-app-theme'
 import { useCurrentUserOrg } from '~/lib/use-current-user-org'
 import { useOrgInfo } from '~/lib/use-org-info'
@@ -54,8 +53,11 @@ export default function EventEditorScreen() {
     const isNew = !id || id === 'new'
     const lookupId = isNew ? '' : baseId
 
-    const { data: existingEvents } = useLiveQuery(
-        query => query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, lookupId)),
+    const { data: existingEvents } = useOrgLiveQuery(
+        query => {
+            if (!lookupId) return null
+            return query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, lookupId))
+        },
         [lookupId]
     )
     const event = existingEvents?.[0]
@@ -162,22 +164,16 @@ export default function EventEditorScreen() {
     if (isNotFound) {
         return (
             <View
+                className="flex-1 items-center justify-center"
                 style={{
-                    flex: 1,
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     backgroundColor: bgColor,
                 }}
             >
                 <Text style={{ fontSize: 16, color: mutedColor }}>Event not found</Text>
                 <Pressable
                     onPress={() => router.back()}
+                    className="mt-3 px-3 py-1.5 rounded-md border"
                     style={{
-                        marginTop: 12,
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 6,
-                        borderWidth: 1,
                         borderColor: mutedColor,
                     }}
                 >
@@ -208,16 +204,9 @@ export default function EventEditorScreen() {
 
     return (
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ backgroundColor: bgColor }}>
-            <View style={{ flex: 1, padding: 20 }}>
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: 20,
-                    }}
-                >
-                    <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+            <View className="flex-1 p-5">
+                <View className="flex-row justify-between items-center mb-5">
+                    <View className="flex-row gap-3 items-center">
                         <Pressable onPress={() => router.back()}>
                             <ArrowLeft size={24} color={fgColor} />
                         </Pressable>
@@ -231,12 +220,12 @@ export default function EventEditorScreen() {
                 </View>
 
                 {isDesktop ? (
-                    <View style={{ flexDirection: 'row', gap: 20, flex: 1 }}>
-                        <View style={{ flex: 2 }}>{formContent}</View>
-                        <View style={{ flex: 1 }}>{guestContent}</View>
+                    <View className="flex-row gap-5 flex-1">
+                        <View className="flex-[2]">{formContent}</View>
+                        <View className="flex-1">{guestContent}</View>
                     </View>
                 ) : (
-                    <View style={{ gap: 16 }}>
+                    <View className="gap-4">
                         {formContent}
                         {guestContent}
                     </View>

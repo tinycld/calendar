@@ -1,8 +1,7 @@
 import { eq } from '@tanstack/db'
-import { useLiveQuery } from '@tanstack/react-db'
 import { useCallback, useMemo } from 'react'
 import { mutation, useMutation } from '~/lib/mutations'
-import { useStore } from '~/lib/pocketbase'
+import { useOrgLiveQuery, useStore } from '~/lib/pocketbase'
 import { useCurrentUserOrg } from '~/lib/use-current-user-org'
 import { useOrgInfo } from '~/lib/use-org-info'
 import type { CalendarColorKey, CalendarWithGroup } from '../types'
@@ -14,19 +13,18 @@ export interface MembershipInfo {
 }
 
 export function useCalendarData() {
-    const { orgSlug, orgId } = useOrgInfo()
+    const { orgSlug } = useOrgInfo()
     const userOrg = useCurrentUserOrg(orgSlug)
     const [calendarsCollection] = useStore('calendar_calendars')
     const [membersCollection] = useStore('calendar_members')
 
-    const { data: allCalendars } = useLiveQuery(
-        query => query.from({ cal: calendarsCollection }).where(({ cal }) => eq(cal.org, orgId)),
-        [orgId]
+    const { data: allCalendars } = useOrgLiveQuery((query, { orgId }) =>
+        query.from({ cal: calendarsCollection }).where(({ cal }) => eq(cal.org, orgId))
     )
 
     const userOrgId = userOrg?.id ?? ''
 
-    const { data: memberships } = useLiveQuery(
+    const { data: memberships } = useOrgLiveQuery(
         query =>
             query.from({ mem: membersCollection }).where(({ mem }) => eq(mem.user_org, userOrgId)),
         [userOrgId]
