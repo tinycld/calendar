@@ -31,31 +31,14 @@ function CalendarCheckbox({
     const colors = getCalendarColorResolved(calendar.color)
 
     return (
-        <View
-            style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingRight: 12,
-                paddingVertical: 5,
-            }}
-        >
+        <View className="flex-row items-center pr-3 py-[5px]">
             <Pressable
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 10,
-                    flex: 1,
-                    paddingLeft: 32,
-                }}
+                className="flex-row items-center gap-2.5 flex-1 pl-8"
                 onPress={() => onToggle(calendar.id)}
             >
                 <View
+                    className="size-4 rounded-sm items-center justify-center"
                     style={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: 3,
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         backgroundColor: isChecked ? colors.bg : 'transparent',
                         borderColor: isChecked ? undefined : colors.bg,
                         borderWidth: isChecked ? 0 : 2,
@@ -98,13 +81,7 @@ function CalendarSection({
     return (
         <View>
             <Pressable
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 6,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                }}
+                className="flex-row items-center gap-1.5 px-3 py-1.5"
                 onPress={() => setExpanded(prev => !prev)}
             >
                 <ChevronIcon size={14} color={mutedColor} />
@@ -136,7 +113,7 @@ export function CalendarList({
     const other = calendars.filter(c => c.group === 'other')
 
     return (
-        <View style={{ gap: 4 }}>
+        <View className="gap-1">
             <CalendarSection
                 title="My calendars"
                 calendars={mine}

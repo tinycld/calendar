@@ -30,22 +30,14 @@ export function CalendarHeader() {
 
     if (isMobile) {
         return (
-            <View
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    gap: 8,
-                }}
-            >
+            <View className="flex-row items-center px-3 py-2 gap-2">
                 <Pressable onPress={() => setDrawerOpen(true)} hitSlop={8}>
                     <Menu size={22} color={fgColor} />
                 </Pressable>
 
                 <Pressable
                     onPress={() => setViewMode('month')}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
+                    className="flex-row items-center gap-0.5"
                     hitSlop={4}
                 >
                     <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor }}>
@@ -54,7 +46,7 @@ export function CalendarHeader() {
                     <ChevronDown size={16} color={mutedColor} />
                 </Pressable>
 
-                <View style={{ flex: 1 }} />
+                <View className="flex-1" />
 
                 <Button onPress={goToday} variant="outline" size="sm">
                     <ButtonText>Today</ButtonText>
@@ -71,15 +63,7 @@ export function CalendarHeader() {
     }
 
     return (
-        <View
-            style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                gap: 8,
-            }}
-        >
+        <View className="flex-row items-center px-4 py-2 gap-2">
             <Button onPress={goToday} variant="outline" size="sm">
                 <ButtonText>Today</ButtonText>
             </Button>
@@ -96,12 +80,9 @@ export function CalendarHeader() {
             </Text>
 
             <View
+                className="flex-row border rounded-md overflow-hidden"
                 style={{
-                    flexDirection: 'row',
-                    borderWidth: 1,
                     borderColor,
-                    borderRadius: 6,
-                    overflow: 'hidden',
                 }}
             >
                 {DESKTOP_VIEW_MODES.map((mode, i) => (

@@ -48,7 +48,7 @@ export function EventForm({
     )
 
     return (
-        <View style={{ gap: 16 }}>
+        <View className="gap-4">
             <FormErrorSummary errors={errors} isEnabled={isSubmitted} />
 
             <TextInput control={control} name="title" label="Title" placeholder="Event title" />

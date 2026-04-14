@@ -50,15 +50,12 @@ export function RecurrencePicker({ value, onChange, eventStartDate }: Recurrence
     }
 
     return (
-        <View style={{ gap: 6, marginBottom: 12 }}>
+        <View className="gap-1.5 mb-3">
             <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Recurrence</Text>
             <Pressable
                 onPress={() => setShowPresets(true)}
+                className="border rounded-lg px-3 py-2.5"
                 style={{
-                    borderWidth: 1,
-                    borderRadius: 8,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
                     borderColor,
                     backgroundColor: bgColor,
                 }}
@@ -111,17 +108,15 @@ function PresetDialog({
                 <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor, marginBottom: 8 }}>
                     Repeat
                 </Text>
-                <View style={{ gap: 4, paddingTop: 8 }}>
+                <View className="gap-1 pt-2">
                     {presets.map(preset => {
                         const isSelected = preset.value === currentValue
                         return (
                             <Pressable
                                 key={preset.value || 'none'}
                                 onPress={() => onSelect(preset.value)}
+                                className="px-3 py-2.5 rounded-md"
                                 style={{
-                                    paddingHorizontal: 12,
-                                    paddingVertical: 10,
-                                    borderRadius: 6,
                                     ...(isSelected && {
                                         backgroundColor: `${accentColor}20`,
                                     }),
@@ -272,8 +267,8 @@ function CustomRecurrenceDialog({
                     Custom recurrence
                 </Text>
 
-                <View style={{ gap: 12 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View className="gap-3">
+                    <View className="flex-row items-center gap-2">
                         <Text style={{ fontSize: 14, color: fgColor }}>Repeat every</Text>
                         <Pressable
                             onPress={() => {
@@ -282,13 +277,8 @@ function CustomRecurrenceDialog({
                             onLongPress={() => {
                                 updateState({ interval: Math.max(state.interval - 1, 1) })
                             }}
+                            className="border rounded-md w-[44px] h-[36px] items-center justify-center"
                             style={{
-                                borderWidth: 1,
-                                borderRadius: 6,
-                                width: 44,
-                                height: 36,
-                                alignItems: 'center',
-                                justifyContent: 'center',
                                 borderColor,
                             }}
                         >
@@ -296,25 +286,15 @@ function CustomRecurrenceDialog({
                                 {state.interval}
                             </Text>
                         </Pressable>
-                        <View
-                            style={{
-                                flexDirection: 'row',
-                                gap: 4,
-                                flexWrap: 'wrap',
-                                flex: 1,
-                            }}
-                        >
+                        <View className="flex-row gap-1 flex-wrap flex-1">
                             {FREQ_OPTIONS.map(opt => {
                                 const isSelected = state.freq === opt.value
                                 return (
                                     <Pressable
                                         key={opt.value}
                                         onPress={() => updateState({ freq: opt.value })}
+                                        className="px-2.5 py-1 rounded-md border"
                                         style={{
-                                            paddingHorizontal: 10,
-                                            paddingVertical: 4,
-                                            borderRadius: 6,
-                                            borderWidth: 1,
                                             borderColor: isSelected ? primaryColor : borderColor,
                                             backgroundColor: isSelected ? primaryColor : undefined,
                                         }}
@@ -357,11 +337,11 @@ function CustomRecurrenceDialog({
                         onChange={mode => updateState({ monthlyMode: mode })}
                     />
 
-                    <View style={{ gap: 8 }}>
+                    <View className="gap-2">
                         <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>
                             Ends
                         </Text>
-                        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                        <View className="flex-row gap-2 flex-wrap">
                             {(['never', 'on', 'after'] as const).map(type => {
                                 const isSelected = state.endType === type
                                 const label =
@@ -370,11 +350,8 @@ function CustomRecurrenceDialog({
                                     <Pressable
                                         key={type}
                                         onPress={() => updateState({ endType: type })}
+                                        className="px-2.5 py-1 rounded-md border"
                                         style={{
-                                            paddingHorizontal: 10,
-                                            paddingVertical: 4,
-                                            borderRadius: 6,
-                                            borderWidth: 1,
                                             borderColor: isSelected ? primaryColor : borderColor,
                                             backgroundColor: isSelected ? primaryColor : undefined,
                                         }}
@@ -409,21 +386,11 @@ function CustomRecurrenceDialog({
                     </View>
                 </View>
 
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        justifyContent: 'flex-end',
-                        gap: 8,
-                        paddingTop: 8,
-                    }}
-                >
+                <View className="flex-row justify-end gap-2 pt-2">
                     <Pressable
                         onPress={() => onOpenChange(false)}
+                        className="px-3 py-1.5 rounded-md border"
                         style={{
-                            paddingHorizontal: 12,
-                            paddingVertical: 6,
-                            borderRadius: 6,
-                            borderWidth: 1,
                             borderColor,
                         }}
                     >
@@ -431,10 +398,8 @@ function CustomRecurrenceDialog({
                     </Pressable>
                     <Pressable
                         onPress={handleDone}
+                        className="px-3 py-1.5 rounded-md"
                         style={{
-                            paddingHorizontal: 12,
-                            paddingVertical: 6,
-                            borderRadius: 6,
                             backgroundColor: primaryColor,
                         }}
                     >
@@ -464,22 +429,17 @@ function WeekDaySelector({
     if (!isVisible) return null
 
     return (
-        <View style={{ gap: 6 }}>
+        <View className="gap-1.5">
             <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Repeat on</Text>
-            <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'center' }}>
+            <View className="flex-row gap-1.5 justify-center">
                 {DAY_CODES.map((code, i) => {
                     const isSelected = selectedDays.includes(code)
                     return (
                         <Pressable
                             key={code}
                             onPress={() => onToggle(code)}
+                            className="size-9 rounded-full border items-center justify-center"
                             style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 18,
-                                borderWidth: 1,
-                                alignItems: 'center',
-                                justifyContent: 'center',
                                 backgroundColor: isSelected ? primaryColor : 'transparent',
                                 borderColor: isSelected ? primaryColor : borderColor,
                             }}
@@ -527,16 +487,13 @@ function MonthlyModeSelector({
     const ordinal = ordinals[position] ?? `${position}th`
 
     return (
-        <View style={{ gap: 6 }}>
+        <View className="gap-1.5">
             <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Monthly on</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View className="flex-row gap-2">
                 <Pressable
                     onPress={() => onChange('dayOfMonth')}
+                    className="px-2.5 py-1 rounded-md border"
                     style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 6,
-                        borderWidth: 1,
                         borderColor: monthlyMode === 'dayOfMonth' ? primaryColor : borderColor,
                         backgroundColor: monthlyMode === 'dayOfMonth' ? primaryColor : undefined,
                     }}
@@ -552,11 +509,8 @@ function MonthlyModeSelector({
                 </Pressable>
                 <Pressable
                     onPress={() => onChange('dayOfWeek')}
+                    className="px-2.5 py-1 rounded-md border"
                     style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 6,
-                        borderWidth: 1,
                         borderColor: monthlyMode === 'dayOfWeek' ? primaryColor : borderColor,
                         backgroundColor: monthlyMode === 'dayOfWeek' ? primaryColor : undefined,
                     }}
@@ -591,22 +545,18 @@ function EndDateInput({
     if (!isVisible) return null
 
     return (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View className="flex-row items-center gap-2">
             <Text style={{ fontSize: 14, color: fgColor }}>End date:</Text>
             <PlainInput
                 value={value}
                 onChangeText={onChange}
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor={mutedColor}
+                className="border rounded-md px-2.5 py-1.5 flex-1"
                 style={{
-                    borderWidth: 1,
                     borderColor,
-                    borderRadius: 6,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
                     color: fgColor,
                     fontSize: 14,
-                    flex: 1,
                 }}
             />
         </View>
@@ -630,16 +580,13 @@ function EndCountInput({
     if (!isVisible) return null
 
     return (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View className="flex-row items-center gap-2">
             <Text style={{ fontSize: 14, color: fgColor }}>After</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <View className="flex-row items-center gap-1">
                 <Pressable
                     onPress={onDecrement}
+                    className="px-2.5 py-1 rounded-md border"
                     style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 6,
-                        borderWidth: 1,
                         borderColor,
                     }}
                 >
@@ -657,11 +604,8 @@ function EndCountInput({
                 </Text>
                 <Pressable
                     onPress={onIncrement}
+                    className="px-2.5 py-1 rounded-md border"
                     style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 6,
-                        borderWidth: 1,
                         borderColor,
                     }}
                 >

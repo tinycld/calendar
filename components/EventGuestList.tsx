@@ -31,43 +31,30 @@ export function EventGuestList({ guests }: EventGuestListProps) {
 
     if (guests.length === 0) {
         return (
-            <View style={{ padding: 16 }}>
+            <View className="p-4">
                 <Text style={{ fontSize: 14, color: mutedColor }}>No guests</Text>
             </View>
         )
     }
 
     return (
-        <View style={{ gap: 8 }}>
+        <View className="gap-2">
             <Text
+                className="px-1"
                 style={{
                     fontSize: 16,
                     fontWeight: '600',
                     color: fgColor,
-                    paddingHorizontal: 4,
                 }}
             >
                 Guests ({guests.length})
             </Text>
 
             {guests.map(guest => (
-                <View
-                    key={guest.email}
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 10,
-                        paddingVertical: 6,
-                        paddingHorizontal: 4,
-                    }}
-                >
+                <View key={guest.email} className="flex-row items-center gap-2.5 py-1.5 px-1">
                     <View
+                        className="size-8 rounded-full items-center justify-center"
                         style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 16,
-                            alignItems: 'center',
-                            justifyContent: 'center',
                             backgroundColor: accentColor,
                         }}
                     >
@@ -75,8 +62,8 @@ export function EventGuestList({ guests }: EventGuestListProps) {
                             {getInitials(guest.name)}
                         </Text>
                     </View>
-                    <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View className="flex-1">
+                        <View className="flex-row items-center gap-1.5">
                             <Text
                                 style={{
                                     fontSize: 14,
@@ -91,7 +78,7 @@ export function EventGuestList({ guests }: EventGuestListProps) {
                                 <Text style={{ fontSize: 11, color: mutedColor }}>Organizer</Text>
                             )}
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <View className="flex-row items-center gap-1">
                             <Text
                                 style={{ fontSize: 12, color: mutedColor, flex: 1 }}
                                 numberOfLines={1}

@@ -46,8 +46,8 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
                 borderBottomColor: borderColor,
             }}
         >
-            <View style={{ width: 50 }} />
-            <View style={{ flex: 1, position: 'relative', height: containerHeight }}>
+            <View className="w-[50px]" />
+            <View className="flex-1 relative" style={{ height: containerHeight }}>
                 {layouts.map(layout => {
                     const event = eventMap.get(layout.id)
                     if (!event) return null
@@ -67,12 +67,8 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
                             }}
                         >
                             <View
+                                className="flex-1 rounded-sm px-1 py-px overflow-hidden"
                                 style={{
-                                    flex: 1,
-                                    borderRadius: 3,
-                                    paddingHorizontal: 4,
-                                    paddingVertical: 1,
-                                    overflow: 'hidden',
                                     backgroundColor: colors.bg,
                                 }}
                             >

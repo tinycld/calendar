@@ -48,17 +48,17 @@ export function WeekView() {
     }, [events, days])
 
     return (
-        <View style={{ flex: 1 }}>
+        <View className="flex-1">
             <View
+                className="flex-row"
                 style={{
-                    flexDirection: 'row',
                     borderBottomWidth: 1,
                     borderBottomColor: borderColor,
                 }}
             >
                 <View style={{ width: 50 }} />
                 {days.map(date => (
-                    <View key={date.toISOString()} style={{ flex: 1, alignItems: 'center' }}>
+                    <View key={date.toISOString()} className="flex-1 items-center">
                         <DayColumnHeader date={date} isToday={isToday(date)} />
                     </View>
                 ))}

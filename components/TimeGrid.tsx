@@ -112,19 +112,18 @@ export function TimeGrid({
         ((now.getHours() * 60 + now.getMinutes() - startHour * 60) / 60) * HOUR_HEIGHT
 
     return (
-        <ScrollView ref={scrollRef} style={{ flex: 1 }} showsVerticalScrollIndicator>
-            <View style={{ flexDirection: 'row' }}>
-                <View style={{ width: 50 }}>{renderTimeLabels()}</View>
+        <ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator>
+            <View className="flex-row">
+                <View className="w-[50px]">{renderTimeLabels()}</View>
 
-                <View style={{ flex: 1, flexDirection: 'row' }}>
+                <View className="flex-1 flex-row">
                     {columnLayouts.map(({ column, layoutMap }, colIndex) => {
                         const todayColumn = isToday(column.date)
                         return (
                             <View
                                 key={column.date.toISOString()}
+                                className="flex-1 relative"
                                 style={{
-                                    flex: 1,
-                                    position: 'relative',
                                     borderRightWidth: colIndex < columns.length - 1 ? 1 : 0,
                                     borderRightColor:
                                         colIndex < columns.length - 1 ? borderColor : undefined,

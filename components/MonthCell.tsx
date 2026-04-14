@@ -37,26 +37,17 @@ export function MonthCell({
 
     return (
         <Pressable
+            className="flex-1 p-0.5 overflow-hidden"
             style={{
-                flex: 1,
                 borderRightWidth: StyleSheet.hairlineWidth,
                 borderBottomWidth: StyleSheet.hairlineWidth,
                 borderColor,
-                padding: 2,
-                overflow: 'hidden',
             }}
             onPress={() => onDatePress(date)}
         >
             <View
+                className="size-6 rounded-full items-center justify-center self-end mb-0.5 mr-0.5"
                 style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    alignSelf: 'flex-end',
-                    marginBottom: 2,
-                    marginRight: 2,
                     backgroundColor: isToday ? primaryColor : undefined,
                 }}
             >
@@ -84,11 +75,8 @@ export function MonthCell({
                     return (
                         <Pressable key={event.id} onPress={e => onEventPress(event.id, e)}>
                             <View
+                                className="rounded-sm px-1 py-px mb-px"
                                 style={{
-                                    borderRadius: 3,
-                                    paddingHorizontal: 4,
-                                    paddingVertical: 1,
-                                    marginBottom: 1,
                                     backgroundColor: colors.bg,
                                 }}
                             >
@@ -111,19 +99,10 @@ export function MonthCell({
 
                 return (
                     <Pressable key={event.id} onPress={e => onEventPress(event.id, e)}>
-                        <View
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 3,
-                                paddingVertical: 1,
-                            }}
-                        >
+                        <View className="flex-row items-center gap-[3px] py-px">
                             <View
+                                className="size-1.5 rounded-full"
                                 style={{
-                                    width: 6,
-                                    height: 6,
-                                    borderRadius: 3,
                                     backgroundColor: colors.bg,
                                 }}
                             />

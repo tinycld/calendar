@@ -50,19 +50,12 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
     const monthLabel = `${months[displayMonth.getMonth()]} ${displayMonth.getFullYear()}`
 
     return (
-        <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-            <View
-                style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: 8,
-                }}
-            >
+        <View className="px-3 py-2">
+            <View className="flex-row justify-between items-center mb-2">
                 <Text style={{ fontSize: 13, fontWeight: '600', color: fgColor }}>
                     {monthLabel}
                 </Text>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View className="flex-row gap-2">
                     <Pressable
                         onPress={() => setDisplayMonth(prev => addMonths(prev, -1))}
                         hitSlop={8}
@@ -78,12 +71,9 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
                 </View>
             </View>
 
-            <View style={{ flexDirection: 'row' }}>
+            <View className="flex-row">
                 {DAY_LETTERS.map(day => (
-                    <View
-                        key={day.key}
-                        style={{ width: '14.28%', alignItems: 'center', paddingVertical: 1 }}
-                    >
+                    <View key={day.key} className="items-center py-px" style={{ width: '14.28%' }}>
                         <Text style={{ fontSize: 10, fontWeight: '600', color: mutedColor }}>
                             {day.label}
                         </Text>
@@ -91,7 +81,7 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
                 ))}
             </View>
 
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            <View className="flex-row flex-wrap">
                 {grid.map(cell => {
                     const isSelected = isSameDay(cell.date, selectedDate)
                     const cellKey = cell.date.toISOString().split('T')[0]
@@ -99,16 +89,13 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
                     return (
                         <Pressable
                             key={cellKey}
-                            style={{ width: '14.28%', alignItems: 'center', paddingVertical: 1 }}
+                            className="items-center py-px"
+                            style={{ width: '14.28%' }}
                             onPress={() => onDateSelect(cell.date)}
                         >
                             <View
+                                className="size-6 rounded-full items-center justify-center"
                                 style={{
-                                    width: 24,
-                                    height: 24,
-                                    borderRadius: 12,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
                                     backgroundColor: cell.isToday
                                         ? primaryColor
                                         : isSelected

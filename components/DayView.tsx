@@ -23,7 +23,7 @@ export function DayView() {
     )
 
     return (
-        <View style={{ flex: 1 }}>
+        <View className="flex-1">
             <DayColumnHeader date={focusDate} isToday={isToday(focusDate)} />
             <AllDayBar
                 events={allDayEvents}

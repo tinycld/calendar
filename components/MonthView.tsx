@@ -66,7 +66,7 @@ export function MonthView() {
     }
 
     return (
-        <View style={{ flex: 1, overflow: 'hidden' }}>
+        <View className="flex-1 overflow-hidden">
             <View
                 style={{
                     flexDirection: 'row',
@@ -75,7 +75,7 @@ export function MonthView() {
                 }}
             >
                 {DAY_LABELS.map(label => (
-                    <View key={label} style={{ flex: 1, alignItems: 'center', paddingVertical: 8 }}>
+                    <View key={label} className="flex-1 items-center py-2">
                         <Text style={{ fontSize: 12, fontWeight: '600', color: mutedColor }}>
                             {label}
                         </Text>
@@ -89,11 +89,8 @@ export function MonthView() {
                 return (
                     <View
                         key={row[0].date.toISOString()}
+                        className="flex-1 flex-row relative overflow-hidden"
                         style={{
-                            flex: 1,
-                            flexDirection: 'row',
-                            position: 'relative',
-                            overflow: 'hidden',
                             minHeight: 0,
                         }}
                     >
@@ -163,12 +160,8 @@ function MultiDayBars({ cellLayoutMap, eventMap, calendarMap, onEventPress }: Mu
                     }}
                 >
                     <View
+                        className="flex-1 rounded-sm px-1 py-px overflow-hidden"
                         style={{
-                            flex: 1,
-                            borderRadius: 3,
-                            paddingHorizontal: 4,
-                            paddingVertical: 1,
-                            overflow: 'hidden',
                             backgroundColor: colors.bg,
                         }}
                     >

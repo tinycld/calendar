@@ -53,15 +53,13 @@ function EventCard({
 
     return (
         <Pressable
-            style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden' }}
+            className="flex-row rounded-lg overflow-hidden"
             onPress={e => onPress(event.id, e)}
         >
             <View style={{ width: 4, backgroundColor: colors.bg }} />
             <View
+                className="flex-1 py-2 px-2.5"
                 style={{
-                    flex: 1,
-                    paddingVertical: 8,
-                    paddingHorizontal: 10,
                     backgroundColor: surfaceBg,
                 }}
             >
@@ -116,7 +114,7 @@ function DaySection({
                 gap: 16,
             }}
         >
-            <View style={{ width: 44, alignItems: 'center' }}>
+            <View className="w-[44px] items-center">
                 <Text
                     style={{
                         fontSize: 11,
@@ -129,12 +127,8 @@ function DaySection({
                     {getShortDayName(row.date)}
                 </Text>
                 <View
+                    className="size-8 rounded-full items-center justify-center"
                     style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 16,
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         backgroundColor: row.today ? primaryColor : undefined,
                     }}
                 >
@@ -149,7 +143,7 @@ function DaySection({
                     </Text>
                 </View>
             </View>
-            <View style={{ flex: 1, gap: 6, justifyContent: 'center' }}>
+            <View className="flex-1 gap-1.5 justify-center">
                 {row.events.length > 0 ? (
                     row.events.map(event => (
                         <EventCard key={event.id} event={event} onPress={onEventPress} />
@@ -211,7 +205,7 @@ export function ScheduleView() {
                     onEmptyPress={handleEmptyPress}
                 />
             )}
-            style={{ flex: 1 }}
+            className="flex-1"
         />
     )
 }

@@ -17,7 +17,7 @@ export function CalendarMenu({ currentColor, onColorChange, onShowOnly }: Calend
     return (
         <Menu>
             <Menu.Trigger>
-                <Pressable style={{ padding: 4, borderRadius: 4 }} hitSlop={8}>
+                <Pressable className="p-1 rounded" hitSlop={8}>
                     <MoreVertical size={14} color={mutedColor} />
                 </Pressable>
             </Menu.Trigger>
@@ -30,31 +30,20 @@ export function CalendarMenu({ currentColor, onColorChange, onShowOnly }: Calend
 
                     <Separator />
 
-                    <View style={{ paddingHorizontal: 12, paddingVertical: 8, gap: 6 }}>
+                    <View className="px-3 py-2 gap-1.5">
                         {CALENDAR_COLOR_GRID.map(row => (
-                            <View key={row.join('-')} style={{ flexDirection: 'row', gap: 6 }}>
+                            <View key={row.join('-')} className="flex-row gap-1.5">
                                 {row.map(colorKey => {
                                     const { bg } = getCalendarColorResolved(colorKey)
                                     return (
                                         <Pressable
                                             key={colorKey}
                                             onPress={() => onColorChange(colorKey)}
-                                            style={{
-                                                padding: 2,
-                                                borderRadius: 14,
-                                                width: 28,
-                                                height: 28,
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                            }}
+                                            className="p-0.5 rounded-full size-7 items-center justify-center"
                                         >
                                             <View
+                                                className="size-6 rounded-full items-center justify-center"
                                                 style={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    borderRadius: 12,
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
                                                     backgroundColor: bg,
                                                 }}
                                             >

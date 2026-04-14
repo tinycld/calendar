@@ -30,11 +30,11 @@ export default function CalendarLayout() {
     })
 
     return (
-        <View style={{ flex: 1, backgroundColor: bgColor }}>
+        <View className="flex-1" style={{ backgroundColor: bgColor }}>
             <ScreenHeader>
                 <CalendarHeader />
             </ScreenHeader>
-            <View style={{ flex: 1 }}>
+            <View className="flex-1">
                 <Slot />
             </View>
 

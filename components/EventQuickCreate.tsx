@@ -150,14 +150,8 @@ function MobileQuickCreate({
                 <ActionsheetDragIndicatorWrapper>
                     <ActionsheetDragIndicator />
                 </ActionsheetDragIndicatorWrapper>
-                <View style={{ padding: 20, gap: 12, width: '100%' }}>
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                        }}
-                    >
+                <View className="p-5 gap-3 w-full">
+                    <View className="flex-row justify-between items-center">
                         <Pressable onPress={onClose}>
                             <Text style={{ fontSize: 14, color: mutedColor }}>Cancel</Text>
                         </Pressable>
@@ -168,18 +162,13 @@ function MobileQuickCreate({
 
                     <TextInput control={control} name="title" placeholder="Add title" autoFocus />
 
-                    <View style={{ gap: 4 }}>
+                    <View className="gap-1">
                         <Text style={{ fontSize: 12, color: mutedColor }}>{dayLabel}</Text>
                         <Text style={{ fontSize: 12, color: mutedColor }}>{timeLabel}</Text>
                     </View>
 
                     <Pressable
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 10,
-                            paddingVertical: 8,
-                        }}
+                        className="flex-row items-center gap-2.5 py-2"
                         onPress={onMoreOptions}
                     >
                         <Users size={18} color={mutedColor} />
@@ -220,24 +209,12 @@ function DesktopQuickCreate({
 
     return (
         <Pressable
-            style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                justifyContent: 'center',
-                alignItems: 'center',
-                zIndex: 100,
-            }}
+            className="absolute top-0 left-0 right-0 bottom-0 justify-center items-center z-[100]"
             onPress={onClose}
         >
             <Pressable
+                className="w-[340px] rounded-xl border p-4"
                 style={{
-                    width: 340,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    padding: 16,
                     backgroundColor: bgColor,
                     borderColor,
                     shadowColor,
@@ -248,13 +225,7 @@ function DesktopQuickCreate({
                 }}
                 onPress={e => e.stopPropagation()}
             >
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                    }}
-                >
+                <View className="flex-row justify-between items-center">
                     <Text style={{ fontSize: 16, fontWeight: '600', color: fgColor }}>
                         New Event
                     </Text>
@@ -263,23 +234,16 @@ function DesktopQuickCreate({
                     </Pressable>
                 </View>
 
-                <View style={{ gap: 12, paddingVertical: 8 }}>
+                <View className="gap-3 py-2">
                     <TextInput control={control} name="title" placeholder="Add title" autoFocus />
 
-                    <View style={{ gap: 4 }}>
+                    <View className="gap-1">
                         <Text style={{ fontSize: 12, color: mutedColor }}>{dayLabel}</Text>
                         <Text style={{ fontSize: 12, color: mutedColor }}>{timeLabel}</Text>
                     </View>
                 </View>
 
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginTop: 8,
-                    }}
-                >
+                <View className="flex-row justify-between items-center mt-2">
                     <Pressable onPress={onMoreOptions}>
                         <Text style={{ fontSize: 12, color: primaryColor }}>More options</Text>
                     </Pressable>

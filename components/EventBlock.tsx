@@ -28,8 +28,8 @@ export function EventBlock({
     return (
         <Pressable
             onPress={onPress}
+            className="absolute"
             style={{
-                position: 'absolute',
                 top: topOffset,
                 left: `${left}%`,
                 width: `${width}%`,
@@ -39,12 +39,10 @@ export function EventBlock({
             }}
         >
             <View
+                className="flex-1 rounded overflow-hidden"
                 style={{
-                    flex: 1,
-                    borderRadius: 4,
                     paddingHorizontal: 6,
                     paddingVertical: 2,
-                    overflow: 'hidden',
                     backgroundColor: bgColor,
                 }}
             >

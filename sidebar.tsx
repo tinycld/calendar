@@ -60,7 +60,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
         <SidebarNav>
             {isMobile && (
                 <>
-                    <View style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+                    <View className="px-2 py-1">
                         {VIEW_MODE_OPTIONS.map(opt => (
                             <SidebarItem
                                 key={opt.mode}

@@ -16,7 +16,7 @@ export function DayColumnHeader({ date, isToday }: DayColumnHeaderProps) {
     const dateNum = date.getDate()
 
     return (
-        <View style={{ alignItems: 'center', paddingVertical: 8, gap: 4 }}>
+        <View className="items-center py-2 gap-1">
             <Text
                 style={{
                     fontSize: 11,
@@ -27,12 +27,8 @@ export function DayColumnHeader({ date, isToday }: DayColumnHeaderProps) {
                 {dayName}
             </Text>
             <View
+                className="size-7 rounded-full items-center justify-center"
                 style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     backgroundColor: isToday ? primaryColor : 'transparent',
                 }}
             >

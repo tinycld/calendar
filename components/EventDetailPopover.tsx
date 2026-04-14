@@ -75,20 +75,12 @@ function MobileEventDetail({
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: bgColor }}>
-            <View
-                style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                }}
-            >
+        <View className="flex-1" style={{ backgroundColor: bgColor }}>
+            <View className="flex-row justify-between items-center px-4 py-3">
                 <Pressable onPress={onClose} hitSlop={8}>
                     <X size={22} color={fgColor} />
                 </Pressable>
-                <View style={{ flexDirection: 'row', gap: 20 }}>
+                <View className="flex-row gap-5">
                     <Pressable onPress={onEdit} hitSlop={8}>
                         <Pencil size={20} color={mutedColor} />
                     </Pressable>
@@ -105,22 +97,13 @@ function MobileEventDetail({
             </View>
 
             <ScrollView
-                style={{ flex: 1 }}
+                className="flex-1"
                 contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
             >
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 12,
-                        marginBottom: 20,
-                    }}
-                >
+                <View className="flex-row items-center gap-3 mb-5">
                     <View
+                        className="size-4 rounded-lg"
                         style={{
-                            width: 16,
-                            height: 16,
-                            borderRadius: 8,
                             backgroundColor: colors.bg,
                         }}
                     />
@@ -129,14 +112,7 @@ function MobileEventDetail({
                     </Text>
                 </View>
 
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'flex-start',
-                        gap: 12,
-                        marginBottom: 12,
-                    }}
-                >
+                <View className="flex-row items-start gap-3 mb-3">
                     <Clock size={18} color={mutedColor} />
                     <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>{dateTimeStr}</Text>
                 </View>
@@ -155,14 +131,7 @@ function MobileEventDetail({
                 ) : null}
 
                 {event.location ? (
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'flex-start',
-                            gap: 12,
-                            marginBottom: 12,
-                        }}
-                    >
+                    <View className="flex-row items-start gap-3 mb-3">
                         <MapPin size={18} color={mutedColor} />
                         <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>
                             {event.location}
@@ -171,15 +140,8 @@ function MobileEventDetail({
                 ) : null}
 
                 {event.guests.length > 0 ? (
-                    <View style={{ marginBottom: 8 }}>
-                        <View
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'flex-start',
-                                gap: 12,
-                                marginBottom: 12,
-                            }}
-                        >
+                    <View className="mb-2">
+                        <View className="flex-row items-start gap-3 mb-3">
                             <Users size={18} color={mutedColor} />
                             <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>
                                 {event.guests.length} guest
@@ -419,7 +381,7 @@ export function EventDetailPopover({
                 onStartShouldSetResponder={() => true}
                 onResponderRelease={e => e.stopPropagation()}
             >
-                <Pressable onPress={e => e.stopPropagation()} style={{ flex: 1 }}>
+                <Pressable onPress={e => e.stopPropagation()} className="flex-1">
                     {anchorRect ? (
                         <>
                             <View
@@ -443,14 +405,7 @@ export function EventDetailPopover({
                         </>
                     ) : null}
 
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            justifyContent: 'flex-end',
-                            gap: 16,
-                            marginBottom: 12,
-                        }}
-                    >
+                    <View className="flex-row justify-end gap-4 mb-3">
                         <Pressable onPress={onEdit} hitSlop={8}>
                             <Pencil size={18} color={mutedColor} />
                         </Pressable>
@@ -462,19 +417,10 @@ export function EventDetailPopover({
                         </Pressable>
                     </View>
 
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 10,
-                            marginBottom: 12,
-                        }}
-                    >
+                    <View className="flex-row items-center gap-2.5 mb-3">
                         <View
+                            className="w-1 h-6 rounded-sm"
                             style={{
-                                width: 4,
-                                height: 24,
-                                borderRadius: 2,
                                 backgroundColor: colors.bg,
                             }}
                         />
@@ -483,29 +429,13 @@ export function EventDetailPopover({
                         </Text>
                     </View>
 
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'flex-start',
-                            gap: 10,
-                            marginBottom: 8,
-                            paddingLeft: 2,
-                        }}
-                    >
+                    <View className="flex-row items-start gap-2.5 mb-2 pl-0.5">
                         <Clock size={16} color={mutedColor} />
                         <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>{dateTimeStr}</Text>
                     </View>
 
                     {event.location ? (
-                        <View
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'flex-start',
-                                gap: 10,
-                                marginBottom: 8,
-                                paddingLeft: 2,
-                            }}
-                        >
+                        <View className="flex-row items-start gap-2.5 mb-2 pl-0.5">
                             <MapPin size={16} color={mutedColor} />
                             <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>
                                 {event.location}
@@ -514,15 +444,7 @@ export function EventDetailPopover({
                     ) : null}
 
                     {event.guests.length > 0 ? (
-                        <View
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'flex-start',
-                                gap: 10,
-                                marginBottom: 8,
-                                paddingLeft: 2,
-                            }}
-                        >
+                        <View className="flex-row items-start gap-2.5 mb-2 pl-0.5">
                             <Users size={16} color={mutedColor} />
                             <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>
                                 {event.guests.length} guest{event.guests.length !== 1 ? 's' : ''}
@@ -532,12 +454,10 @@ export function EventDetailPopover({
 
                     {event.description ? (
                         <Text
+                            className="mt-1 mb-2 pl-0.5"
                             style={{
                                 fontSize: 13,
                                 color: mutedColor,
-                                marginTop: 4,
-                                marginBottom: 8,
-                                paddingLeft: 2,
                             }}
                             numberOfLines={3}
                         >
@@ -546,11 +466,10 @@ export function EventDetailPopover({
                     ) : null}
 
                     <Text
+                        className="mt-2 pl-0.5"
                         style={{
                             fontSize: 12,
                             color: mutedColor,
-                            marginTop: 8,
-                            paddingLeft: 2,
                         }}
                     >
                         {calendarName}
