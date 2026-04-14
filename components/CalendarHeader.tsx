@@ -20,8 +20,8 @@ export function CalendarHeader() {
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
     const borderColor = useThemeColor('border')
-    const accentColor = useThemeColor('accent')
-    const accentFgColor = useThemeColor('accent-foreground')
+    const primaryColor = useThemeColor('primary')
+    const primaryFgColor = useThemeColor('primary-foreground')
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'
     const { setDrawerOpen } = useWorkspaceLayout()
@@ -112,7 +112,7 @@ export function CalendarHeader() {
                         size="sm"
                         style={{
                             borderRadius: 0,
-                            backgroundColor: viewMode === mode ? accentColor : undefined,
+                            backgroundColor: viewMode === mode ? primaryColor : undefined,
                             borderLeftWidth: i > 0 ? 1 : 0,
                             borderLeftColor: borderColor,
                         }}
@@ -120,7 +120,7 @@ export function CalendarHeader() {
                         <Text
                             style={{
                                 fontSize: 14,
-                                color: viewMode === mode ? accentFgColor : fgColor,
+                                color: viewMode === mode ? primaryFgColor : fgColor,
                             }}
                         >
                             {VIEW_LABELS[mode]}

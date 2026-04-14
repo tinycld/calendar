@@ -8,8 +8,8 @@ interface DayColumnHeaderProps {
 }
 
 export function DayColumnHeader({ date, isToday }: DayColumnHeaderProps) {
-    const accentColor = useThemeColor('accent')
-    const accentFgColor = useThemeColor('accent-foreground')
+    const primaryColor = useThemeColor('primary')
+    const primaryFgColor = useThemeColor('primary-foreground')
     const mutedColor = useThemeColor('muted-foreground')
     const fgColor = useThemeColor('foreground')
     const dayName = getShortDayName(date)
@@ -21,7 +21,7 @@ export function DayColumnHeader({ date, isToday }: DayColumnHeaderProps) {
                 style={{
                     fontSize: 11,
                     fontWeight: '600',
-                    color: isToday ? accentColor : mutedColor,
+                    color: isToday ? primaryColor : mutedColor,
                 }}
             >
                 {dayName}
@@ -33,14 +33,14 @@ export function DayColumnHeader({ date, isToday }: DayColumnHeaderProps) {
                     borderRadius: 14,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: isToday ? accentColor : 'transparent',
+                    backgroundColor: isToday ? primaryColor : 'transparent',
                 }}
             >
                 <Text
                     style={{
                         fontSize: 16,
                         fontWeight: '600',
-                        color: isToday ? accentFgColor : fgColor,
+                        color: isToday ? primaryFgColor : fgColor,
                     }}
                 >
                     {dateNum}

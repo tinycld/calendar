@@ -101,8 +101,8 @@ function DaySection({
 }) {
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
-    const accentColor = useThemeColor('accent')
-    const bgColor = useThemeColor('background')
+    const primaryColor = useThemeColor('primary')
+    const primaryFgColor = useThemeColor('primary-foreground')
     const borderColor = useThemeColor('border')
 
     return (
@@ -123,7 +123,7 @@ function DaySection({
                         fontWeight: '600',
                         textTransform: 'uppercase',
                         marginBottom: 2,
-                        color: row.today ? accentColor : mutedColor,
+                        color: row.today ? primaryColor : mutedColor,
                     }}
                 >
                     {getShortDayName(row.date)}
@@ -135,14 +135,14 @@ function DaySection({
                         borderRadius: 16,
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor: row.today ? accentColor : undefined,
+                        backgroundColor: row.today ? primaryColor : undefined,
                     }}
                 >
                     <Text
                         style={{
                             fontSize: 18,
                             fontWeight: '500',
-                            color: row.today ? bgColor : fgColor,
+                            color: row.today ? primaryFgColor : fgColor,
                         }}
                     >
                         {row.date.getDate()}

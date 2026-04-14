@@ -26,8 +26,8 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
     )
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
-    const accentColor = useThemeColor('accent')
-    const accentFgColor = useThemeColor('accent-foreground')
+    const primaryColor = useThemeColor('primary')
+    const primaryFgColor = useThemeColor('primary-foreground')
     const activeIndicatorColor = useThemeColor('active-indicator')
 
     const grid = getMonthGrid(displayMonth)
@@ -110,7 +110,7 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     backgroundColor: cell.isToday
-                                        ? accentColor
+                                        ? primaryColor
                                         : isSelected
                                           ? `${activeIndicatorColor}30`
                                           : undefined,
@@ -121,7 +121,7 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
                                         fontSize: 11,
                                         fontWeight: cell.isToday ? '700' : undefined,
                                         color: cell.isToday
-                                            ? accentFgColor
+                                            ? primaryFgColor
                                             : cell.isCurrentMonth
                                               ? fgColor
                                               : mutedColor,

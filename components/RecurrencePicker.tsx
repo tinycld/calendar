@@ -214,8 +214,8 @@ function CustomRecurrenceDialog({
 }) {
     const fgColor = useThemeColor('foreground')
     const borderColor = useThemeColor('border')
-    const accentColor = useThemeColor('accent')
-    const accentFgColor = useThemeColor('accent-foreground')
+    const primaryColor = useThemeColor('primary')
+    const primaryFgColor = useThemeColor('primary-foreground')
     const [state, setState] = useState<CustomState>(() =>
         initCustomState(eventStartDate, initialValue)
     )
@@ -315,14 +315,14 @@ function CustomRecurrenceDialog({
                                             paddingVertical: 4,
                                             borderRadius: 6,
                                             borderWidth: 1,
-                                            borderColor: isSelected ? accentColor : borderColor,
-                                            backgroundColor: isSelected ? accentColor : undefined,
+                                            borderColor: isSelected ? primaryColor : borderColor,
+                                            backgroundColor: isSelected ? primaryColor : undefined,
                                         }}
                                     >
                                         <Text
                                             style={{
                                                 fontSize: 12,
-                                                color: isSelected ? accentFgColor : fgColor,
+                                                color: isSelected ? primaryFgColor : fgColor,
                                             }}
                                         >
                                             {state.interval > 1 ? `${opt.label}s` : opt.label}
@@ -375,14 +375,14 @@ function CustomRecurrenceDialog({
                                             paddingVertical: 4,
                                             borderRadius: 6,
                                             borderWidth: 1,
-                                            borderColor: isSelected ? accentColor : borderColor,
-                                            backgroundColor: isSelected ? accentColor : undefined,
+                                            borderColor: isSelected ? primaryColor : borderColor,
+                                            backgroundColor: isSelected ? primaryColor : undefined,
                                         }}
                                     >
                                         <Text
                                             style={{
                                                 fontSize: 12,
-                                                color: isSelected ? accentFgColor : fgColor,
+                                                color: isSelected ? primaryFgColor : fgColor,
                                             }}
                                         >
                                             {label}
@@ -435,10 +435,10 @@ function CustomRecurrenceDialog({
                             paddingHorizontal: 12,
                             paddingVertical: 6,
                             borderRadius: 6,
-                            backgroundColor: accentColor,
+                            backgroundColor: primaryColor,
                         }}
                     >
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: accentFgColor }}>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: primaryFgColor }}>
                             Done
                         </Text>
                     </Pressable>
@@ -459,7 +459,7 @@ function WeekDaySelector({
 }) {
     const fgColor = useThemeColor('foreground')
     const borderColor = useThemeColor('border')
-    const accentColor = useThemeColor('accent')
+    const primaryColor = useThemeColor('primary')
 
     if (!isVisible) return null
 
@@ -480,8 +480,8 @@ function WeekDaySelector({
                                 borderWidth: 1,
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                backgroundColor: isSelected ? accentColor : 'transparent',
-                                borderColor: isSelected ? accentColor : borderColor,
+                                backgroundColor: isSelected ? primaryColor : 'transparent',
+                                borderColor: isSelected ? primaryColor : borderColor,
                             }}
                         >
                             <Text
@@ -514,8 +514,8 @@ function MonthlyModeSelector({
 }) {
     const fgColor = useThemeColor('foreground')
     const borderColor = useThemeColor('border')
-    const accentColor = useThemeColor('accent')
-    const accentFgColor = useThemeColor('accent-foreground')
+    const primaryColor = useThemeColor('primary')
+    const primaryFgColor = useThemeColor('primary-foreground')
 
     if (!isVisible) return null
 
@@ -537,14 +537,14 @@ function MonthlyModeSelector({
                         paddingVertical: 4,
                         borderRadius: 6,
                         borderWidth: 1,
-                        borderColor: monthlyMode === 'dayOfMonth' ? accentColor : borderColor,
-                        backgroundColor: monthlyMode === 'dayOfMonth' ? accentColor : undefined,
+                        borderColor: monthlyMode === 'dayOfMonth' ? primaryColor : borderColor,
+                        backgroundColor: monthlyMode === 'dayOfMonth' ? primaryColor : undefined,
                     }}
                 >
                     <Text
                         style={{
                             fontSize: 12,
-                            color: monthlyMode === 'dayOfMonth' ? accentFgColor : fgColor,
+                            color: monthlyMode === 'dayOfMonth' ? primaryFgColor : fgColor,
                         }}
                     >
                         Day {dayOfMonth}
@@ -557,14 +557,14 @@ function MonthlyModeSelector({
                         paddingVertical: 4,
                         borderRadius: 6,
                         borderWidth: 1,
-                        borderColor: monthlyMode === 'dayOfWeek' ? accentColor : borderColor,
-                        backgroundColor: monthlyMode === 'dayOfWeek' ? accentColor : undefined,
+                        borderColor: monthlyMode === 'dayOfWeek' ? primaryColor : borderColor,
+                        backgroundColor: monthlyMode === 'dayOfWeek' ? primaryColor : undefined,
                     }}
                 >
                     <Text
                         style={{
                             fontSize: 12,
-                            color: monthlyMode === 'dayOfWeek' ? accentFgColor : fgColor,
+                            color: monthlyMode === 'dayOfWeek' ? primaryFgColor : fgColor,
                         }}
                     >
                         {ordinal} {dayName}

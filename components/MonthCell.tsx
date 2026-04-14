@@ -27,8 +27,8 @@ export function MonthCell({
 }: MonthCellProps) {
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
-    const accentColor = useThemeColor('accent')
-    const accentFgColor = useThemeColor('accent-foreground')
+    const primaryColor = useThemeColor('primary')
+    const primaryFgColor = useThemeColor('primary-foreground')
     const borderColor = useThemeColor('border')
     const calendarMap = useCalendarMap()
     const dateNum = date.getDate()
@@ -57,14 +57,14 @@ export function MonthCell({
                     alignSelf: 'flex-end',
                     marginBottom: 2,
                     marginRight: 2,
-                    backgroundColor: isToday ? accentColor : undefined,
+                    backgroundColor: isToday ? primaryColor : undefined,
                 }}
             >
                 <Text
                     style={{
                         fontSize: 12,
                         fontWeight: '500',
-                        color: isToday ? accentFgColor : isCurrentMonth ? fgColor : mutedColor,
+                        color: isToday ? primaryFgColor : isCurrentMonth ? fgColor : mutedColor,
                     }}
                 >
                     {dateNum}

@@ -201,7 +201,7 @@ function DesktopQuickCreate({
     const mutedColor = useThemeColor('muted-foreground')
     const bgColor = useThemeColor('background')
     const borderColor = useThemeColor('border')
-    const accentColor = useThemeColor('accent')
+    const primaryColor = useThemeColor('primary')
     const shadowColor = useThemeColor('overlay-backdrop')
     const router = useRouter()
     const orgHref = useOrgHref()
@@ -281,7 +281,7 @@ function DesktopQuickCreate({
                     }}
                 >
                     <Pressable onPress={onMoreOptions}>
-                        <Text style={{ fontSize: 12, color: accentColor }}>More options</Text>
+                        <Text style={{ fontSize: 12, color: primaryColor }}>More options</Text>
                     </Pressable>
                     <Button onPress={onSave} size="sm">
                         Save
