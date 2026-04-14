@@ -1,16 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import {
-    createContext,
-    createElement,
-    type ReactNode,
-    useCallback,
-    useContext,
-    useMemo,
-    useState,
-} from 'react'
+import { useCallback, useMemo } from 'react'
 import type { GestureResponderEvent } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { useOrgHref } from '~/lib/org-routes'
+import type { AnchorRect, PopoverState } from '../stores/calendar-ui-store'
+import { useCalendarUIStore } from '../stores/calendar-ui-store'
 import { addDays, addMonths, addWeeks, parseDate, toDateString } from './useCalendarNavigation'
 
 export type ViewMode = 'day' | 'week' | 'month' | 'schedule'
@@ -22,17 +16,7 @@ function parseViewMode(str: string | undefined): ViewMode {
     return 'week'
 }
 
-export interface AnchorRect {
-    x: number
-    y: number
-    width: number
-    height: number
-}
-
-type PopoverState =
-    | { type: 'closed' }
-    | { type: 'quick-create'; date: Date; hour: number }
-    | { type: 'event-detail'; eventId: string; anchorRect?: AnchorRect }
+export type { AnchorRect, PopoverState }
 
 interface CalendarViewState {
     viewMode: ViewMode
@@ -48,32 +32,20 @@ interface CalendarViewState {
     closePopover: () => void
 }
 
-const PopoverContext = createContext<{
-    popover: PopoverState
-    setPopover: (state: PopoverState) => void
-} | null>(null)
-
-export function CalendarViewProvider({ children }: { children: ReactNode }) {
-    const [popover, setPopover] = useState<PopoverState>({ type: 'closed' })
-    const value = useMemo(() => ({ popover, setPopover }), [popover])
-    return createElement(PopoverContext.Provider, { value }, children)
-}
-
 export function useCalendarView(): CalendarViewState {
     const router = useRouter()
     const orgHref = useOrgHref()
     const { view, date } = useLocalSearchParams<{ view?: string; date?: string }>()
-    const popoverCtx = useContext(PopoverContext)
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'
 
-    if (!popoverCtx) {
-        throw new Error('useCalendarView must be used within CalendarViewProvider')
-    }
+    const popover = useCalendarUIStore(s => s.popover)
+    const storeOpenQuickCreate = useCalendarUIStore(s => s.openQuickCreate)
+    const storeOpenEventDetail = useCalendarUIStore(s => s.openEventDetail)
+    const closePopover = useCalendarUIStore(s => s.closePopover)
 
     const viewMode = parseViewMode(view)
     const focusDate = useMemo(() => parseDate(date), [date])
-    const { popover, setPopover } = popoverCtx
 
     const navigate = useCallback(
         (newView: ViewMode, newDate: Date) => {
@@ -107,8 +79,8 @@ export function useCalendarView(): CalendarViewState {
     const goToDate = useCallback((d: Date) => navigate(viewMode, d), [navigate, viewMode])
 
     const openQuickCreate = useCallback(
-        (d: Date, hour: number) => setPopover({ type: 'quick-create', date: d, hour }),
-        [setPopover]
+        (d: Date, hour: number) => storeOpenQuickCreate(d, hour),
+        [storeOpenQuickCreate]
     )
 
     const openEventDetail = useCallback(
@@ -126,12 +98,10 @@ export function useCalendarView(): CalendarViewState {
                     }
                 }
             }
-            setPopover({ type: 'event-detail', eventId, anchorRect })
+            storeOpenEventDetail(eventId, anchorRect)
         },
-        [setPopover]
+        [storeOpenEventDetail]
     )
-
-    const closePopover = useCallback(() => setPopover({ type: 'closed' }), [setPopover])
 
     return {
         viewMode,

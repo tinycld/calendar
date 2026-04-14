@@ -1,27 +1,11 @@
 import { eq } from '@tanstack/db'
 import { useLiveQuery } from '@tanstack/react-db'
-import {
-    createContext,
-    createElement,
-    type ReactNode,
-    useCallback,
-    useContext,
-    useMemo,
-    useRef,
-    useState,
-} from 'react'
-import { mutation, useMutation } from '~/lib/mutations'
+import { useEffect, useMemo } from 'react'
 import { useStore } from '~/lib/pocketbase'
-import { useCurrentUserOrg } from '~/lib/use-current-user-org'
-import { useOrgInfo } from '~/lib/use-org-info'
 import { expandRecurringEvents, parseEventId } from '../lib/recurrence'
+import { useCalendarUIStore } from '../stores/calendar-ui-store'
 import type { CalendarColorKey, CalendarEvents, CalendarWithGroup } from '../types'
-
-interface MembershipInfo {
-    id: string
-    role: 'owner' | 'editor' | 'viewer'
-    color: CalendarColorKey | ''
-}
+import { type MembershipInfo, useCalendarData } from './useCalendarData'
 
 interface VisibleCalendarsState {
     calendars: CalendarWithGroup[]
@@ -36,157 +20,42 @@ interface VisibleCalendarsState {
     isLoading: boolean
 }
 
-const VisibleCalendarsContext = createContext<VisibleCalendarsState | null>(null)
-
-export function VisibleCalendarsProvider({ children }: { children: ReactNode }) {
-    const { orgSlug, orgId } = useOrgInfo()
-    const userOrg = useCurrentUserOrg(orgSlug)
-    const [calendarsCollection] = useStore('calendar_calendars')
-    const [membersCollection] = useStore('calendar_members')
-
-    const { data: allCalendars } = useLiveQuery(
-        query => query.from({ cal: calendarsCollection }).where(({ cal }) => eq(cal.org, orgId)),
-        [orgId]
-    )
-
-    const userOrgId = userOrg?.id ?? ''
-
-    const { data: memberships } = useLiveQuery(
-        query =>
-            query.from({ mem: membersCollection }).where(({ mem }) => eq(mem.user_org, userOrgId)),
-        [userOrgId]
-    )
-
-    const membershipByCalendar = useMemo(
-        () =>
-            new Map(
-                (memberships ?? []).map(m => [
-                    m.calendar,
-                    { id: m.id, role: m.role, color: m.color } as MembershipInfo,
-                ])
-            ),
-        [memberships]
-    )
-
-    const calendars = useMemo<CalendarWithGroup[]>(
-        () =>
-            (allCalendars ?? []).map(cal => {
-                const membership = membershipByCalendar.get(cal.id)
-                return {
-                    ...cal,
-                    color: membership?.color || cal.color,
-                    group: membership?.role === 'owner' ? 'mine' : 'other',
-                }
-            }),
-        [allCalendars, membershipByCalendar]
-    )
-
-    const initializedRef = useRef(false)
-    const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set())
-
-    if (!initializedRef.current && calendars.length > 0) {
-        initializedRef.current = true
-        setVisibleIds(new Set(calendars.map(c => c.id)))
-    }
-
-    const toggleCalendar = useCallback((id: string) => {
-        setVisibleIds(prev => {
-            const next = new Set(prev)
-            if (next.has(id)) {
-                next.delete(id)
-            } else {
-                next.add(id)
-            }
-            return next
-        })
-    }, [])
-
-    const showOnlyCalendar = useCallback((id: string) => {
-        setVisibleIds(new Set([id]))
-    }, [])
-
-    const colorMutation = useMutation({
-        mutationFn: mutation(function* ({
-            membershipId,
-            color,
-        }: {
-            membershipId: string
-            color: CalendarColorKey
-        }) {
-            yield membersCollection.update(membershipId, draft => {
-                draft.color = color
-            })
-        }),
-    })
-
-    const setCalendarColor = useCallback(
-        (calendarId: string, color: CalendarColorKey) => {
-            const membership = membershipByCalendar.get(calendarId)
-            if (membership) {
-                colorMutation.mutate({ membershipId: membership.id, color })
-            }
-        },
-        [membershipByCalendar, colorMutation]
-    )
-
-    const mineCalendars = useMemo(() => calendars.filter(c => c.group === 'mine'), [calendars])
-    const otherCalendars = useMemo(() => calendars.filter(c => c.group === 'other'), [calendars])
-
-    const calendarMap = useMemo(() => new Map(calendars.map(c => [c.id, c])), [calendars])
-
-    const isLoading = !allCalendars || !memberships
-
-    const value = useMemo(
-        () => ({
-            calendars,
-            mineCalendars,
-            otherCalendars,
-            visibleIds,
-            toggleCalendar,
-            calendarMap,
-            membershipByCalendar,
-            setCalendarColor,
-            showOnlyCalendar,
-            isLoading,
-        }),
-        [
-            calendars,
-            mineCalendars,
-            otherCalendars,
-            visibleIds,
-            toggleCalendar,
-            calendarMap,
-            membershipByCalendar,
-            setCalendarColor,
-            showOnlyCalendar,
-            isLoading,
-        ]
-    )
-
-    return createElement(VisibleCalendarsContext.Provider, { value }, children)
-}
-
-const NOOP = () => {}
-const EMPTY_SET = new Set<string>()
-const EMPTY_MAP_CWG = new Map<string, CalendarWithGroup>()
-const EMPTY_MAP_MI = new Map<string, MembershipInfo>()
-
-const DEFAULT_STATE: VisibleCalendarsState = {
-    calendars: [],
-    mineCalendars: [],
-    otherCalendars: [],
-    visibleIds: EMPTY_SET,
-    toggleCalendar: NOOP,
-    calendarMap: EMPTY_MAP_CWG,
-    membershipByCalendar: EMPTY_MAP_MI,
-    setCalendarColor: NOOP,
-    showOnlyCalendar: NOOP,
-    isLoading: true,
-}
-
 export function useVisibleCalendars(): VisibleCalendarsState {
-    const ctx = useContext(VisibleCalendarsContext)
-    return ctx ?? DEFAULT_STATE
+    const {
+        calendars,
+        mineCalendars,
+        otherCalendars,
+        calendarMap,
+        membershipByCalendar,
+        setCalendarColor,
+        isLoading,
+    } = useCalendarData()
+
+    const visibleIdsArray = useCalendarUIStore(s => s.visibleIds)
+    const toggleCalendar = useCalendarUIStore(s => s.toggleCalendar)
+    const showOnlyCalendar = useCalendarUIStore(s => s.showOnlyCalendar)
+    const initVisibleIds = useCalendarUIStore(s => s.initVisibleIds)
+
+    useEffect(() => {
+        if (visibleIdsArray.length === 0 && calendars.length > 0) {
+            initVisibleIds(calendars.map(c => c.id))
+        }
+    }, [visibleIdsArray.length, calendars, initVisibleIds])
+
+    const visibleIds = useMemo(() => new Set(visibleIdsArray), [visibleIdsArray])
+
+    return {
+        calendars,
+        mineCalendars,
+        otherCalendars,
+        visibleIds,
+        toggleCalendar,
+        calendarMap,
+        membershipByCalendar,
+        setCalendarColor,
+        showOnlyCalendar,
+        isLoading,
+    }
 }
 
 export function useCalendarMap(): Map<string, CalendarWithGroup> {

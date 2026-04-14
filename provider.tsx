@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { VisibleCalendarsProvider } from './hooks/useCalendarEvents'
 import { useEventReminders } from './hooks/useEventReminders'
 
 function EventReminders() {
@@ -9,9 +8,9 @@ function EventReminders() {
 
 export default function CalendarProvider({ children }: { children: ReactNode }) {
     return (
-        <VisibleCalendarsProvider>
+        <>
             <EventReminders />
             {children}
-        </VisibleCalendarsProvider>
+        </>
     )
 }

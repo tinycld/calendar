@@ -11,9 +11,9 @@ import { CalendarHeader } from '../components/CalendarHeader'
 import { EventDetailPopover } from '../components/EventDetailPopover'
 import { EventQuickCreate } from '../components/EventQuickCreate'
 import { useEventDetail } from '../hooks/useCalendarEvents'
-import { CalendarViewProvider, useCalendarView } from '../hooks/useCalendarView'
+import { useCalendarView } from '../hooks/useCalendarView'
 
-function CalendarLayoutInner() {
+export default function CalendarLayout() {
     const { popover, closePopover } = useCalendarView()
     const isMobile = useBreakpoint() === 'mobile'
     const [eventsCollection] = useStore('calendar_events')
@@ -57,13 +57,5 @@ function CalendarLayoutInner() {
                 onDelete={id => deleteEvent.mutate(id)}
             />
         </View>
-    )
-}
-
-export default function CalendarLayout() {
-    return (
-        <CalendarViewProvider>
-            <CalendarLayoutInner />
-        </CalendarViewProvider>
     )
 }
