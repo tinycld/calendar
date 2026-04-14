@@ -248,7 +248,7 @@ function DesktopQuickCreate({
                         <Text style={{ fontSize: 12, color: primaryColor }}>More options</Text>
                     </Pressable>
                     <Button onPress={onSave} size="sm">
-                        Save
+                        <ButtonText>Save</ButtonText>
                     </Button>
                 </View>
             </Pressable>
