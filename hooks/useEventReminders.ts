@@ -1,11 +1,11 @@
-import { useLiveQuery } from '@tanstack/react-db'
+import { eq } from '@tanstack/db'
 import { useEffect, useRef } from 'react'
 import {
     cancelAllNotifications,
     requestNotificationPermission,
     scheduleNotification,
 } from '~/lib/notifications'
-import { useStore } from '~/lib/pocketbase'
+import { useOrgLiveQuery, useStore } from '~/lib/pocketbase'
 import type { CalendarEvents } from '../types'
 import { useVisibleCalendars } from './useCalendarEvents'
 
@@ -61,20 +61,28 @@ async function scheduleEventReminders(
 export function useEventReminders() {
     const { visibleIds } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
+    const [calendarsCollection] = useStore('calendar_calendars')
     const scheduledRef = useRef(new Set<string>())
 
-    const { data: allEvents } = useLiveQuery(query => query.from({ evt: eventsCollection }), [])
+    const { data: allEvents } = useOrgLiveQuery((query, { orgId }) =>
+        query
+            .from({ evt: eventsCollection })
+            .join({ cal: calendarsCollection }, ({ evt, cal }) => eq(evt.calendar, cal.id))
+            .where(({ cal }) => eq(cal.org, orgId))
+            .select(({ evt }) => evt)
+    )
 
     useEffect(() => {
         if (!allEvents) return
 
+        const events = allEvents
         let cancelled = false
 
         async function run() {
             const granted = await requestNotificationPermission()
             if (!granted || cancelled) return
             scheduledRef.current = await scheduleEventReminders(
-                allEvents,
+                events,
                 visibleIds,
                 scheduledRef.current
             )

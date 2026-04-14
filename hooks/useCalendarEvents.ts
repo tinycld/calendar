@@ -1,7 +1,6 @@
 import { eq } from '@tanstack/db'
-import { useLiveQuery } from '@tanstack/react-db'
 import { useEffect, useMemo } from 'react'
-import { useStore } from '~/lib/pocketbase'
+import { useOrgLiveQuery, useStore } from '~/lib/pocketbase'
 import { expandRecurringEvents, parseEventId } from '../lib/recurrence'
 import { useCalendarUIStore } from '../stores/calendar-ui-store'
 import type { CalendarColorKey, CalendarEvents, CalendarWithGroup } from '../types'
@@ -65,8 +64,15 @@ export function useCalendarMap(): Map<string, CalendarWithGroup> {
 export function useCalendarEvents(startDate: Date, endDate: Date) {
     const { visibleIds } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
+    const [calendarsCollection] = useStore('calendar_calendars')
 
-    const { data: allEvents } = useLiveQuery(query => query.from({ evt: eventsCollection }), [])
+    const { data: allEvents } = useOrgLiveQuery((query, { orgId }) =>
+        query
+            .from({ evt: eventsCollection })
+            .join({ cal: calendarsCollection }, ({ evt, cal }) => eq(evt.calendar, cal.id))
+            .where(({ cal }) => eq(cal.org, orgId))
+            .select(({ evt }) => evt)
+    )
 
     return useMemo(() => {
         if (!allEvents) return []
@@ -89,7 +95,7 @@ export function useEventDetail(eventId: string | undefined): {
 
     const { baseId, occurrenceDate } = parseEventId(eventId ?? '')
 
-    const { data: events } = useLiveQuery(
+    const { data: events } = useOrgLiveQuery(
         query => query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, baseId)),
         [baseId]
     )
