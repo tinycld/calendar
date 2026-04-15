@@ -76,6 +76,46 @@ func Register(app *pocketbase.PocketBase) {
 		return e.Next()
 	})
 
+	// Auto-create owner membership when a calendar is created via the API.
+	// The calendar_members create rule requires an existing owner, so the first
+	// membership must be created server-side.
+	app.OnRecordCreateRequest("calendar_calendars").BindFunc(func(e *core.RecordRequestEvent) error {
+		if err := e.Next(); err != nil {
+			return err
+		}
+
+		auth := e.Auth
+		if auth == nil {
+			return nil
+		}
+
+		orgID := e.Record.GetString("org")
+		userOrg, err := app.FindFirstRecordByFilter(
+			"user_org",
+			"user = {:user} && org = {:org}",
+			map[string]any{"user": auth.Id, "org": orgID},
+		)
+		if err != nil {
+			return nil
+		}
+
+		memberCollection, err := app.FindCollectionByNameOrId("calendar_members")
+		if err != nil {
+			return nil
+		}
+
+		member := core.NewRecord(memberCollection)
+		member.Set("calendar", e.Record.Id)
+		member.Set("user_org", userOrg.Id)
+		member.Set("role", "owner")
+		if err := app.Save(member); err != nil {
+			app.Logger().Warn("calendar: failed to auto-create owner membership",
+				"calendar", e.Record.Id, "error", err)
+		}
+
+		return nil
+	})
+
 	// Auto-generate ical_uid for events created via the web UI
 	app.OnRecordCreate("calendar_events").BindFunc(func(e *core.RecordEvent) error {
 		if e.Record.GetString("ical_uid") == "" {
