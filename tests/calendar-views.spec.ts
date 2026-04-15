@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test'
-import { login, navigateToAddon } from '../../../tests/e2e/helpers'
+import { login, navigateToPackage } from '../../../tests/e2e/helpers'
 
 test.describe('Calendar — Views', () => {
     test.beforeEach(async ({ page }) => {
         await login(page)
-        await navigateToAddon(page, 'calendar')
+        await navigateToPackage(page, 'calendar')
     })
 
     test('calendar renders default view', async ({ page }) => {

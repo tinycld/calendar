@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { login, navigateToAddon, ORG_SLUG } from '../../../tests/e2e/helpers'
+import { login, navigateToPackage, ORG_SLUG } from '../../../tests/e2e/helpers'
 
 test.describe('Calendar — Events', () => {
     test.beforeEach(async ({ page }) => {
@@ -7,7 +7,7 @@ test.describe('Calendar — Events', () => {
     })
 
     test('calendar loads with view controls', async ({ page }) => {
-        await navigateToAddon(page, 'calendar')
+        await navigateToPackage(page, 'calendar')
         await page.getByRole('button', { name: 'Week' }).click()
         await expect(page.getByRole('button', { name: 'Today' })).toBeVisible()
     })
@@ -48,7 +48,7 @@ test.describe('Calendar — Events', () => {
     })
 
     test('toggle calendar visibility in sidebar', async ({ page }) => {
-        await navigateToAddon(page, 'calendar')
+        await navigateToPackage(page, 'calendar')
         const personalCalendar = page.getByText('Personal').first()
         if (await personalCalendar.isVisible()) {
             await personalCalendar.click()
