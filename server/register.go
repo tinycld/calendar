@@ -8,9 +8,34 @@ import (
 	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
+	"tinycld.org/audit"
 )
 
 func Register(app *pocketbase.PocketBase) {
+	// Audit logging for calendar collections
+	audit.RegisterCollection(app, "calendar_calendars", &audit.CollectionConfig{
+		ExtractLabel: audit.LabelFromField("name"),
+	})
+	audit.RegisterCollection(app, "calendar_events", &audit.CollectionConfig{
+		ResolveOrg: func(a core.App, record *core.Record) string {
+			calendarID := record.GetString("calendar")
+			if calendarID == "" {
+				return ""
+			}
+			return audit.ResolveViaRelation(a, "calendar_calendars", calendarID, "org")
+		},
+		ExtractLabel: audit.LabelFromField("title"),
+	})
+	audit.RegisterCollection(app, "calendar_members", &audit.CollectionConfig{
+		ResolveOrg: func(a core.App, record *core.Record) string {
+			calendarID := record.GetString("calendar")
+			if calendarID == "" {
+				return ""
+			}
+			return audit.ResolveViaRelation(a, "calendar_calendars", calendarID, "org")
+		},
+	})
+
 	// Auto-create personal calendar when a user joins an org
 	app.OnRecordAfterCreateSuccess("user_org").BindFunc(func(e *core.RecordEvent) error {
 		handleUserOrgCreated(app, e.Record)
