@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronRight } from 'lucide-react-native'
+import { AlertTriangle, Check, ChevronDown, ChevronRight } from 'lucide-react-native'
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { useThemeColor } from '~/lib/use-app-theme'
@@ -12,6 +12,8 @@ interface CalendarListProps {
     onToggle: (id: string) => void
     onColorChange: (calendarId: string, color: CalendarColorKey) => void
     onShowOnly: (calendarId: string) => void
+    onRefreshSubscription?: (calendarId: string) => void
+    onDeleteCalendar?: (calendarId: string) => void
 }
 
 function CalendarCheckbox({
@@ -20,41 +22,64 @@ function CalendarCheckbox({
     onToggle,
     onColorChange,
     onShowOnly,
+    onRefreshSubscription,
+    onDeleteCalendar,
 }: {
     calendar: CalendarWithGroup
     isChecked: boolean
     onToggle: (id: string) => void
     onColorChange: (calendarId: string, color: CalendarColorKey) => void
     onShowOnly: (calendarId: string) => void
+    onRefreshSubscription?: (calendarId: string) => void
+    onDeleteCalendar?: (calendarId: string) => void
 }) {
     const fgColor = useThemeColor('foreground')
+    const dangerColor = useThemeColor('danger')
     const colors = getCalendarColorResolved(calendar.color)
 
     return (
-        <View className="flex-row items-center pr-3 py-[5px]">
-            <Pressable
-                className="flex-row items-center gap-2.5 flex-1 pl-8"
-                onPress={() => onToggle(calendar.id)}
-            >
-                <View
-                    className="size-4 rounded-sm items-center justify-center"
-                    style={{
-                        backgroundColor: isChecked ? colors.bg : 'transparent',
-                        borderColor: isChecked ? undefined : colors.bg,
-                        borderWidth: isChecked ? 0 : 2,
-                    }}
+        <View>
+            <View className="flex-row items-center pr-3 py-[5px]">
+                <Pressable
+                    className="flex-row items-center gap-2.5 flex-1 pl-8"
+                    onPress={() => onToggle(calendar.id)}
                 >
-                    {isChecked && <Check size={12} color={colors.text} />}
-                </View>
-                <Text style={{ fontSize: 13, color: fgColor, flex: 1 }} numberOfLines={1}>
-                    {calendar.name}
+                    <View
+                        className="size-4 rounded-sm items-center justify-center"
+                        style={{
+                            backgroundColor: isChecked ? colors.bg : 'transparent',
+                            borderColor: isChecked ? undefined : colors.bg,
+                            borderWidth: isChecked ? 0 : 2,
+                        }}
+                    >
+                        {isChecked && <Check size={12} color={colors.text} />}
+                    </View>
+                    <Text style={{ fontSize: 13, color: fgColor, flex: 1 }} numberOfLines={1}>
+                        {calendar.name}
+                    </Text>
+                    {calendar.subscription_error ? (
+                        <AlertTriangle size={14} color={dangerColor} />
+                    ) : null}
+                </Pressable>
+                <CalendarMenu
+                    currentColor={calendar.color}
+                    onColorChange={color => onColorChange(calendar.id, color)}
+                    onShowOnly={() => onShowOnly(calendar.id)}
+                    calendar={calendar}
+                    onRefresh={
+                        onRefreshSubscription ? () => onRefreshSubscription(calendar.id) : undefined
+                    }
+                    onDelete={onDeleteCalendar ? () => onDeleteCalendar(calendar.id) : undefined}
+                />
+            </View>
+            {calendar.subscription_error ? (
+                <Text
+                    style={{ fontSize: 11, color: dangerColor, paddingLeft: 52, paddingRight: 12 }}
+                    numberOfLines={2}
+                >
+                    {calendar.subscription_error}
                 </Text>
-            </Pressable>
-            <CalendarMenu
-                currentColor={calendar.color}
-                onColorChange={color => onColorChange(calendar.id, color)}
-                onShowOnly={() => onShowOnly(calendar.id)}
-            />
+            ) : null}
         </View>
     )
 }
@@ -66,6 +91,8 @@ function CalendarSection({
     onToggle,
     onColorChange,
     onShowOnly,
+    onRefreshSubscription,
+    onDeleteCalendar,
 }: {
     title: string
     calendars: CalendarWithGroup[]
@@ -73,6 +100,8 @@ function CalendarSection({
     onToggle: (id: string) => void
     onColorChange: (calendarId: string, color: CalendarColorKey) => void
     onShowOnly: (calendarId: string) => void
+    onRefreshSubscription?: (calendarId: string) => void
+    onDeleteCalendar?: (calendarId: string) => void
 }) {
     const [expanded, setExpanded] = useState(true)
     const mutedColor = useThemeColor('muted-foreground')
@@ -96,6 +125,8 @@ function CalendarSection({
                         onToggle={onToggle}
                         onColorChange={onColorChange}
                         onShowOnly={onShowOnly}
+                        onRefreshSubscription={onRefreshSubscription}
+                        onDeleteCalendar={onDeleteCalendar}
                     />
                 ))}
         </View>
@@ -108,9 +139,12 @@ export function CalendarList({
     onToggle,
     onColorChange,
     onShowOnly,
+    onRefreshSubscription,
+    onDeleteCalendar,
 }: CalendarListProps) {
     const mine = calendars.filter(c => c.group === 'mine')
     const other = calendars.filter(c => c.group === 'other')
+    const subscribed = calendars.filter(c => c.group === 'subscribed')
 
     return (
         <View className="gap-1">
@@ -121,6 +155,7 @@ export function CalendarList({
                 onToggle={onToggle}
                 onColorChange={onColorChange}
                 onShowOnly={onShowOnly}
+                onDeleteCalendar={onDeleteCalendar}
             />
             <CalendarSection
                 title="Other calendars"
@@ -129,7 +164,20 @@ export function CalendarList({
                 onToggle={onToggle}
                 onColorChange={onColorChange}
                 onShowOnly={onShowOnly}
+                onDeleteCalendar={onDeleteCalendar}
             />
+            {subscribed.length > 0 && (
+                <CalendarSection
+                    title="Subscribed calendars"
+                    calendars={subscribed}
+                    visibleIds={visibleIds}
+                    onToggle={onToggle}
+                    onColorChange={onColorChange}
+                    onShowOnly={onShowOnly}
+                    onRefreshSubscription={onRefreshSubscription}
+                    onDeleteCalendar={onDeleteCalendar}
+                />
+            )}
         </View>
     )
 }

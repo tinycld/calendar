@@ -1,6 +1,6 @@
 import { useGlobalSearchParams, useRouter } from 'expo-router'
-import { CalendarDays, Columns3, Grid3X3, List } from 'lucide-react-native'
-import { useMemo } from 'react'
+import { CalendarDays, Columns3, Grid3X3, Link2, List } from 'lucide-react-native'
+import { useCallback, useMemo, useState } from 'react'
 import { View } from 'react-native'
 import {
     SidebarActionButton,
@@ -10,9 +10,12 @@ import {
 } from '~/components/sidebar-primitives'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { useWorkspaceLayout } from '~/components/workspace/useWorkspaceLayout'
+import { mutation, useMutation } from '~/lib/mutations'
 import { useOrgHref } from '~/lib/org-routes'
+import { useStore } from '~/lib/pocketbase'
 import { CalendarList } from './components/CalendarList'
 import { MiniCalendar } from './components/MiniCalendar'
+import { SubscriptionDialog } from './components/SubscriptionDialog'
 import { useVisibleCalendars } from './hooks/useCalendarEvents'
 import { parseDate, toDateString } from './hooks/useCalendarNavigation'
 import type { ViewMode } from './hooks/useCalendarView'
@@ -40,6 +43,9 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
     const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
     const isMobile = useBreakpoint() === 'mobile'
     const { setDrawerOpen } = useWorkspaceLayout()
+    const [subscribeOpen, setSubscribeOpen] = useState(false)
+
+    const [calendarsCollection] = useStore('calendar_calendars')
 
     const selectedDate = useMemo(() => parseDate(date), [date])
 
@@ -55,6 +61,31 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
     const handleViewModeSelect = (mode: ViewMode) => {
         router.push(orgHref('calendar', { view: mode, date: date ?? toDateString(new Date()) }))
     }
+
+    const refreshMutation = useMutation({
+        mutationFn: mutation(function* (calendarId: string) {
+            yield calendarsCollection.update(calendarId, draft => {
+                draft.subscription_error = ''
+                draft.subscription_last_sync = ''
+            })
+        }),
+    })
+
+    const handleRefreshSubscription = useCallback(
+        (calendarId: string) => refreshMutation.mutate(calendarId),
+        [refreshMutation]
+    )
+
+    const deleteCalendarMutation = useMutation({
+        mutationFn: mutation(function* (calendarId: string) {
+            yield calendarsCollection.delete(calendarId)
+        }),
+    })
+
+    const handleDeleteCalendar = useCallback(
+        (calendarId: string) => deleteCalendarMutation.mutate(calendarId),
+        [deleteCalendarMutation]
+    )
 
     return (
         <SidebarNav>
@@ -88,7 +119,19 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
                 onToggle={toggleCalendar}
                 onColorChange={setCalendarColor}
                 onShowOnly={showOnlyCalendar}
+                onRefreshSubscription={handleRefreshSubscription}
+                onDeleteCalendar={handleDeleteCalendar}
             />
+
+            <SidebarDivider />
+
+            <SidebarItem
+                label="Subscribe to calendar"
+                icon={Link2}
+                onPress={() => setSubscribeOpen(true)}
+            />
+
+            <SubscriptionDialog open={subscribeOpen} onClose={() => setSubscribeOpen(false)} />
         </SidebarNav>
     )
 }

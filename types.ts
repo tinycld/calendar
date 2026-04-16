@@ -34,6 +34,9 @@ export interface CalendarCalendars {
     name: string
     description: string
     color: CalendarColorKey
+    subscription_url: string
+    subscription_last_sync: string
+    subscription_error: string
     created: string
     updated: string
 }
@@ -68,7 +71,7 @@ export interface CalendarEvents {
     updated: string
 }
 
-export type CalendarWithGroup = CalendarCalendars & { group: 'mine' | 'other' }
+export type CalendarWithGroup = CalendarCalendars & { group: 'mine' | 'other' | 'subscribed' }
 
 export type CalendarSchema = {
     calendar_calendars: {

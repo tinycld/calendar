@@ -55,6 +55,7 @@ export default function CalendarLayout() {
                 anchorRect={popover.type === 'event-detail' ? popover.anchorRect : undefined}
                 onClose={closePopover}
                 onDelete={id => deleteEvent.mutate(id)}
+                isReadOnly={!!calendar?.subscription_url}
             />
         </View>
     )

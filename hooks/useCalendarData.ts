@@ -41,21 +41,30 @@ export function useCalendarData() {
         [memberships]
     )
 
-    const calendars = useMemo<CalendarWithGroup[]>(
+    const calendars = useMemo(
         () =>
             (allCalendars ?? []).map(cal => {
                 const membership = membershipByCalendar.get(cal.id)
+                const group: CalendarWithGroup['group'] = cal.subscription_url
+                    ? 'subscribed'
+                    : membership?.role === 'owner'
+                      ? 'mine'
+                      : 'other'
                 return {
                     ...cal,
                     color: membership?.color || cal.color,
-                    group: membership?.role === 'owner' ? 'mine' : 'other',
-                }
+                    group,
+                } as CalendarWithGroup
             }),
         [allCalendars, membershipByCalendar]
     )
 
     const mineCalendars = useMemo(() => calendars.filter(c => c.group === 'mine'), [calendars])
     const otherCalendars = useMemo(() => calendars.filter(c => c.group === 'other'), [calendars])
+    const subscribedCalendars = useMemo(
+        () => calendars.filter(c => c.group === 'subscribed'),
+        [calendars]
+    )
 
     const calendarMap = useMemo(() => new Map(calendars.map(c => [c.id, c])), [calendars])
 
@@ -89,6 +98,7 @@ export function useCalendarData() {
         calendars,
         mineCalendars,
         otherCalendars,
+        subscribedCalendars,
         calendarMap,
         membershipByCalendar,
         setCalendarColor,

@@ -46,7 +46,7 @@ export default function EventEditorScreen() {
     const breakpoint = useBreakpoint()
     const { orgSlug } = useOrgInfo()
     const userOrg = useCurrentUserOrg(orgSlug)
-    const { calendars, mineCalendars } = useVisibleCalendars()
+    const { calendars, mineCalendars, calendarMap } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
 
     const { baseId } = parseEventId(id ?? '')
@@ -160,6 +160,28 @@ export default function EventEditorScreen() {
 
     const isLoadingEvent = !isNew && !existingEvents
     const isNotFound = !isNew && existingEvents && !event
+    const eventCalendar = event ? calendarMap.get(event.calendar) : undefined
+    const isReadOnly = !!eventCalendar?.subscription_url
+
+    if (!isNew && isReadOnly) {
+        return (
+            <View
+                className="flex-1 items-center justify-center"
+                style={{ backgroundColor: bgColor }}
+            >
+                <Text style={{ fontSize: 16, color: mutedColor }}>
+                    Events from subscribed calendars cannot be edited
+                </Text>
+                <Pressable
+                    onPress={() => router.back()}
+                    className="mt-3 px-3 py-1.5 rounded-md border"
+                    style={{ borderColor: mutedColor }}
+                >
+                    <Text style={{ fontSize: 14, color: fgColor }}>Go back</Text>
+                </Pressable>
+            </View>
+        )
+    }
 
     if (isNotFound) {
         return (
