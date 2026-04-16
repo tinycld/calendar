@@ -19,6 +19,7 @@ interface EventDetailPopoverProps {
     anchorRect?: AnchorRect
     onClose: () => void
     onDelete?: (eventId: string) => void
+    isReadOnly?: boolean
 }
 
 function formatEventDateTime(event: CalendarEvents): string {
@@ -59,6 +60,7 @@ function MobileEventDetail({
     calendarColorKey,
     onClose,
     onDelete,
+    isReadOnly,
 }: Omit<EventDetailPopoverProps, 'isVisible'> & { event: CalendarEvents }) {
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
@@ -80,20 +82,22 @@ function MobileEventDetail({
                 <Pressable onPress={onClose} hitSlop={8}>
                     <X size={22} color={fgColor} />
                 </Pressable>
-                <View className="flex-row gap-5">
-                    <Pressable onPress={onEdit} hitSlop={8}>
-                        <Pencil size={20} color={mutedColor} />
-                    </Pressable>
-                    <Pressable
-                        hitSlop={8}
-                        onPress={() => {
-                            onDelete?.(baseId)
-                            onClose()
-                        }}
-                    >
-                        <Trash2 size={20} color={mutedColor} />
-                    </Pressable>
-                </View>
+                {!isReadOnly && (
+                    <View className="flex-row gap-5">
+                        <Pressable onPress={onEdit} hitSlop={8}>
+                            <Pencil size={20} color={mutedColor} />
+                        </Pressable>
+                        <Pressable
+                            hitSlop={8}
+                            onPress={() => {
+                                onDelete?.(baseId)
+                                onClose()
+                            }}
+                        >
+                            <Trash2 size={20} color={mutedColor} />
+                        </Pressable>
+                    </View>
+                )}
             </View>
 
             <ScrollView
@@ -247,6 +251,7 @@ export function EventDetailPopover({
     anchorRect,
     onClose,
     onDelete,
+    isReadOnly,
 }: EventDetailPopoverProps) {
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
@@ -406,12 +411,16 @@ export function EventDetailPopover({
                     ) : null}
 
                     <View className="flex-row justify-end gap-4 mb-3">
-                        <Pressable onPress={onEdit} hitSlop={8}>
-                            <Pencil size={18} color={mutedColor} />
-                        </Pressable>
-                        <Pressable onPress={handleDelete} hitSlop={8}>
-                            <Trash2 size={18} color={mutedColor} />
-                        </Pressable>
+                        {!isReadOnly && (
+                            <>
+                                <Pressable onPress={onEdit} hitSlop={8}>
+                                    <Pencil size={18} color={mutedColor} />
+                                </Pressable>
+                                <Pressable onPress={handleDelete} hitSlop={8}>
+                                    <Trash2 size={18} color={mutedColor} />
+                                </Pressable>
+                            </>
+                        )}
                         <Pressable onPress={onClose} hitSlop={8}>
                             <X size={18} color={mutedColor} />
                         </Pressable>
@@ -433,6 +442,19 @@ export function EventDetailPopover({
                         <Clock size={16} color={mutedColor} />
                         <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>{dateTimeStr}</Text>
                     </View>
+
+                    {event.recurrence ? (
+                        <Text
+                            style={{
+                                fontSize: 13,
+                                color: mutedColor,
+                                marginBottom: 8,
+                                paddingLeft: 22,
+                            }}
+                        >
+                            {getRecurrenceLabel(event)}
+                        </Text>
+                    ) : null}
 
                     {event.location ? (
                         <View className="flex-row items-start gap-2.5 mb-2 pl-0.5">
