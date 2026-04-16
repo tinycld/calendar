@@ -15,17 +15,24 @@ export type PopoverState =
 interface CalendarUIState {
     popover: PopoverState
     visibleIds: string[]
+    /**
+     * Keyboard-driven focus index into the schedule view. Persisted so
+     * navigating away from and back to the calendar preserves j/k position.
+     */
+    scheduleFocusedIndex: number
     openQuickCreate: (date: Date, hour: number) => void
     openEventDetail: (eventId: string, anchorRect?: AnchorRect) => void
     closePopover: () => void
     toggleCalendar: (id: string) => void
     showOnlyCalendar: (id: string) => void
     initVisibleIds: (ids: string[]) => void
+    setScheduleFocusedIndex: (i: number | ((prev: number) => number)) => void
 }
 
 export const useCalendarUIStore = create<CalendarUIState>(set => ({
     popover: { type: 'closed' },
     visibleIds: [],
+    scheduleFocusedIndex: 0,
 
     openQuickCreate: (date, hour) => set({ popover: { type: 'quick-create', date, hour } }),
 
@@ -51,4 +58,10 @@ export const useCalendarUIStore = create<CalendarUIState>(set => ({
             if (state.visibleIds.length > 0) return state
             return { visibleIds: ids }
         }),
+
+    setScheduleFocusedIndex: next =>
+        set(state => ({
+            scheduleFocusedIndex:
+                typeof next === 'function' ? next(state.scheduleFocusedIndex) : next,
+        })),
 }))

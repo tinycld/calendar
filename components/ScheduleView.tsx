@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import {
     FlatList,
     type GestureResponderEvent,
@@ -18,6 +18,7 @@ import {
     toDateString,
 } from '../hooks/useCalendarNavigation'
 import { useCalendarView } from '../hooks/useCalendarView'
+import { useCalendarUIStore } from '../stores/calendar-ui-store'
 import type { CalendarEvents } from '../types'
 import { getCalendarColorResolved } from './calendar-colors'
 
@@ -226,9 +227,11 @@ interface ScheduleShortcutsArgs {
 }
 
 function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleShortcutsArgs) {
-    const [focusedIndex, setFocusedIndex] = useState(0)
+    const storedIndex = useCalendarUIStore(s => s.scheduleFocusedIndex)
+    const setFocusedIndex = useCalendarUIStore(s => s.setScheduleFocusedIndex)
     useShortcutScope('list')
 
+    const focusedIndex = events.length === 0 ? 0 : Math.min(storedIndex, events.length - 1)
     const focusedId = events[focusedIndex]?.id ?? null
 
     const shortcuts = useMemo<Shortcut[]>(
@@ -272,7 +275,7 @@ function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleS
                 run: () => onNewEvent(),
             },
         ],
-        [events.length, focusedId, openEventDetail, onNewEvent]
+        [events.length, focusedId, openEventDetail, onNewEvent, setFocusedIndex]
     )
 
     useRegisterShortcuts(shortcuts)
