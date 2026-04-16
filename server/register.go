@@ -2,13 +2,16 @@ package calendar
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/emersion/go-webdav/caldav"
 	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"tinycld.org/audit"
+	"tinycld.org/notify"
 )
 
 func Register(app *pocketbase.PocketBase) {
@@ -48,7 +51,90 @@ func Register(app *pocketbase.PocketBase) {
 		return e.Next()
 	})
 
+	// Normalize webcal:// URLs on create/update
+	app.OnRecordCreate("calendar_calendars").BindFunc(func(e *core.RecordEvent) error {
+		if url := e.Record.GetString("subscription_url"); url != "" {
+			e.Record.Set("subscription_url", normalizeSubscriptionURL(url))
+		}
+		return e.Next()
+	})
+
+	app.OnRecordUpdate("calendar_calendars").BindFunc(func(e *core.RecordEvent) error {
+		if url := e.Record.GetString("subscription_url"); url != "" {
+			e.Record.Set("subscription_url", normalizeSubscriptionURL(url))
+		}
+		return e.Next()
+	})
+
+	// Trigger immediate sync when subscription_url changes or a refresh is requested
+	// (refresh clears subscription_last_sync to signal the hook)
+	app.OnRecordAfterUpdateSuccess("calendar_calendars").BindFunc(func(e *core.RecordEvent) error {
+		newURL := e.Record.GetString("subscription_url")
+		if newURL == "" {
+			return e.Next()
+		}
+		oldURL := e.Record.Original().GetString("subscription_url")
+		oldSync := e.Record.Original().GetString("subscription_last_sync")
+		newSync := e.Record.GetString("subscription_last_sync")
+		urlChanged := newURL != oldURL
+		refreshRequested := oldSync != "" && newSync == ""
+		if urlChanged || refreshRequested {
+			calId := e.Record.Id
+			go func() {
+				rec, err := app.FindRecordById("calendar_calendars", calId)
+				if err != nil {
+					return
+				}
+				if err := syncSubscription(app, rec); err != nil {
+					app.Logger().Warn("subscription: immediate sync failed",
+						"calendar", calId,
+						"url", rec.GetString("subscription_url"),
+						"error", err)
+					errMsg := err.Error()
+					if len(errMsg) > 500 {
+						errMsg = errMsg[:500]
+					}
+					rec.Set("subscription_error", errMsg)
+					rec.Set("subscription_last_sync", time.Now().UTC().Format(pbTimeFormat))
+					_ = app.Save(rec)
+					notifySubscriptionError(app, rec, errMsg)
+				}
+			}()
+		}
+		return e.Next()
+	})
+
+	// Trigger immediate sync when a new subscription is created
+	app.OnRecordAfterCreateSuccess("calendar_calendars").BindFunc(func(e *core.RecordEvent) error {
+		if url := e.Record.GetString("subscription_url"); url != "" {
+			calId := e.Record.Id
+			go func() {
+				rec, err := app.FindRecordById("calendar_calendars", calId)
+				if err != nil {
+					return
+				}
+				if err := syncSubscription(app, rec); err != nil {
+					app.Logger().Warn("subscription: immediate sync failed",
+						"calendar", calId,
+						"url", rec.GetString("subscription_url"),
+						"error", err)
+					errMsg := err.Error()
+					if len(errMsg) > 500 {
+						errMsg = errMsg[:500]
+					}
+					rec.Set("subscription_error", errMsg)
+					rec.Set("subscription_last_sync", time.Now().UTC().Format(pbTimeFormat))
+					_ = app.Save(rec)
+					notifySubscriptionError(app, rec, errMsg)
+				}
+			}()
+		}
+		return e.Next()
+	})
+
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		go startSubscriptionSync(app)
+
 		backend := &CalDAVBackend{app: app}
 		handler := caldav.Handler{Backend: backend, Prefix: "/caldav"}
 
@@ -116,11 +202,57 @@ func Register(app *pocketbase.PocketBase) {
 		return nil
 	})
 
+	// Notify invited user when a new calendar membership is created
+	app.OnRecordAfterCreateSuccess("calendar_members").BindFunc(func(e *core.RecordEvent) error {
+		go notifyCalendarInvite(app, e.Record)
+		return e.Next()
+	})
+
 	// Auto-generate ical_uid for events created via the web UI
 	app.OnRecordCreate("calendar_events").BindFunc(func(e *core.RecordEvent) error {
 		if e.Record.GetString("ical_uid") == "" {
 			e.Record.Set("ical_uid", "urn:uuid:"+uuid.NewString())
 		}
 		return e.Next()
+	})
+}
+
+func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record) {
+	userOrgID := memberRecord.GetString("user_org")
+	calendarID := memberRecord.GetString("calendar")
+	role := memberRecord.GetString("role")
+
+	// Skip notifications for owner memberships (auto-created)
+	if role == "owner" {
+		return
+	}
+
+	userOrgRecord, err := app.FindRecordById("user_org", userOrgID)
+	if err != nil {
+		return
+	}
+	userID := userOrgRecord.GetString("user")
+	orgID := userOrgRecord.GetString("org")
+
+	calendar, err := app.FindRecordById("calendar_calendars", calendarID)
+	if err != nil {
+		return
+	}
+	calendarName := calendar.GetString("name")
+
+	orgRecord, err := app.FindRecordById("orgs", orgID)
+	if err != nil {
+		return
+	}
+	orgSlug := orgRecord.GetString("slug")
+
+	notify.NotifyUser(app, notify.NotifyParams{
+		UserID:  userID,
+		OrgID:   orgID,
+		Type:    "calendar_invite",
+		Package: "calendar",
+		Title:   fmt.Sprintf("You were added to calendar: %s", calendarName),
+		Body:    fmt.Sprintf("You now have %s access", role),
+		URL:     fmt.Sprintf("/a/%s/calendar", orgSlug),
 	})
 }

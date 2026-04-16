@@ -7,12 +7,19 @@ require (
 	github.com/emersion/go-webdav v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/pocketbase/pocketbase v0.36.8
+	github.com/teambition/rrule-go v1.8.2
 	tinycld.org/audit v0.0.0
+	tinycld.org/notify v0.0.0-00010101000000-000000000000
 )
 
 replace tinycld.org/audit => ../../../server/audit
 
+replace tinycld.org/notify => ../../../server/notify
+
+replace tinycld.org/push => ../../../server/push
+
 require (
+	github.com/SherClockHolmes/webpush-go v1.4.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/domodwyer/mailyak/v3 v3.6.2 // indirect
@@ -31,7 +38,6 @@ require (
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/teambition/rrule-go v1.8.2 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/image v0.38.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
@@ -43,4 +49,5 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.48.0 // indirect
+	tinycld.org/push v0.0.0 // indirect
 )
