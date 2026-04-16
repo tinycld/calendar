@@ -1,4 +1,4 @@
-import { newRecordId } from 'pbtsdb'
+import { newRecordId } from 'pbtsdb/core'
 import { Pressable, Text, View } from 'react-native'
 import { handleMutationErrorsWithForm } from '~/lib/errors'
 import { mutation, useMutation } from '~/lib/mutations'

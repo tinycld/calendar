@@ -1,7 +1,7 @@
 import { eq } from '@tanstack/db'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
-import { newRecordId } from 'pbtsdb'
+import { newRecordId } from 'pbtsdb/core'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { handleMutationErrorsWithForm } from '~/lib/errors'

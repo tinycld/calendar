@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
 import { Users, X } from 'lucide-react-native'
-import { newRecordId } from 'pbtsdb'
+import { newRecordId } from 'pbtsdb/core'
 import { Pressable, Text, View } from 'react-native'
 import { useBreakpoint } from '~/components/workspace/useBreakpoint'
 import { captureException } from '~/lib/errors'
