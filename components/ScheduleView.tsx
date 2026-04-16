@@ -290,12 +290,11 @@ function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleS
                 scope: 'list',
                 group: 'Calendar',
                 description: 'Open event',
-                run: e => {
+                run: () => {
                     if (!focusedId) return
                     openEventDetail(focusedId, {
                         nativeEvent: {},
                     } as unknown as GestureResponderEvent)
-                    void e
                 },
             },
             {
