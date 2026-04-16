@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
     FlatList,
     type GestureResponderEvent,
@@ -7,6 +7,7 @@ import {
     Text,
     View,
 } from 'react-native'
+import { type Shortcut, useRegisterShortcuts, useShortcutScope } from '~/lib/shortcuts'
 import { useThemeColor } from '~/lib/use-app-theme'
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
 import {
@@ -190,6 +191,14 @@ export function ScheduleView() {
         return result
     }, [focusDate, events])
 
+    const flatEvents = useMemo(() => rows.flatMap(r => r.events), [rows])
+
+    useScheduleShortcuts({
+        events: flatEvents,
+        openEventDetail,
+        onNewEvent: () => openQuickCreate(new Date(), 9),
+    })
+
     const handleEmptyPress = (date: Date) => {
         openQuickCreate(date, 9)
     }
@@ -208,4 +217,63 @@ export function ScheduleView() {
             className="flex-1"
         />
     )
+}
+
+interface ScheduleShortcutsArgs {
+    events: CalendarEvents[]
+    openEventDetail: (id: string, e: GestureResponderEvent) => void
+    onNewEvent: () => void
+}
+
+function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleShortcutsArgs) {
+    const [focusedIndex, setFocusedIndex] = useState(0)
+    useShortcutScope('list')
+
+    const focusedId = events[focusedIndex]?.id ?? null
+
+    const shortcuts = useMemo<Shortcut[]>(
+        () => [
+            {
+                id: 'calendar.schedule.next',
+                keys: 'j',
+                scope: 'list',
+                group: 'Calendar',
+                description: 'Next event',
+                run: () => setFocusedIndex(i => Math.min(i + 1, Math.max(events.length - 1, 0))),
+            },
+            {
+                id: 'calendar.schedule.prev',
+                keys: 'k',
+                scope: 'list',
+                group: 'Calendar',
+                description: 'Previous event',
+                run: () => setFocusedIndex(i => Math.max(i - 1, 0)),
+            },
+            {
+                id: 'calendar.schedule.open',
+                keys: 'Enter',
+                scope: 'list',
+                group: 'Calendar',
+                description: 'Open event',
+                run: e => {
+                    if (!focusedId) return
+                    openEventDetail(focusedId, {
+                        nativeEvent: {},
+                    } as unknown as GestureResponderEvent)
+                    void e
+                },
+            },
+            {
+                id: 'calendar.schedule.new',
+                keys: 'Shift+C',
+                scope: 'list',
+                group: 'Calendar',
+                description: 'New event',
+                run: () => onNewEvent(),
+            },
+        ],
+        [events.length, focusedId, openEventDetail, onNewEvent]
+    )
+
+    useRegisterShortcuts(shortcuts)
 }

@@ -4,7 +4,7 @@ const manifest = {
     version: '0.1.0',
     description: 'Shared calendar for your organization',
     routes: { directory: 'screens' },
-    nav: { label: 'Calendar', icon: 'calendar', order: 8 },
+    nav: { label: 'Calendar', icon: 'calendar', order: 8, shortcut: 'a' },
     sidebar: { component: 'sidebar' },
     provider: { component: 'provider' },
     migrations: { directory: 'pb-migrations' },
