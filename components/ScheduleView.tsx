@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
     FlatList,
     type GestureResponderEvent,
+    Platform,
     Pressable,
     StyleSheet,
     Text,
@@ -41,22 +42,45 @@ function formatTimeRange(event: CalendarEvents): string {
 
 function EventCard({
     event,
+    isFocused,
     onPress,
 }: {
     event: CalendarEvents
+    isFocused: boolean
     onPress: (id: string, e: GestureResponderEvent) => void
 }) {
     const calendarMap = useCalendarMap()
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
     const surfaceBg = useThemeColor('surface-secondary')
+    const activeIndicator = useThemeColor('active-indicator')
     const cal = calendarMap.get(event.calendar)
     const colors = getCalendarColorResolved(cal?.color ?? 'blue')
+    const [isHovered, setIsHovered] = useState(false)
+
+    // Event cards already carry the calendar's color stripe on the left,
+    // so use an outline ring rather than an inset stripe for focus/hover.
+    const highlight =
+        Platform.OS === 'web' && (isFocused || isHovered)
+            ? ({
+                  boxShadow: `0 0 0 ${isFocused ? 2 : 1}px ${activeIndicator}`,
+              } as Record<string, unknown>)
+            : null
+
+    const hoverWebProps =
+        Platform.OS === 'web'
+            ? {
+                  onMouseEnter: () => setIsHovered(true),
+                  onMouseLeave: () => setIsHovered(false),
+              }
+            : {}
 
     return (
         <Pressable
             className="flex-row rounded-lg overflow-hidden"
             onPress={e => onPress(event.id, e)}
+            style={highlight}
+            {...hoverWebProps}
         >
             <View style={{ width: 4, backgroundColor: colors.bg }} />
             <View
@@ -92,10 +116,12 @@ function EventCard({
 
 function DaySection({
     row,
+    focusedEventId,
     onEventPress,
     onEmptyPress,
 }: {
     row: DayRow
+    focusedEventId: string | null
     onEventPress: (id: string, e: GestureResponderEvent) => void
     onEmptyPress: (date: Date) => void
 }) {
@@ -148,7 +174,12 @@ function DaySection({
             <View className="flex-1 gap-1.5 justify-center">
                 {row.events.length > 0 ? (
                     row.events.map(event => (
-                        <EventCard key={event.id} event={event} onPress={onEventPress} />
+                        <EventCard
+                            key={event.id}
+                            event={event}
+                            isFocused={event.id === focusedEventId}
+                            onPress={onEventPress}
+                        />
                     ))
                 ) : (
                     <Pressable onPress={() => onEmptyPress(row.date)}>
@@ -194,7 +225,7 @@ export function ScheduleView() {
 
     const flatEvents = useMemo(() => rows.flatMap(r => r.events), [rows])
 
-    useScheduleShortcuts({
+    const { focusedId } = useScheduleShortcuts({
         events: flatEvents,
         openEventDetail,
         onNewEvent: () => openQuickCreate(new Date(), 9),
@@ -211,6 +242,7 @@ export function ScheduleView() {
             renderItem={({ item }) => (
                 <DaySection
                     row={item}
+                    focusedEventId={focusedId}
                     onEventPress={openEventDetail}
                     onEmptyPress={handleEmptyPress}
                 />
@@ -279,4 +311,6 @@ function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleS
     )
 
     useRegisterShortcuts(shortcuts)
+
+    return { focusedId }
 }
