@@ -5,7 +5,8 @@ import {
     requestNotificationPermission,
     scheduleNotification,
 } from '~/lib/notifications'
-import { useOrgLiveQuery, useStore } from '~/lib/pocketbase'
+import { useStore } from '~/lib/pocketbase'
+import { useOrgLiveQuery } from '~/lib/use-org-live-query'
 import type { CalendarEvents } from '../types'
 import { useVisibleCalendars } from './useCalendarEvents'
 
