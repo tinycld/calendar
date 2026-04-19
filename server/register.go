@@ -134,6 +134,7 @@ func Register(app *pocketbase.PocketBase) {
 
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		go startSubscriptionSync(app)
+		go startReminderScheduler(app)
 
 		backend := &CalDAVBackend{app: app}
 		handler := caldav.Handler{Backend: backend, Prefix: "/caldav"}
