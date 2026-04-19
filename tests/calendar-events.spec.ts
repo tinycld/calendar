@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { login, navigateToPackage, ORG_SLUG } from '../../../tests/e2e/helpers'
+import { login, navigateToPackage, ORG_SLUG } from '../../../../tests/e2e/helpers'
 
 test.describe('Calendar — Events', () => {
     test.beforeEach(async ({ page }) => {
