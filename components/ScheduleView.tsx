@@ -1,13 +1,5 @@
 import { useMemo, useState } from 'react'
-import {
-    FlatList,
-    type GestureResponderEvent,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native'
+import { FlatList, type GestureResponderEvent, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import { type Shortcut, useRegisterShortcuts, useShortcutScope } from '~/lib/shortcuts'
 import { useThemeColor } from '~/lib/use-app-theme'
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
@@ -78,7 +70,7 @@ function EventCard({
     return (
         <Pressable
             className="flex-row rounded-lg overflow-hidden"
-            onPress={e => onPress(event.id, e)}
+            onPress={(e) => onPress(event.id, e)}
             style={highlight}
             {...hoverWebProps}
         >
@@ -102,10 +94,7 @@ function EventCard({
                 </Text>
                 <Text style={{ fontSize: 12, color: mutedColor }}>{formatTimeRange(event)}</Text>
                 {event.location ? (
-                    <Text
-                        style={{ fontSize: 12, color: mutedColor, marginTop: 1 }}
-                        numberOfLines={1}
-                    >
+                    <Text style={{ fontSize: 12, color: mutedColor, marginTop: 1 }} numberOfLines={1}>
                         {event.location}
                     </Text>
                 ) : null}
@@ -173,7 +162,7 @@ function DaySection({
             </View>
             <View className="flex-1 gap-1.5 justify-center">
                 {row.events.length > 0 ? (
-                    row.events.map(event => (
+                    row.events.map((event) => (
                         <EventCard
                             key={event.id}
                             event={event}
@@ -183,9 +172,7 @@ function DaySection({
                     ))
                 ) : (
                     <Pressable onPress={() => onEmptyPress(row.date)}>
-                        <Text style={{ fontSize: 13, fontStyle: 'italic', color: mutedColor }}>
-                            Nothing planned
-                        </Text>
+                        <Text style={{ fontSize: 13, fontStyle: 'italic', color: mutedColor }}>Nothing planned</Text>
                     </Pressable>
                 )}
             </View>
@@ -207,7 +194,7 @@ export function ScheduleView() {
             const dayEnd = new Date(date)
             dayEnd.setHours(23, 59, 59, 999)
             const dayEvents = events
-                .filter(e => eventOverlapsRange(e, dayStart, dayEnd))
+                .filter((e) => eventOverlapsRange(e, dayStart, dayEnd))
                 .sort((a, b) => {
                     if (a.all_day && !b.all_day) return -1
                     if (!a.all_day && b.all_day) return 1
@@ -223,7 +210,7 @@ export function ScheduleView() {
         return result
     }, [focusDate, events])
 
-    const flatEvents = useMemo(() => rows.flatMap(r => r.events), [rows])
+    const flatEvents = useMemo(() => rows.flatMap((r) => r.events), [rows])
 
     const { focusedId } = useScheduleShortcuts({
         events: flatEvents,
@@ -238,7 +225,7 @@ export function ScheduleView() {
     return (
         <FlatList
             data={rows}
-            keyExtractor={row => row.key}
+            keyExtractor={(row) => row.key}
             renderItem={({ item }) => (
                 <DaySection
                     row={item}
@@ -259,8 +246,8 @@ interface ScheduleShortcutsArgs {
 }
 
 function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleShortcutsArgs) {
-    const storedIndex = useCalendarUIStore(s => s.scheduleFocusedIndex)
-    const setFocusedIndex = useCalendarUIStore(s => s.setScheduleFocusedIndex)
+    const storedIndex = useCalendarUIStore((s) => s.scheduleFocusedIndex)
+    const setFocusedIndex = useCalendarUIStore((s) => s.setScheduleFocusedIndex)
     useShortcutScope('list')
 
     const focusedIndex = events.length === 0 ? 0 : Math.min(storedIndex, events.length - 1)
@@ -274,7 +261,7 @@ function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleS
                 scope: 'list',
                 group: 'Calendar',
                 description: 'Next event',
-                run: () => setFocusedIndex(i => Math.min(i + 1, Math.max(events.length - 1, 0))),
+                run: () => setFocusedIndex((i) => Math.min(i + 1, Math.max(events.length - 1, 0))),
             },
             {
                 id: 'calendar.schedule.prev',
@@ -282,7 +269,7 @@ function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleS
                 scope: 'list',
                 group: 'Calendar',
                 description: 'Previous event',
-                run: () => setFocusedIndex(i => Math.max(i - 1, 0)),
+                run: () => setFocusedIndex((i) => Math.max(i - 1, 0)),
             },
             {
                 id: 'calendar.schedule.open',

@@ -12,30 +12,18 @@ export function DayView() {
     const events = useCalendarEvents(focusDate, focusDate)
 
     const { allDayEvents, timedEvents } = useMemo(() => {
-        const allDay = events.filter(e => e.all_day)
-        const timed = events.filter(e => !e.all_day)
+        const allDay = events.filter((e) => e.all_day)
+        const timed = events.filter((e) => !e.all_day)
         return { allDayEvents: allDay, timedEvents: timed }
     }, [events])
 
-    const columns = useMemo(
-        () => [{ date: focusDate, events: timedEvents }],
-        [focusDate, timedEvents]
-    )
+    const columns = useMemo(() => [{ date: focusDate, events: timedEvents }], [focusDate, timedEvents])
 
     return (
         <View className="flex-1">
             <DayColumnHeader date={focusDate} isToday={isToday(focusDate)} />
-            <AllDayBar
-                events={allDayEvents}
-                weekStart={focusDate}
-                dayCount={1}
-                onEventPress={openEventDetail}
-            />
-            <TimeGrid
-                columns={columns}
-                onSlotPress={openQuickCreate}
-                onEventPress={openEventDetail}
-            />
+            <AllDayBar events={allDayEvents} weekStart={focusDate} dayCount={1} onEventPress={openEventDetail} />
+            <TimeGrid columns={columns} onSlotPress={openQuickCreate} onEventPress={openEventDetail} />
         </View>
     )
 }

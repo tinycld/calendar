@@ -35,14 +35,8 @@ export function CalendarHeader() {
                     <Menu size={22} color={fgColor} />
                 </Pressable>
 
-                <Pressable
-                    onPress={() => setViewMode('month')}
-                    className="flex-row items-center gap-0.5"
-                    hitSlop={4}
-                >
-                    <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor }}>
-                        {dateLabel}
-                    </Text>
+                <Pressable onPress={() => setViewMode('month')} className="flex-row items-center gap-0.5" hitSlop={4}>
+                    <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor }}>{dateLabel}</Text>
                     <ChevronDown size={16} color={mutedColor} />
                 </Pressable>
 
@@ -75,9 +69,7 @@ export function CalendarHeader() {
                 <ChevronRight size={20} color={fgColor} />
             </Pressable>
 
-            <Text style={{ fontSize: 20, fontWeight: '600', color: fgColor, flex: 1 }}>
-                {dateLabel}
-            </Text>
+            <Text style={{ fontSize: 20, fontWeight: '600', color: fgColor, flex: 1 }}>{dateLabel}</Text>
 
             <View
                 className="flex-row border rounded-md overflow-hidden"

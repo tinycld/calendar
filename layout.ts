@@ -38,12 +38,8 @@ function eventsOverlap(a: LayoutEvent, b: LayoutEvent): boolean {
     return a.start < b.end && a.end > b.start
 }
 
-export function layoutTimedEvents(
-    events: LayoutEvent[],
-    startHour: number,
-    hourHeight: number
-): TimedEventLayout[] {
-    const timed = events.filter(e => !e.allDay && e.end > e.start)
+export function layoutTimedEvents(events: LayoutEvent[], startHour: number, hourHeight: number): TimedEventLayout[] {
+    const timed = events.filter((e) => !e.allDay && e.end > e.start)
     if (timed.length === 0) return []
 
     const sorted = [...timed].sort((a, b) => {
@@ -99,7 +95,7 @@ export function layoutTimedEvents(
             const col = eventCol.get(event.id) ?? 0
             let effectiveSpan = 1
             for (let c = col + 1; c < totalCols; c++) {
-                const hasConflict = columns[c].some(other => eventsOverlap(event, other))
+                const hasConflict = columns[c].some((other) => eventsOverlap(event, other))
                 if (hasConflict) break
                 effectiveSpan++
             }
@@ -120,12 +116,8 @@ export function layoutTimedEvents(
     return results
 }
 
-export function layoutAllDayEvents(
-    events: LayoutEvent[],
-    weekStart: Date,
-    dayCount: number
-): AllDayEventLayout[] {
-    const allDay = events.filter(e => e.allDay)
+export function layoutAllDayEvents(events: LayoutEvent[], weekStart: Date, dayCount: number): AllDayEventLayout[] {
+    const allDay = events.filter((e) => e.allDay)
     if (allDay.length === 0) return []
 
     const weekEnd = new Date(weekStart)
@@ -240,14 +232,8 @@ export function layoutMonthEvents(
         const clippedStart = eventStart < weekStart ? weekStart : eventStart
         const clippedEnd = eventEnd > weekEnd ? weekEnd : eventEnd
 
-        const startCol = Math.max(
-            0,
-            Math.floor((clippedStart.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000))
-        )
-        const endCol = Math.min(
-            7,
-            Math.ceil((clippedEnd.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000))
-        )
+        const startCol = Math.max(0, Math.floor((clippedStart.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000)))
+        const endCol = Math.min(7, Math.ceil((clippedEnd.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000)))
         const span = Math.max(1, endCol - startCol)
         const isStart = eventStart >= weekStart
 
@@ -333,7 +319,7 @@ export function layoutMonthEvents(
         }
         cellLayouts.sort((a, b) => a.row - b.row)
 
-        const visible = cellLayouts.filter(l => l.row < maxVisible)
+        const visible = cellLayouts.filter((l) => l.row < maxVisible)
         const totalInCell = cellLayouts.length
         const overflowCount = totalInCell > maxVisible ? totalInCell - maxVisible : 0
 

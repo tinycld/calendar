@@ -33,12 +33,7 @@ interface EventQuickCreateProps {
     onClose: () => void
 }
 
-export function EventQuickCreate({
-    isVisible,
-    initialDate,
-    initialHour,
-    onClose,
-}: EventQuickCreateProps) {
+export function EventQuickCreate({ isVisible, initialDate, initialHour, onClose }: EventQuickCreateProps) {
     const isMobile = useBreakpoint() === 'mobile'
 
     if (isMobile) {
@@ -107,7 +102,7 @@ function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () 
             reset()
             onClose()
         },
-        onError: error => captureException('EventQuickCreate', error),
+        onError: (error) => captureException('EventQuickCreate', error),
     })
 
     const dayLabel = initialDate.toLocaleDateString('en-US', {
@@ -118,25 +113,16 @@ function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () 
     const endHour = (initialHour + 1) % 24
     const timeLabel = `${getTimeLabel(initialHour)} – ${getTimeLabel(endHour)}`
 
-    const onSave = handleSubmit(data => createEvent.mutate(data))
+    const onSave = handleSubmit((data) => createEvent.mutate(data))
 
     return { control, onSave, dayLabel, timeLabel }
 }
 
-function MobileQuickCreate({
-    isVisible,
-    initialDate,
-    initialHour,
-    onClose,
-}: EventQuickCreateProps) {
+function MobileQuickCreate({ isVisible, initialDate, initialHour, onClose }: EventQuickCreateProps) {
     const mutedColor = useThemeColor('muted-foreground')
     const router = useRouter()
     const orgHref = useOrgHref()
-    const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
-        initialDate,
-        initialHour,
-        onClose
-    )
+    const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(initialDate, initialHour, onClose)
 
     const onMoreOptions = () => {
         onClose()
@@ -167,10 +153,7 @@ function MobileQuickCreate({
                         <Text style={{ fontSize: 12, color: mutedColor }}>{timeLabel}</Text>
                     </View>
 
-                    <Pressable
-                        className="flex-row items-center gap-2.5 py-2"
-                        onPress={onMoreOptions}
-                    >
+                    <Pressable className="flex-row items-center gap-2.5 py-2" onPress={onMoreOptions}>
                         <Users size={18} color={mutedColor} />
                         <Text style={{ fontSize: 14, color: mutedColor }}>Add guests</Text>
                     </Pressable>
@@ -180,12 +163,7 @@ function MobileQuickCreate({
     )
 }
 
-function DesktopQuickCreate({
-    isVisible,
-    initialDate,
-    initialHour,
-    onClose,
-}: EventQuickCreateProps) {
+function DesktopQuickCreate({ isVisible, initialDate, initialHour, onClose }: EventQuickCreateProps) {
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
     const bgColor = useThemeColor('background')
@@ -194,11 +172,7 @@ function DesktopQuickCreate({
     const shadowColor = useThemeColor('overlay-backdrop')
     const router = useRouter()
     const orgHref = useOrgHref()
-    const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
-        initialDate,
-        initialHour,
-        onClose
-    )
+    const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(initialDate, initialHour, onClose)
 
     if (!isVisible) return null
 
@@ -223,12 +197,10 @@ function DesktopQuickCreate({
                     shadowRadius: 12,
                     elevation: 8,
                 }}
-                onPress={e => e.stopPropagation()}
+                onPress={(e) => e.stopPropagation()}
             >
                 <View className="flex-row justify-between items-center">
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: fgColor }}>
-                        New Event
-                    </Text>
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: fgColor }}>New Event</Text>
                     <Pressable onPress={onClose} hitSlop={8}>
                         <X size={18} color={mutedColor} />
                     </Pressable>

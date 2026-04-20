@@ -50,7 +50,7 @@ export function EventGuestList({ guests }: EventGuestListProps) {
                 Guests ({guests.length})
             </Text>
 
-            {guests.map(guest => (
+            {guests.map((guest) => (
                 <View key={guest.email} className="flex-row items-center gap-2.5 py-1.5 px-1">
                     <View
                         className="size-8 rounded-full items-center justify-center"
@@ -79,10 +79,7 @@ export function EventGuestList({ guests }: EventGuestListProps) {
                             )}
                         </View>
                         <View className="flex-row items-center gap-1">
-                            <Text
-                                style={{ fontSize: 12, color: mutedColor, flex: 1 }}
-                                numberOfLines={1}
-                            >
+                            <Text style={{ fontSize: 12, color: mutedColor, flex: 1 }} numberOfLines={1}>
                                 {guest.email}
                             </Text>
                             <RsvpIcon rsvp={guest.rsvp} />

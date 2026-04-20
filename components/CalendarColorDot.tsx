@@ -8,7 +8,5 @@ interface CalendarColorDotProps {
 
 export function CalendarColorDot({ colorKey, size = 10 }: CalendarColorDotProps) {
     const { bg } = getCalendarColorResolved(colorKey)
-    return (
-        <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg }} />
-    )
+    return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: bg }} />
 }

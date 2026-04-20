@@ -1,10 +1,6 @@
 import { eq } from '@tanstack/db'
 import { useEffect, useRef } from 'react'
-import {
-    cancelAllNotifications,
-    requestNotificationPermission,
-    scheduleNotification,
-} from '~/lib/notifications'
+import { cancelAllNotifications, requestNotificationPermission, scheduleNotification } from '~/lib/notifications'
 import { useStore } from '~/lib/pocketbase'
 import { useOrgLiveQuery } from '~/lib/use-org-live-query'
 import type { CalendarEvents } from '../types'
@@ -82,11 +78,7 @@ export function useEventReminders() {
         async function run() {
             const granted = await requestNotificationPermission()
             if (!granted || cancelled) return
-            scheduledRef.current = await scheduleEventReminders(
-                events,
-                visibleIds,
-                scheduledRef.current
-            )
+            scheduledRef.current = await scheduleEventReminders(events, visibleIds, scheduledRef.current)
         }
 
         run()

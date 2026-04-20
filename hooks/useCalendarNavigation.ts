@@ -34,11 +34,7 @@ export function endOfMonth(date: Date): Date {
 }
 
 export function isSameDay(a: Date, b: Date): boolean {
-    return (
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate()
-    )
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
 export function isToday(date: Date): boolean {
@@ -53,10 +49,7 @@ export function getWeekDays(weekStart: Date): Date[] {
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 }
 
-export function formatDateLabel(
-    date: Date,
-    viewMode: 'day' | 'week' | 'month' | 'schedule'
-): string {
+export function formatDateLabel(date: Date, viewMode: 'day' | 'week' | 'month' | 'schedule'): string {
     const months = [
         'January',
         'February',
@@ -94,11 +87,7 @@ export function getShortDayName(date: Date): string {
     return SHORT_DAYS[date.getDay()]
 }
 
-export function eventOverlapsRange(
-    event: CalendarEvents,
-    rangeStart: Date,
-    rangeEnd: Date
-): boolean {
+export function eventOverlapsRange(event: CalendarEvents, rangeStart: Date, rangeEnd: Date): boolean {
     const eventStart = new Date(event.start)
     const eventEnd = new Date(event.end)
     if (event.all_day) {

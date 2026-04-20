@@ -100,10 +100,7 @@ function MobileEventDetail({
                 )}
             </View>
 
-            <ScrollView
-                className="flex-1"
-                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
-            >
+            <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}>
                 <View className="flex-row items-center gap-3 mb-5">
                     <View
                         className="size-4 rounded-lg"
@@ -111,9 +108,7 @@ function MobileEventDetail({
                             backgroundColor: colors.bg,
                         }}
                     />
-                    <Text style={{ fontSize: 22, fontWeight: '700', color: fgColor, flex: 1 }}>
-                        {event.title}
-                    </Text>
+                    <Text style={{ fontSize: 22, fontWeight: '700', color: fgColor, flex: 1 }}>{event.title}</Text>
                 </View>
 
                 <View className="flex-row items-start gap-3 mb-3">
@@ -137,9 +132,7 @@ function MobileEventDetail({
                 {event.location ? (
                     <View className="flex-row items-start gap-3 mb-3">
                         <MapPin size={18} color={mutedColor} />
-                        <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>
-                            {event.location}
-                        </Text>
+                        <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>{event.location}</Text>
                     </View>
                 ) : null}
 
@@ -170,9 +163,7 @@ function MobileEventDetail({
                     </Text>
                 ) : null}
 
-                <Text style={{ fontSize: 13, color: mutedColor, marginTop: 16 }}>
-                    {calendarName}
-                </Text>
+                <Text style={{ fontSize: 13, color: mutedColor, marginTop: 16 }}>{calendarName}</Text>
             </ScrollView>
         </View>
     )
@@ -225,20 +216,14 @@ function usePopoverPosition(anchorRect: AnchorRect | undefined) {
         arrowSide = 'left'
         left = Math.max(
             POPOVER_MARGIN,
-            Math.min(
-                winW - POPOVER_WIDTH - POPOVER_MARGIN,
-                anchorRect.x + anchorRect.width + POPOVER_MARGIN
-            )
+            Math.min(winW - POPOVER_WIDTH - POPOVER_MARGIN, anchorRect.x + anchorRect.width + POPOVER_MARGIN)
         )
     }
 
     let top = anchorCenterY - popoverHeight / 2
     top = Math.max(POPOVER_MARGIN, Math.min(winH - popoverHeight - POPOVER_MARGIN, top))
 
-    const arrowOffset = Math.max(
-        ARROW_SIZE + 4,
-        Math.min(popoverHeight - ARROW_SIZE - 4, anchorCenterY - top)
-    )
+    const arrowOffset = Math.max(ARROW_SIZE + 4, Math.min(popoverHeight - ARROW_SIZE - 4, anchorCenterY - top))
 
     return { popoverRef, position: { top, left }, arrowSide, arrowOffset }
 }
@@ -261,9 +246,7 @@ export function EventDetailPopover({
     const router = useRouter()
     const orgHref = useOrgHref()
     const isMobile = useBreakpoint() === 'mobile'
-    const { popoverRef, position, arrowSide, arrowOffset } = usePopoverPosition(
-        isVisible ? anchorRect : undefined
-    )
+    const { popoverRef, position, arrowSide, arrowOffset } = usePopoverPosition(isVisible ? anchorRect : undefined)
 
     if (!isVisible || !event) return null
 
@@ -384,9 +367,9 @@ export function EventDetailPopover({
                     left: position.left,
                 }}
                 onStartShouldSetResponder={() => true}
-                onResponderRelease={e => e.stopPropagation()}
+                onResponderRelease={(e) => e.stopPropagation()}
             >
-                <Pressable onPress={e => e.stopPropagation()} className="flex-1">
+                <Pressable onPress={(e) => e.stopPropagation()} className="flex-1">
                     {anchorRect ? (
                         <>
                             <View
@@ -433,9 +416,7 @@ export function EventDetailPopover({
                                 backgroundColor: colors.bg,
                             }}
                         />
-                        <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor, flex: 1 }}>
-                            {event.title}
-                        </Text>
+                        <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor, flex: 1 }}>{event.title}</Text>
                     </View>
 
                     <View className="flex-row items-start gap-2.5 mb-2 pl-0.5">
@@ -459,9 +440,7 @@ export function EventDetailPopover({
                     {event.location ? (
                         <View className="flex-row items-start gap-2.5 mb-2 pl-0.5">
                             <MapPin size={16} color={mutedColor} />
-                            <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>
-                                {event.location}
-                            </Text>
+                            <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>{event.location}</Text>
                         </View>
                     ) : null}
 
