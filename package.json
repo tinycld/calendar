@@ -6,14 +6,14 @@
     "exports": {
         "./package.json": "./package.json",
         "./manifest": "./manifest.ts",
-        "./types": "./types.ts",
-        "./collections": "./collections.ts",
-        "./screens/*": "./screens/*.tsx",
-        "./sidebar": "./sidebar.tsx",
-        "./provider": "./provider.tsx",
-        "./seed": "./seed.ts",
-        "./hooks/*": "./hooks/*.ts",
-        "./components/*": "./components/*.tsx"
+        "./types": "./tinycld/calendar/types.ts",
+        "./collections": "./tinycld/calendar/collections.ts",
+        "./screens/*": "./tinycld/calendar/screens/*.tsx",
+        "./sidebar": "./tinycld/calendar/sidebar.tsx",
+        "./provider": "./tinycld/calendar/provider.tsx",
+        "./seed": "./tinycld/calendar/seed.ts",
+        "./hooks/*": "./tinycld/calendar/hooks/*.ts",
+        "./components/*": "./tinycld/calendar/components/*.tsx"
     },
     "scripts": {
         "lint": "biome check .",
