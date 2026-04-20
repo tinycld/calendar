@@ -26,15 +26,14 @@ export function useCalendarData() {
     const userOrgId = userOrg?.id ?? ''
 
     const { data: memberships } = useOrgLiveQuery(
-        query =>
-            query.from({ mem: membersCollection }).where(({ mem }) => eq(mem.user_org, userOrgId)),
+        (query) => query.from({ mem: membersCollection }).where(({ mem }) => eq(mem.user_org, userOrgId)),
         [userOrgId]
     )
 
     const membershipByCalendar = useMemo(
         () =>
             new Map(
-                (memberships ?? []).map(m => [
+                (memberships ?? []).map((m) => [
                     m.calendar,
                     { id: m.id, role: m.role, color: m.color } as MembershipInfo,
                 ])
@@ -44,7 +43,7 @@ export function useCalendarData() {
 
     const calendars = useMemo(
         () =>
-            (allCalendars ?? []).map(cal => {
+            (allCalendars ?? []).map((cal) => {
                 const membership = membershipByCalendar.get(cal.id)
                 const group: CalendarWithGroup['group'] = cal.subscription_url
                     ? 'subscribed'
@@ -60,26 +59,17 @@ export function useCalendarData() {
         [allCalendars, membershipByCalendar]
     )
 
-    const mineCalendars = useMemo(() => calendars.filter(c => c.group === 'mine'), [calendars])
-    const otherCalendars = useMemo(() => calendars.filter(c => c.group === 'other'), [calendars])
-    const subscribedCalendars = useMemo(
-        () => calendars.filter(c => c.group === 'subscribed'),
-        [calendars]
-    )
+    const mineCalendars = useMemo(() => calendars.filter((c) => c.group === 'mine'), [calendars])
+    const otherCalendars = useMemo(() => calendars.filter((c) => c.group === 'other'), [calendars])
+    const subscribedCalendars = useMemo(() => calendars.filter((c) => c.group === 'subscribed'), [calendars])
 
-    const calendarMap = useMemo(() => new Map(calendars.map(c => [c.id, c])), [calendars])
+    const calendarMap = useMemo(() => new Map(calendars.map((c) => [c.id, c])), [calendars])
 
     const isLoading = !allCalendars || !memberships
 
     const colorMutation = useMutation({
-        mutationFn: mutation(function* ({
-            membershipId,
-            color,
-        }: {
-            membershipId: string
-            color: CalendarColorKey
-        }) {
-            yield membersCollection.update(membershipId, draft => {
+        mutationFn: mutation(function* ({ membershipId, color }: { membershipId: string; color: CalendarColorKey }) {
+            yield membersCollection.update(membershipId, (draft) => {
                 draft.color = color
             })
         }),

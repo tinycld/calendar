@@ -1,10 +1,5 @@
 import { strict as assert } from 'node:assert'
-import {
-    type LayoutEvent,
-    layoutAllDayEvents,
-    layoutMonthEvents,
-    layoutTimedEvents,
-} from './layout'
+import { type LayoutEvent, layoutAllDayEvents, layoutMonthEvents, layoutTimedEvents } from './layout'
 
 function makeEvent(
     id: string,
@@ -53,8 +48,8 @@ console.log('  two overlapping events get side-by-side columns')
     const events = [makeEvent('a', 9, 10), makeEvent('b', 9, 11)]
     const result = layoutTimedEvents(events, 0, HOUR_HEIGHT)
     assert.equal(result.length, 2)
-    const a = result.find(r => r.id === 'a')!
-    const b = result.find(r => r.id === 'b')!
+    const a = result.find((r) => r.id === 'a')!
+    const b = result.find((r) => r.id === 'b')!
     // b is longer so sorted first → col 0; a is shorter → col 1
     assert.equal(b.left, 0)
     assert.equal(a.left, 50)
@@ -77,7 +72,7 @@ console.log('  three overlapping events get three columns')
     const events = [makeEvent('a', 9, 11), makeEvent('b', 9, 10), makeEvent('c', 10, 11)]
     const result = layoutTimedEvents(events, 0, HOUR_HEIGHT)
     assert.equal(result.length, 3)
-    const cols = new Set(result.map(r => r.left))
+    const cols = new Set(result.map((r) => r.left))
     assert.equal(cols.size, 2) // b and c share a column since they don't overlap
 }
 
@@ -89,7 +84,7 @@ console.log('  expand-to-fill: short event expands into empty columns')
     // b should expand: col 1, can expand right? no more cols -> width 50%
     const events = [makeEvent('a', 9, 11), makeEvent('b', 9, 10), makeEvent('c', 10, 11)]
     const result = layoutTimedEvents(events, 0, HOUR_HEIGHT)
-    const a = result.find(r => r.id === 'a')!
+    const a = result.find((r) => r.id === 'a')!
     assert.equal(a.left, 0)
     assert.equal(a.width, 50)
 }
@@ -160,8 +155,8 @@ console.log('  overlapping all-day events go to different rows')
     const events = [makeAllDayEvent('a', 0, 3), makeAllDayEvent('b', 1, 2)]
     const result = layoutAllDayEvents(events, weekStart, 7)
     assert.equal(result.length, 2)
-    const a = result.find(r => r.id === 'a')!
-    const b = result.find(r => r.id === 'b')!
+    const a = result.find((r) => r.id === 'a')!
+    const b = result.find((r) => r.id === 'b')!
     assert.notEqual(a.row, b.row)
 }
 
@@ -169,8 +164,8 @@ console.log('  non-overlapping all-day events share a row')
 {
     const events = [makeAllDayEvent('a', 0, 1), makeAllDayEvent('b', 3, 1)]
     const result = layoutAllDayEvents(events, weekStart, 7)
-    const a = result.find(r => r.id === 'a')!
-    const b = result.find(r => r.id === 'b')!
+    const a = result.find((r) => r.id === 'a')!
+    const b = result.find((r) => r.id === 'b')!
     assert.equal(a.row, b.row)
 }
 
@@ -218,19 +213,14 @@ console.log('  multi-day event spans across cells')
     const cell1 = result.get(1)!
     const cell2 = result.get(2)!
     const cell3 = result.get(3)!
-    assert.ok(cell1.layouts.some(l => l.id === 'a'))
-    assert.ok(cell2.layouts.some(l => l.id === 'a'))
-    assert.ok(cell3.layouts.some(l => l.id === 'a'))
+    assert.ok(cell1.layouts.some((l) => l.id === 'a'))
+    assert.ok(cell2.layouts.some((l) => l.id === 'a'))
+    assert.ok(cell3.layouts.some((l) => l.id === 'a'))
 }
 
 console.log('  overflow count works with maxVisible')
 {
-    const events = [
-        makeEvent('a', 9, 10),
-        makeEvent('b', 10, 11),
-        makeEvent('c', 11, 12),
-        makeEvent('d', 13, 14),
-    ]
+    const events = [makeEvent('a', 9, 10), makeEvent('b', 10, 11), makeEvent('c', 11, 12), makeEvent('d', 13, 14)]
     const result = layoutMonthEvents(events, weekStart, 2) // max 2 visible
     const cell0 = result.get(0)!
     assert.equal(cell0.layouts.length, 2) // only 2 visible
@@ -242,8 +232,8 @@ console.log('  multi-day events get isAllDay=true, single-day get isAllDay=false
     const events = [makeAllDayEvent('allday', 0, 2), makeEvent('timed', 9, 10)]
     const result = layoutMonthEvents(events, weekStart, 5)
     const cell0 = result.get(0)!
-    const allDayLayout = cell0.layouts.find(l => l.id === 'allday')!
-    const timedLayout = cell0.layouts.find(l => l.id === 'timed')!
+    const allDayLayout = cell0.layouts.find((l) => l.id === 'allday')!
+    const timedLayout = cell0.layouts.find((l) => l.id === 'timed')!
     assert.equal(allDayLayout.isAllDay, true)
     assert.equal(timedLayout.isAllDay, false)
 }
@@ -254,8 +244,8 @@ console.log('  isStart is true only on the starting cell')
     const result = layoutMonthEvents(events, weekStart, 5)
     const cell1 = result.get(1)!
     const cell2 = result.get(2)!
-    const layout1 = cell1.layouts.find(l => l.id === 'a')!
-    const layout2 = cell2.layouts.find(l => l.id === 'a')!
+    const layout1 = cell1.layouts.find((l) => l.id === 'a')!
+    const layout2 = cell2.layouts.find((l) => l.id === 'a')!
     assert.equal(layout1.isStart, true)
     assert.equal(layout2.isStart, true) // same layout object, isStart reflects week boundary
 }

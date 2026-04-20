@@ -52,37 +52,27 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
     return (
         <View className="px-3 py-2">
             <View className="flex-row justify-between items-center mb-2">
-                <Text style={{ fontSize: 13, fontWeight: '600', color: fgColor }}>
-                    {monthLabel}
-                </Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: fgColor }}>{monthLabel}</Text>
                 <View className="flex-row gap-2">
-                    <Pressable
-                        onPress={() => setDisplayMonth(prev => addMonths(prev, -1))}
-                        hitSlop={8}
-                    >
+                    <Pressable onPress={() => setDisplayMonth((prev) => addMonths(prev, -1))} hitSlop={8}>
                         <ChevronLeft size={16} color={mutedColor} />
                     </Pressable>
-                    <Pressable
-                        onPress={() => setDisplayMonth(prev => addMonths(prev, 1))}
-                        hitSlop={8}
-                    >
+                    <Pressable onPress={() => setDisplayMonth((prev) => addMonths(prev, 1))} hitSlop={8}>
                         <ChevronRight size={16} color={mutedColor} />
                     </Pressable>
                 </View>
             </View>
 
             <View className="flex-row">
-                {DAY_LETTERS.map(day => (
+                {DAY_LETTERS.map((day) => (
                     <View key={day.key} className="items-center py-px" style={{ width: '14.28%' }}>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: mutedColor }}>
-                            {day.label}
-                        </Text>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: mutedColor }}>{day.label}</Text>
                     </View>
                 ))}
             </View>
 
             <View className="flex-row flex-wrap">
-                {grid.map(cell => {
+                {grid.map((cell) => {
                     const isSelected = isSameDay(cell.date, selectedDate)
                     const cellKey = cell.date.toISOString().split('T')[0]
 

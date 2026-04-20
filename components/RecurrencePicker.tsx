@@ -38,7 +38,7 @@ export function RecurrencePicker({ value, onChange, eventStartDate }: Recurrence
 
     const displayLabel = value ? describeRRule(value, eventStartDate) : 'Does not repeat'
 
-    const isPresetValue = presets.some(p => p.value === value)
+    const isPresetValue = presets.some((p) => p.value === value)
 
     const handlePresetSelect = (preset: string) => {
         setShowPresets(false)
@@ -60,9 +60,7 @@ export function RecurrencePicker({ value, onChange, eventStartDate }: Recurrence
                     backgroundColor: bgColor,
                 }}
             >
-                <Text style={{ fontSize: 14, color: value ? fgColor : mutedColor }}>
-                    {displayLabel}
-                </Text>
+                <Text style={{ fontSize: 14, color: value ? fgColor : mutedColor }}>{displayLabel}</Text>
             </Pressable>
 
             <PresetDialog
@@ -105,11 +103,9 @@ function PresetDialog({
         <Modal isOpen={open} onClose={() => onOpenChange(false)}>
             <ModalBackdrop />
             <ModalContent className="w-[320px] p-3">
-                <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor, marginBottom: 8 }}>
-                    Repeat
-                </Text>
+                <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor, marginBottom: 8 }}>Repeat</Text>
                 <View className="gap-1 pt-2">
-                    {presets.map(preset => {
+                    {presets.map((preset) => {
                         const isSelected = preset.value === currentValue
                         return (
                             <Pressable
@@ -211,12 +207,10 @@ function CustomRecurrenceDialog({
     const borderColor = useThemeColor('border')
     const primaryColor = useThemeColor('primary')
     const primaryFgColor = useThemeColor('primary-foreground')
-    const [state, setState] = useState<CustomState>(() =>
-        initCustomState(eventStartDate, initialValue)
-    )
+    const [state, setState] = useState<CustomState>(() => initCustomState(eventStartDate, initialValue))
 
     const updateState = (partial: Partial<CustomState>) => {
-        setState(prev => ({ ...prev, ...partial }))
+        setState((prev) => ({ ...prev, ...partial }))
     }
 
     const handleDone = () => {
@@ -282,12 +276,10 @@ function CustomRecurrenceDialog({
                                 borderColor,
                             }}
                         >
-                            <Text style={{ fontSize: 14, color: fgColor, textAlign: 'center' }}>
-                                {state.interval}
-                            </Text>
+                            <Text style={{ fontSize: 14, color: fgColor, textAlign: 'center' }}>{state.interval}</Text>
                         </Pressable>
                         <View className="flex-row gap-1 flex-wrap flex-1">
-                            {FREQ_OPTIONS.map(opt => {
+                            {FREQ_OPTIONS.map((opt) => {
                                 const isSelected = state.freq === opt.value
                                 return (
                                     <Pressable
@@ -316,12 +308,12 @@ function CustomRecurrenceDialog({
                     <WeekDaySelector
                         isVisible={state.freq === 'WEEKLY'}
                         selectedDays={state.byDay}
-                        onToggle={day => {
+                        onToggle={(day) => {
                             const has = state.byDay.includes(day)
                             if (has) {
                                 if (state.byDay.length > 1) {
                                     updateState({
-                                        byDay: state.byDay.filter(d => d !== day),
+                                        byDay: state.byDay.filter((d) => d !== day),
                                     })
                                 }
                             } else {
@@ -334,18 +326,15 @@ function CustomRecurrenceDialog({
                         isVisible={state.freq === 'MONTHLY'}
                         monthlyMode={state.monthlyMode}
                         eventStartDate={eventStartDate}
-                        onChange={mode => updateState({ monthlyMode: mode })}
+                        onChange={(mode) => updateState({ monthlyMode: mode })}
                     />
 
                     <View className="gap-2">
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>
-                            Ends
-                        </Text>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Ends</Text>
                         <View className="flex-row gap-2 flex-wrap">
-                            {(['never', 'on', 'after'] as const).map(type => {
+                            {(['never', 'on', 'after'] as const).map((type) => {
                                 const isSelected = state.endType === type
-                                const label =
-                                    type === 'never' ? 'Never' : type === 'on' ? 'On date' : 'After'
+                                const label = type === 'never' ? 'Never' : type === 'on' ? 'On date' : 'After'
                                 return (
                                     <Pressable
                                         key={type}
@@ -372,15 +361,13 @@ function CustomRecurrenceDialog({
                         <EndDateInput
                             isVisible={state.endType === 'on'}
                             value={state.untilDate}
-                            onChange={val => updateState({ untilDate: val })}
+                            onChange={(val) => updateState({ untilDate: val })}
                         />
 
                         <EndCountInput
                             isVisible={state.endType === 'after'}
                             value={state.count}
-                            onIncrement={() =>
-                                updateState({ count: Math.min(state.count + 1, 999) })
-                            }
+                            onIncrement={() => updateState({ count: Math.min(state.count + 1, 999) })}
                             onDecrement={() => updateState({ count: Math.max(state.count - 1, 1) })}
                         />
                     </View>
@@ -403,9 +390,7 @@ function CustomRecurrenceDialog({
                             backgroundColor: primaryColor,
                         }}
                     >
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: primaryFgColor }}>
-                            Done
-                        </Text>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: primaryFgColor }}>Done</Text>
                     </Pressable>
                 </View>
             </ModalContent>

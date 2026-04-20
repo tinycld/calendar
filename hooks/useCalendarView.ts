@@ -39,10 +39,10 @@ export function useCalendarView(): CalendarViewState {
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'
 
-    const popover = useCalendarUIStore(s => s.popover)
-    const storeOpenQuickCreate = useCalendarUIStore(s => s.openQuickCreate)
-    const storeOpenEventDetail = useCalendarUIStore(s => s.openEventDetail)
-    const closePopover = useCalendarUIStore(s => s.closePopover)
+    const popover = useCalendarUIStore((s) => s.popover)
+    const storeOpenQuickCreate = useCalendarUIStore((s) => s.openQuickCreate)
+    const storeOpenEventDetail = useCalendarUIStore((s) => s.openEventDetail)
+    const closePopover = useCalendarUIStore((s) => s.closePopover)
 
     const viewMode = parseViewMode(view)
     const focusDate = useMemo(() => parseDate(date), [date])
@@ -54,25 +54,19 @@ export function useCalendarView(): CalendarViewState {
         [router, orgHref]
     )
 
-    const setViewMode = useCallback(
-        (mode: ViewMode) => navigate(mode, focusDate),
-        [navigate, focusDate]
-    )
+    const setViewMode = useCallback((mode: ViewMode) => navigate(mode, focusDate), [navigate, focusDate])
 
     const goToday = useCallback(() => navigate(viewMode, new Date()), [navigate, viewMode])
 
     const goNext = useCallback(() => {
         if (viewMode === 'day' || viewMode === 'schedule') navigate(viewMode, addDays(focusDate, 1))
-        else if (viewMode === 'week')
-            navigate(viewMode, isMobile ? addDays(focusDate, 3) : addWeeks(focusDate, 1))
+        else if (viewMode === 'week') navigate(viewMode, isMobile ? addDays(focusDate, 3) : addWeeks(focusDate, 1))
         else navigate(viewMode, addMonths(focusDate, 1))
     }, [navigate, viewMode, focusDate, isMobile])
 
     const goPrevious = useCallback(() => {
-        if (viewMode === 'day' || viewMode === 'schedule')
-            navigate(viewMode, addDays(focusDate, -1))
-        else if (viewMode === 'week')
-            navigate(viewMode, isMobile ? addDays(focusDate, -3) : addWeeks(focusDate, -1))
+        if (viewMode === 'day' || viewMode === 'schedule') navigate(viewMode, addDays(focusDate, -1))
+        else if (viewMode === 'week') navigate(viewMode, isMobile ? addDays(focusDate, -3) : addWeeks(focusDate, -1))
         else navigate(viewMode, addMonths(focusDate, -1))
     }, [navigate, viewMode, focusDate, isMobile])
 

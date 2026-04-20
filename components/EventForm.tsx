@@ -2,14 +2,7 @@ import { MapPin } from 'lucide-react-native'
 import type { Control, FieldErrors } from 'react-hook-form'
 import { Controller } from 'react-hook-form'
 import { View } from 'react-native'
-import {
-    FormErrorSummary,
-    NumberInput,
-    SelectInput,
-    TextAreaInput,
-    TextInput,
-    Toggle,
-} from '~/ui/form'
+import { FormErrorSummary, NumberInput, SelectInput, TextAreaInput, TextInput, Toggle } from '~/ui/form'
 import type { CalendarWithGroup } from '../types'
 import { RecurrencePicker } from './RecurrencePicker'
 
@@ -35,17 +28,9 @@ interface EventFormProps {
     startDateValue: string
 }
 
-export function EventForm({
-    control,
-    errors,
-    isSubmitted,
-    calendars,
-    startDateValue,
-}: EventFormProps) {
-    const calendarOptions = calendars.map(c => ({ label: c.name, value: c.id }))
-    const eventStartDate = new Date(
-        `${startDateValue || new Date().toISOString().split('T')[0]}T00:00:00`
-    )
+export function EventForm({ control, errors, isSubmitted, calendars, startDateValue }: EventFormProps) {
+    const calendarOptions = calendars.map((c) => ({ label: c.name, value: c.id }))
+    const eventStartDate = new Date(`${startDateValue || new Date().toISOString().split('T')[0]}T00:00:00`)
 
     return (
         <View className="gap-4">
@@ -59,20 +44,11 @@ export function EventForm({
                 control={control}
                 name="recurrence"
                 render={({ field }) => (
-                    <RecurrencePicker
-                        value={field.value}
-                        onChange={field.onChange}
-                        eventStartDate={eventStartDate}
-                    />
+                    <RecurrencePicker value={field.value} onChange={field.onChange} eventStartDate={eventStartDate} />
                 )}
             />
 
-            <TextInput
-                control={control}
-                name="startDate"
-                label="Start date"
-                placeholder="YYYY-MM-DD"
-            />
+            <TextInput control={control} name="startDate" label="Start date" placeholder="YYYY-MM-DD" />
             <TextInput control={control} name="startTime" label="Start time" placeholder="HH:MM" />
             <TextInput control={control} name="endDate" label="End date" placeholder="YYYY-MM-DD" />
             <TextInput control={control} name="endTime" label="End time" placeholder="HH:MM" />
@@ -94,12 +70,7 @@ export function EventForm({
                 increment={5}
             />
 
-            <SelectInput
-                control={control}
-                name="calendar"
-                label="Calendar"
-                options={calendarOptions}
-            />
+            <SelectInput control={control} name="calendar" label="Calendar" options={calendarOptions} />
 
             <SelectInput
                 control={control}

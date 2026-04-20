@@ -15,10 +15,7 @@ const subscriptionSchema = z.object({
         .string()
         .min(1, 'URL is required')
         .refine(
-            val =>
-                val.startsWith('http://') ||
-                val.startsWith('https://') ||
-                val.startsWith('webcal://'),
+            (val) => val.startsWith('http://') || val.startsWith('https://') || val.startsWith('webcal://'),
             'Must be an HTTP(S) or webcal:// URL'
         ),
     name: z.string().min(1, 'Name is required'),
@@ -53,8 +50,7 @@ export function SubscriptionDialog({ open, onClose }: SubscriptionDialogProps) {
     const createSubscription = useMutation({
         mutationFn: mutation(function* (data: z.infer<typeof subscriptionSchema>) {
             if (!orgId) throw new Error('No organization context')
-            const randomColor =
-                CALENDAR_COLOR_KEYS[Math.floor(Math.random() * CALENDAR_COLOR_KEYS.length)]
+            const randomColor = CALENDAR_COLOR_KEYS[Math.floor(Math.random() * CALENDAR_COLOR_KEYS.length)]
             yield calendarsCollection.insert({
                 id: newRecordId(),
                 org: orgId,
@@ -73,7 +69,7 @@ export function SubscriptionDialog({ open, onClose }: SubscriptionDialogProps) {
         onError: handleMutationErrorsWithForm({ setError, getValues }),
     })
 
-    const onSubmit = handleSubmit(data => createSubscription.mutate(data))
+    const onSubmit = handleSubmit((data) => createSubscription.mutate(data))
 
     const handleClose = () => {
         reset()
@@ -85,9 +81,7 @@ export function SubscriptionDialog({ open, onClose }: SubscriptionDialogProps) {
             <ModalBackdrop />
             <ModalContent className="w-[420px] p-0">
                 <View className="px-5 pt-5 pb-3">
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: fgColor }}>
-                        Subscribe to calendar
-                    </Text>
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: fgColor }}>Subscribe to calendar</Text>
                 </View>
 
                 <View className="px-5 pb-5 gap-3">
@@ -103,25 +97,14 @@ export function SubscriptionDialog({ open, onClose }: SubscriptionDialogProps) {
                         keyboardType="url"
                     />
 
-                    <TextInput
-                        control={control}
-                        name="name"
-                        label="Calendar name"
-                        placeholder="US Holidays"
-                    />
+                    <TextInput control={control} name="name" label="Calendar name" placeholder="US Holidays" />
 
                     <View className="flex-row justify-end gap-2 pt-2">
                         <Pressable onPress={handleClose} className="px-3 py-1.5">
                             <Text style={{ fontSize: 14, color: fgColor }}>Cancel</Text>
                         </Pressable>
-                        <Button
-                            onPress={onSubmit}
-                            isDisabled={createSubscription.isPending}
-                            size="sm"
-                        >
-                            <ButtonText>
-                                {createSubscription.isPending ? 'Subscribing...' : 'Subscribe'}
-                            </ButtonText>
+                        <Button onPress={onSubmit} isDisabled={createSubscription.isPending} size="sm">
+                            <ButtonText>{createSubscription.isPending ? 'Subscribing...' : 'Subscribe'}</ButtonText>
                         </Button>
                     </View>
                 </View>

@@ -16,7 +16,7 @@ function getEventsForDay(events: CalendarEvents[], date: Date): CalendarEvents[]
     const dayEnd = new Date(date)
     dayEnd.setHours(23, 59, 59, 999)
 
-    return events.filter(event => eventOverlapsRange(event, dayStart, dayEnd))
+    return events.filter((event) => eventOverlapsRange(event, dayStart, dayEnd))
 }
 
 export function WeekView() {
@@ -25,10 +25,7 @@ export function WeekView() {
     const borderColor = useThemeColor('border')
     const dayCount = isMobile ? 3 : 7
 
-    const rangeStart = useMemo(
-        () => (isMobile ? focusDate : startOfWeek(focusDate)),
-        [focusDate, isMobile]
-    )
+    const rangeStart = useMemo(() => (isMobile ? focusDate : startOfWeek(focusDate)), [focusDate, isMobile])
     const rangeEnd = useMemo(() => addDays(rangeStart, dayCount - 1), [rangeStart, dayCount])
     const days = useMemo(
         () => Array.from({ length: dayCount }, (_, i) => addDays(rangeStart, i)),
@@ -38,9 +35,9 @@ export function WeekView() {
     const events = useCalendarEvents(rangeStart, rangeEnd)
 
     const { allDayEvents, columns } = useMemo(() => {
-        const allDay = events.filter(e => e.all_day)
-        const timed = events.filter(e => !e.all_day)
-        const cols = days.map(date => ({
+        const allDay = events.filter((e) => e.all_day)
+        const timed = events.filter((e) => !e.all_day)
+        const cols = days.map((date) => ({
             date,
             events: getEventsForDay(timed, date),
         }))
@@ -57,7 +54,7 @@ export function WeekView() {
                 }}
             >
                 <View style={{ width: 50 }} />
-                {days.map(date => (
+                {days.map((date) => (
                     <View key={date.toISOString()} className="flex-1 items-center">
                         <DayColumnHeader date={date} isToday={isToday(date)} />
                     </View>
@@ -69,11 +66,7 @@ export function WeekView() {
                 dayCount={dayCount}
                 onEventPress={openEventDetail}
             />
-            <TimeGrid
-                columns={columns}
-                onSlotPress={openQuickCreate}
-                onEventPress={openEventDetail}
-            />
+            <TimeGrid columns={columns} onSlotPress={openQuickCreate} onEventPress={openEventDetail} />
         </View>
     )
 }

@@ -323,12 +323,7 @@ console.log('expandRecurringEvents: non-recurring outside range excluded')
 
 console.log('expandRecurringEvents: daily recurrence creates multiple occurrences')
 {
-    const event = makeEvent(
-        'e1',
-        '2026-04-01T10:00:00.000Z',
-        '2026-04-01T11:00:00.000Z',
-        'FREQ=DAILY'
-    )
+    const event = makeEvent('e1', '2026-04-01T10:00:00.000Z', '2026-04-01T11:00:00.000Z', 'FREQ=DAILY')
     const result = expandRecurringEvents({
         events: [event],
         rangeStart: new Date(2026, 3, 1),
@@ -342,12 +337,7 @@ console.log('expandRecurringEvents: daily recurrence creates multiple occurrence
 
 console.log('expandRecurringEvents: all-day recurring events')
 {
-    const event = makeAllDayEvent(
-        'e1',
-        '2026-04-06T00:00:00.000Z',
-        '2026-04-06T23:59:59.000Z',
-        'FREQ=WEEKLY;BYDAY=MO'
-    )
+    const event = makeAllDayEvent('e1', '2026-04-06T00:00:00.000Z', '2026-04-06T23:59:59.000Z', 'FREQ=WEEKLY;BYDAY=MO')
     const result = expandRecurringEvents({
         events: [event],
         rangeStart: new Date(2026, 3, 1),
@@ -362,12 +352,7 @@ console.log('expandRecurringEvents: all-day recurring events')
 
 console.log('expandRecurringEvents: safety cap')
 {
-    const event = makeEvent(
-        'e1',
-        '2026-04-01T10:00:00.000Z',
-        '2026-04-01T11:00:00.000Z',
-        'FREQ=DAILY'
-    )
+    const event = makeEvent('e1', '2026-04-01T10:00:00.000Z', '2026-04-01T11:00:00.000Z', 'FREQ=DAILY')
     const result = expandRecurringEvents({
         events: [event],
         rangeStart: new Date(2026, 3, 1),
@@ -381,18 +366,13 @@ console.log('expandRecurringEvents: safety cap')
 
 console.log('composite IDs: unique and parseable')
 {
-    const event = makeEvent(
-        'abc123',
-        '2026-04-01T10:00:00.000Z',
-        '2026-04-01T11:00:00.000Z',
-        'FREQ=DAILY'
-    )
+    const event = makeEvent('abc123', '2026-04-01T10:00:00.000Z', '2026-04-01T11:00:00.000Z', 'FREQ=DAILY')
     const result = expandRecurringEvents({
         events: [event],
         rangeStart: new Date(2026, 3, 1),
         rangeEnd: new Date(2026, 3, 3, 23, 59),
     })
-    const ids = result.map(r => r.id)
+    const ids = result.map((r) => r.id)
     assert.equal(new Set(ids).size, ids.length, 'IDs should be unique')
 
     const parsed = parseEventId(ids[0])

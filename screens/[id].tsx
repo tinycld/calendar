@@ -55,7 +55,7 @@ export default function EventEditorScreen() {
     const lookupId = isNew ? '' : baseId
 
     const { data: existingEvents } = useOrgLiveQuery(
-        query => {
+        (query) => {
             if (!lookupId) return null
             return query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, lookupId))
         },
@@ -141,7 +141,7 @@ export default function EventEditorScreen() {
 
     const updateEvent = useMutation({
         mutationFn: mutation(function* (data: z.infer<typeof eventSchema>) {
-            yield eventsCollection.update(baseId, draft => {
+            yield eventsCollection.update(baseId, (draft) => {
                 draft.title = data.title.trim()
                 draft.description = data.description
                 draft.location = data.location
@@ -166,10 +166,7 @@ export default function EventEditorScreen() {
 
     if (!isNew && isReadOnly) {
         return (
-            <View
-                className="flex-1 items-center justify-center"
-                style={{ backgroundColor: bgColor }}
-            >
+            <View className="flex-1 items-center justify-center" style={{ backgroundColor: bgColor }}>
                 <Text style={{ fontSize: 16, color: mutedColor }}>
                     Events from subscribed calendars cannot be edited
                 </Text>
@@ -207,7 +204,7 @@ export default function EventEditorScreen() {
     }
 
     const activeMutation = isNew ? createEvent : updateEvent
-    const onSubmit = handleSubmit(data => activeMutation.mutate(data))
+    const onSubmit = handleSubmit((data) => activeMutation.mutate(data))
     const canSubmit = !activeMutation.isPending && !!userOrg && !isLoadingEvent
 
     const isDesktop = breakpoint === 'desktop'

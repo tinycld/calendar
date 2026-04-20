@@ -29,39 +29,35 @@ interface CalendarUIState {
     setScheduleFocusedIndex: (i: number | ((prev: number) => number)) => void
 }
 
-export const useCalendarUIStore = create<CalendarUIState>(set => ({
+export const useCalendarUIStore = create<CalendarUIState>((set) => ({
     popover: { type: 'closed' },
     visibleIds: [],
     scheduleFocusedIndex: 0,
 
     openQuickCreate: (date, hour) => set({ popover: { type: 'quick-create', date, hour } }),
 
-    openEventDetail: (eventId, anchorRect) =>
-        set({ popover: { type: 'event-detail', eventId, anchorRect } }),
+    openEventDetail: (eventId, anchorRect) => set({ popover: { type: 'event-detail', eventId, anchorRect } }),
 
     closePopover: () => set({ popover: { type: 'closed' } }),
 
-    toggleCalendar: id =>
-        set(state => {
+    toggleCalendar: (id) =>
+        set((state) => {
             const has = state.visibleIds.includes(id)
             return {
-                visibleIds: has
-                    ? state.visibleIds.filter(v => v !== id)
-                    : [...state.visibleIds, id],
+                visibleIds: has ? state.visibleIds.filter((v) => v !== id) : [...state.visibleIds, id],
             }
         }),
 
-    showOnlyCalendar: id => set({ visibleIds: [id] }),
+    showOnlyCalendar: (id) => set({ visibleIds: [id] }),
 
-    initVisibleIds: ids =>
-        set(state => {
+    initVisibleIds: (ids) =>
+        set((state) => {
             if (state.visibleIds.length > 0) return state
             return { visibleIds: ids }
         }),
 
-    setScheduleFocusedIndex: next =>
-        set(state => ({
-            scheduleFocusedIndex:
-                typeof next === 'function' ? next(state.scheduleFocusedIndex) : next,
+    setScheduleFocusedIndex: (next) =>
+        set((state) => ({
+            scheduleFocusedIndex: typeof next === 'function' ? next(state.scheduleFocusedIndex) : next,
         })),
 }))

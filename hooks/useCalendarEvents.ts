@@ -21,24 +21,17 @@ interface VisibleCalendarsState {
 }
 
 export function useVisibleCalendars(): VisibleCalendarsState {
-    const {
-        calendars,
-        mineCalendars,
-        otherCalendars,
-        calendarMap,
-        membershipByCalendar,
-        setCalendarColor,
-        isLoading,
-    } = useCalendarData()
+    const { calendars, mineCalendars, otherCalendars, calendarMap, membershipByCalendar, setCalendarColor, isLoading } =
+        useCalendarData()
 
-    const visibleIdsArray = useCalendarUIStore(s => s.visibleIds)
-    const toggleCalendar = useCalendarUIStore(s => s.toggleCalendar)
-    const showOnlyCalendar = useCalendarUIStore(s => s.showOnlyCalendar)
-    const initVisibleIds = useCalendarUIStore(s => s.initVisibleIds)
+    const visibleIdsArray = useCalendarUIStore((s) => s.visibleIds)
+    const toggleCalendar = useCalendarUIStore((s) => s.toggleCalendar)
+    const showOnlyCalendar = useCalendarUIStore((s) => s.showOnlyCalendar)
+    const initVisibleIds = useCalendarUIStore((s) => s.initVisibleIds)
 
     useEffect(() => {
         if (visibleIdsArray.length === 0 && calendars.length > 0) {
-            initVisibleIds(calendars.map(c => c.id))
+            initVisibleIds(calendars.map((c) => c.id))
         }
     }, [visibleIdsArray.length, calendars, initVisibleIds])
 
@@ -77,7 +70,7 @@ export function useCalendarEvents(startDate: Date, endDate: Date) {
 
     return useMemo(() => {
         if (!allEvents) return []
-        const visible = allEvents.filter(e => visibleIds.has(e.calendar))
+        const visible = allEvents.filter((e) => visibleIds.has(e.calendar))
         return expandRecurringEvents({
             events: visible,
             rangeStart: startDate,
@@ -97,7 +90,7 @@ export function useEventDetail(eventId: string | undefined): {
     const { baseId, occurrenceDate } = parseEventId(eventId ?? '')
 
     const { data: events } = useOrgLiveQuery(
-        query => query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, baseId)),
+        (query) => query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, baseId)),
         [baseId]
     )
 

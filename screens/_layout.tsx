@@ -26,7 +26,7 @@ export default function CalendarLayout() {
         mutationFn: mutation(function* (eventId: string) {
             yield eventsCollection.delete(eventId)
         }),
-        onError: error => captureException('CalendarDeleteEvent', error),
+        onError: (error) => captureException('CalendarDeleteEvent', error),
     })
 
     return (
@@ -54,7 +54,7 @@ export default function CalendarLayout() {
                 calendarColorKey={calendar?.color ?? 'blue'}
                 anchorRect={popover.type === 'event-detail' ? popover.anchorRect : undefined}
                 onClose={closePopover}
-                onDelete={id => deleteEvent.mutate(id)}
+                onDelete={(id) => deleteEvent.mutate(id)}
                 isReadOnly={!!calendar?.subscription_url}
             />
         </View>

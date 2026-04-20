@@ -11,15 +11,7 @@ const DAY_INDEX: Record<string, number> = {
     SA: 6,
 }
 
-const FULL_DAY_NAMES = [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-]
+const FULL_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 const MONTH_NAMES = [
     'January',
@@ -92,11 +84,11 @@ export function parseRRule(rrule: string): ParsedRRule | null {
     }
 
     if (map.BYDAY) {
-        result.byDay = map.BYDAY.split(',').map(d => d.trim())
+        result.byDay = map.BYDAY.split(',').map((d) => d.trim())
     }
 
     if (map.BYMONTHDAY) {
-        result.byMonthDay = map.BYMONTHDAY.split(',').map(d => Number.parseInt(d.trim(), 10))
+        result.byMonthDay = map.BYMONTHDAY.split(',').map((d) => Number.parseInt(d.trim(), 10))
     }
 
     if (map.COUNT) {
@@ -141,12 +133,7 @@ function daysInMonth(year: number, month: number): number {
     return new Date(year, month + 1, 0).getDate()
 }
 
-function getNthWeekdayOfMonth(
-    year: number,
-    month: number,
-    weekday: number,
-    n: number
-): Date | null {
+function getNthWeekdayOfMonth(year: number, month: number, weekday: number, n: number): Date | null {
     if (n > 0) {
         const first = new Date(year, month, 1)
         const firstDow = first.getDay()
@@ -190,15 +177,7 @@ export function generateOccurrences(
             generateWeekly(eventStart, rule, rangeStart, rangeEnd, maxOccurrences, results, maxIter)
             break
         case 'MONTHLY':
-            generateMonthly(
-                eventStart,
-                rule,
-                rangeStart,
-                rangeEnd,
-                maxOccurrences,
-                results,
-                maxIter
-            )
+            generateMonthly(eventStart, rule, rangeStart, rangeEnd, maxOccurrences, results, maxIter)
             break
         case 'YEARLY':
             generateYearly(eventStart, rule, rangeStart, rangeEnd, maxOccurrences, results, maxIter)
@@ -218,7 +197,7 @@ function generateDaily(
     maxIter: number
 ): number {
     const interval = rule.interval || 1
-    const byDaySet = rule.byDay ? new Set(rule.byDay.map(d => DAY_INDEX[d])) : null
+    const byDaySet = rule.byDay ? new Set(rule.byDay.map((d) => DAY_INDEX[d])) : null
 
     let totalEmitted = 0
     const current = new Date(eventStart)
@@ -261,9 +240,7 @@ function generateWeekly(
     maxIter: number
 ): number {
     const interval = rule.interval || 1
-    const targetDays = rule.byDay
-        ? rule.byDay.map(d => DAY_INDEX[d]).sort((a, b) => a - b)
-        : [eventStart.getDay()]
+    const targetDays = rule.byDay ? rule.byDay.map((d) => DAY_INDEX[d]).sort((a, b) => a - b) : [eventStart.getDay()]
 
     let totalEmitted = 0
     // Start at the beginning of the event's week
@@ -300,12 +277,7 @@ function generateWeekly(
         weekNumber++
         weekStart = new Date(eventStart)
         weekStart.setDate(eventStart.getDate() - eventStart.getDay() + weekNumber * interval * 7)
-        weekStart.setHours(
-            eventStart.getHours(),
-            eventStart.getMinutes(),
-            eventStart.getSeconds(),
-            0
-        )
+        weekStart.setHours(eventStart.getHours(), eventStart.getMinutes(), eventStart.getSeconds(), 0)
     }
 
     return totalEmitted
@@ -329,8 +301,7 @@ function generateMonthly(
     while (iterations < maxIter) {
         iterations++
 
-        const targetYear =
-            eventStart.getFullYear() + Math.floor((eventStart.getMonth() + monthOffset) / 12)
+        const targetYear = eventStart.getFullYear() + Math.floor((eventStart.getMonth() + monthOffset) / 12)
         const targetMonth = (eventStart.getMonth() + monthOffset) % 12
 
         const occurrences = getMonthlyOccurrenceDates(rule, eventStart, targetYear, targetMonth)
@@ -352,8 +323,7 @@ function generateMonthly(
         }
 
         monthOffset += interval
-        const nextYear =
-            eventStart.getFullYear() + Math.floor((eventStart.getMonth() + monthOffset) / 12)
+        const nextYear = eventStart.getFullYear() + Math.floor((eventStart.getMonth() + monthOffset) / 12)
         const nextMonth = (eventStart.getMonth() + monthOffset) % 12
         const nextMonthStart = new Date(nextYear, nextMonth, 1)
         if (nextMonthStart > rangeEnd && (!rule.count || totalEmitted >= rule.count)) break
@@ -363,12 +333,7 @@ function generateMonthly(
     return totalEmitted
 }
 
-function getMonthlyOccurrenceDates(
-    rule: ParsedRRule,
-    eventStart: Date,
-    year: number,
-    month: number
-): Date[] {
+function getMonthlyOccurrenceDates(rule: ParsedRRule, eventStart: Date, year: number, month: number): Date[] {
     if (rule.byDay) {
         const dates: Date[] = []
         for (const bd of rule.byDay) {
@@ -379,12 +344,7 @@ function getMonthlyOccurrenceDates(
             if (position !== null) {
                 const d = getNthWeekdayOfMonth(year, month, dayIndex, position)
                 if (d) {
-                    d.setHours(
-                        eventStart.getHours(),
-                        eventStart.getMinutes(),
-                        eventStart.getSeconds(),
-                        0
-                    )
+                    d.setHours(eventStart.getHours(), eventStart.getMinutes(), eventStart.getSeconds(), 0)
                     dates.push(d)
                 }
             }
@@ -483,13 +443,7 @@ export function expandRecurringEvents(options: {
         const eventEnd = new Date(event.end)
         const durationMs = eventEnd.getTime() - eventStart.getTime()
 
-        const occurrences = generateOccurrences(
-            eventStart,
-            rule,
-            rangeStart,
-            rangeEnd,
-            maxOccurrences
-        )
+        const occurrences = generateOccurrences(eventStart, rule, rangeStart, rangeEnd, maxOccurrences)
 
         for (const occStart of occurrences) {
             const occEnd = new Date(occStart.getTime() + durationMs)
@@ -576,7 +530,7 @@ export function describeRRule(rrule: string, eventStart: Date): string {
         if (
             rule.byDay &&
             rule.byDay.length === 5 &&
-            ['MO', 'TU', 'WE', 'TH', 'FR'].every(d => rule.byDay?.includes(d))
+            ['MO', 'TU', 'WE', 'TH', 'FR'].every((d) => rule.byDay?.includes(d))
         ) {
             base = 'Every weekday (Monday to Friday)'
         } else if (interval === 1) {
@@ -586,7 +540,7 @@ export function describeRRule(rrule: string, eventStart: Date): string {
         }
     } else if (freq === 'WEEKLY') {
         if (rule.byDay && rule.byDay.length > 0) {
-            const dayNames = rule.byDay.map(d => FULL_DAY_NAMES[DAY_INDEX[d]]).filter(Boolean)
+            const dayNames = rule.byDay.map((d) => FULL_DAY_NAMES[DAY_INDEX[d]]).filter(Boolean)
             if (interval === 1) {
                 base = `Weekly on ${dayNames.join(', ')}`
             } else {
