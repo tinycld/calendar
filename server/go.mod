@@ -8,15 +8,10 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/pocketbase/pocketbase v0.36.8
 	github.com/teambition/rrule-go v1.8.2
-	tinycld.org/audit v0.0.0
-	tinycld.org/notify v0.0.0-00010101000000-000000000000
+	tinycld.org/core v0.0.0
 )
 
-replace tinycld.org/audit => ../../../server/audit
-
-replace tinycld.org/notify => ../../../server/notify
-
-replace tinycld.org/push => ../../../server/push
+replace tinycld.org/core => ../../core/server
 
 require (
 	github.com/SherClockHolmes/webpush-go v1.4.0 // indirect
@@ -49,5 +44,4 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.48.0 // indirect
-	tinycld.org/push v0.0.0 // indirect
 )

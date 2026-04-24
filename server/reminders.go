@@ -7,7 +7,7 @@ import (
 
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
-	"tinycld.org/notify"
+	"tinycld.org/core/notify"
 )
 
 // sentReminders dedups reminders so the same event-fire-minute isn't

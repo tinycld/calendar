@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
-	"tinycld.org/audit"
-	"tinycld.org/notify"
+	"tinycld.org/core/audit"
+	"tinycld.org/core/notify"
 )
 
 func Register(app *pocketbase.PocketBase) {

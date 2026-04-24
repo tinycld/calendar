@@ -14,7 +14,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/teambition/rrule-go"
-	"tinycld.org/notify"
+	"tinycld.org/core/notify"
 )
 
 const (
