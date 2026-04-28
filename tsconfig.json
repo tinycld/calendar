@@ -5,7 +5,7 @@
         "rootDir": "..",
         "paths": {
             "~/tinycld/calendar/*": ["./tinycld/calendar/*"],
-            "@tinycld/core/*": ["../core/tinycld/core/*"],
+            "@tinycld/core/*": ["../core/*"],
             "@tinycld/*": ["../core/packages/@tinycld/*"],
             "~/*": ["../core/*"]
         },
