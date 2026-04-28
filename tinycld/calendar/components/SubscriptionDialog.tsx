@@ -1,5 +1,3 @@
-import { newRecordId } from 'pbtsdb/core'
-import { Pressable, Text, View } from 'react-native'
 import { handleMutationErrorsWithForm } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
@@ -8,6 +6,8 @@ import { useOrgInfo } from '@tinycld/core/lib/use-org-info'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { FormErrorSummary, TextInput, useForm, z, zodResolver } from '@tinycld/core/ui/form'
 import { Modal, ModalBackdrop, ModalContent } from '@tinycld/core/ui/modal'
+import { newRecordId } from 'pbtsdb/core'
+import { Pressable, Text, View } from 'react-native'
 import { CALENDAR_COLOR_KEYS } from './calendar-colors'
 
 const subscriptionSchema = z.object({

@@ -13,6 +13,12 @@
         "noEmit": true,
         "preserveSymlinks": false
     },
-    "include": ["**/*.ts", "**/*.tsx", "../tinycld/uniwind-types.d.ts", "../tinycld/expo-env.d.ts", "../tinycld/.expo/types/**/*.ts"],
+    "include": [
+        "**/*.ts",
+        "**/*.tsx",
+        "../tinycld/uniwind-types.d.ts",
+        "../tinycld/expo-env.d.ts",
+        "../tinycld/.expo/types/**/*.ts"
+    ],
     "exclude": ["node_modules", "server", "pb-migrations", "tests/**/*.spec.ts"]
 }

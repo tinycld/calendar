@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
-import { FlatList, type GestureResponderEvent, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import { type Shortcut, useRegisterShortcuts, useShortcutScope } from '@tinycld/core/lib/shortcuts'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
+import { useMemo, useState } from 'react'
+import { FlatList, type GestureResponderEvent, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
 import {
     addDays,

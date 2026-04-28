@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { Modal, ModalBackdrop, ModalContent } from '@tinycld/core/ui/modal'
 import { PlainInput } from '@tinycld/core/ui/PlainInput'
+import { useState } from 'react'
+import { Pressable, Text, View } from 'react-native'
 import {
     buildRRule,
     describeRRule,

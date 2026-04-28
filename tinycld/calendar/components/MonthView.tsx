@@ -1,6 +1,6 @@
+import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useMemo } from 'react'
 import { type GestureResponderEvent, Pressable, Text, View } from 'react-native'
-import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
 import { addDays, eventOverlapsRange } from '../hooks/useCalendarNavigation'
 import { useCalendarView } from '../hooks/useCalendarView'

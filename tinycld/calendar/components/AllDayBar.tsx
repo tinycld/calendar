@@ -1,6 +1,6 @@
+import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useMemo } from 'react'
 import { type GestureResponderEvent, Pressable, Text, View } from 'react-native'
-import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useCalendarMap } from '../hooks/useCalendarEvents'
 import { type LayoutEvent, layoutAllDayEvents } from '../layout'
 import type { CalendarEvents } from '../types'

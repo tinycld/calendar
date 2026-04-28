@@ -1,13 +1,18 @@
-import { useGlobalSearchParams, useRouter } from 'expo-router'
-import { CalendarDays, Columns3, Grid3X3, Link2, List } from 'lucide-react-native'
-import { useCallback, useMemo, useState } from 'react'
-import { View } from 'react-native'
-import { SidebarActionButton, SidebarDivider, SidebarItem, SidebarNav } from '@tinycld/core/components/sidebar-primitives'
+import {
+    SidebarActionButton,
+    SidebarDivider,
+    SidebarItem,
+    SidebarNav,
+} from '@tinycld/core/components/sidebar-primitives'
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { useWorkspaceLayout } from '@tinycld/core/components/workspace/useWorkspaceLayout'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
+import { useGlobalSearchParams, useRouter } from 'expo-router'
+import { CalendarDays, Columns3, Grid3X3, Link2, List } from 'lucide-react-native'
+import { useCallback, useMemo, useState } from 'react'
+import { View } from 'react-native'
 import { CalendarList } from './components/CalendarList'
 import { MiniCalendar } from './components/MiniCalendar'
 import { SubscriptionDialog } from './components/SubscriptionDialog'

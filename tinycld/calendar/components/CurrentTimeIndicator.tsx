@@ -1,5 +1,5 @@
-import { View } from 'react-native'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
+import { View } from 'react-native'
 
 interface CurrentTimeIndicatorProps {
     topOffset: number

@@ -1,5 +1,5 @@
-import { Text, View } from 'react-native'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
+import { Text, View } from 'react-native'
 import { getShortDayName } from '../hooks/useCalendarNavigation'
 
 interface DayColumnHeaderProps {

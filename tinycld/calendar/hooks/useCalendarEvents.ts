@@ -1,7 +1,7 @@
 import { eq } from '@tanstack/db'
-import { useEffect, useMemo } from 'react'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
+import { useEffect, useMemo } from 'react'
 import { expandRecurringEvents, parseEventId } from '../lib/recurrence'
 import { useCalendarUIStore } from '../stores/calendar-ui-store'
 import type { CalendarColorKey, CalendarEvents, CalendarWithGroup } from '../types'

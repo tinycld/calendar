@@ -1,10 +1,10 @@
 import { eq } from '@tanstack/db'
-import { useCallback, useMemo } from 'react'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useCurrentUserOrg } from '@tinycld/core/lib/use-current-user-org'
 import { useOrgInfo } from '@tinycld/core/lib/use-org-info'
 import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
+import { useCallback, useMemo } from 'react'
 import type { CalendarColorKey, CalendarWithGroup } from '../types'
 
 export interface MembershipInfo {

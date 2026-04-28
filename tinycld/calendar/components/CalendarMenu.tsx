@@ -1,9 +1,9 @@
-import * as Clipboard from 'expo-clipboard'
-import { Check, MoreVertical } from 'lucide-react-native'
-import { Pressable, Text, View } from 'react-native'
 import { SuretyGuard } from '@tinycld/core/components/SuretyGuard'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { Menu, Separator } from '@tinycld/core/ui/menu'
+import * as Clipboard from 'expo-clipboard'
+import { Check, MoreVertical } from 'lucide-react-native'
+import { Pressable, Text, View } from 'react-native'
 import type { CalendarColorKey, CalendarWithGroup } from '../types'
 import { CALENDAR_COLOR_GRID, getCalendarColorResolved } from './calendar-colors'
 

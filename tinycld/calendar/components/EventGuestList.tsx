@@ -1,6 +1,6 @@
+import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { Check, HelpCircle, X as XIcon } from 'lucide-react-native'
 import { Text, View } from 'react-native'
-import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import type { EventGuest } from '../types'
 
 function getInitials(name: string): string {

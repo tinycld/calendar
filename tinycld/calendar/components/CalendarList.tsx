@@ -1,7 +1,7 @@
+import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { AlertTriangle, Check, ChevronDown, ChevronRight } from 'lucide-react-native'
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
-import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import type { CalendarColorKey, CalendarWithGroup } from '../types'
 import { CalendarMenu } from './CalendarMenu'
 import { getCalendarColorResolved } from './calendar-colors'

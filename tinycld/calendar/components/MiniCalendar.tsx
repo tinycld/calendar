@@ -1,7 +1,7 @@
+import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { ChevronLeft, ChevronRight } from 'lucide-react-native'
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
-import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { addMonths, isSameDay } from '../hooks/useCalendarNavigation'
 import { getMonthGrid } from '../hooks/useMonthGrid'
 

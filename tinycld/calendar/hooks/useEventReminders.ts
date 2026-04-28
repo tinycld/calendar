@@ -1,8 +1,12 @@
 import { eq } from '@tanstack/db'
-import { useEffect, useRef } from 'react'
-import { cancelAllNotifications, requestNotificationPermission, scheduleNotification } from '@tinycld/core/lib/notifications'
+import {
+    cancelAllNotifications,
+    requestNotificationPermission,
+    scheduleNotification,
+} from '@tinycld/core/lib/notifications'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
+import { useEffect, useRef } from 'react'
 import type { CalendarEvents } from '../types'
 import { useVisibleCalendars } from './useCalendarEvents'
 
