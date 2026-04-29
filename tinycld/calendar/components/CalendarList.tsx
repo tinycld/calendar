@@ -40,18 +40,25 @@ function CalendarCheckbox({
     return (
         <View>
             <View className="flex-row items-center pr-3 py-[5px]">
-                <Pressable className="flex-row items-center gap-2.5 flex-1 pl-8" onPress={() => onToggle(calendar.id)}>
+                <Pressable
+                    className="flex-row items-center gap-2.5 flex-1"
+                    style={{ paddingLeft: 20 }}
+                    onPress={() => onToggle(calendar.id)}
+                >
                     <View
-                        className="size-4 rounded-sm items-center justify-center"
+                        className="items-center justify-center"
                         style={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: 3,
                             backgroundColor: isChecked ? colors.bg : 'transparent',
-                            borderColor: isChecked ? undefined : colors.bg,
+                            borderColor: colors.bg,
                             borderWidth: isChecked ? 0 : 2,
                         }}
                     >
                         {isChecked && <Check size={12} color={colors.text} />}
                     </View>
-                    <Text style={{ fontSize: 13, color: fgColor, flex: 1 }} numberOfLines={1}>
+                    <Text style={{ fontSize: 15, color: fgColor, flex: 1 }} numberOfLines={1}>
                         {calendar.name}
                     </Text>
                     {calendar.subscription_error ? <AlertTriangle size={14} color={dangerColor} /> : null}
@@ -66,7 +73,7 @@ function CalendarCheckbox({
                 />
             </View>
             {calendar.subscription_error ? (
-                <Text style={{ fontSize: 11, color: dangerColor, paddingLeft: 52, paddingRight: 12 }} numberOfLines={2}>
+                <Text style={{ fontSize: 11, color: dangerColor, paddingLeft: 60, paddingRight: 12 }} numberOfLines={2}>
                     {calendar.subscription_error}
                 </Text>
             ) : null}
@@ -104,7 +111,7 @@ function CalendarSection({
                 onPress={() => setExpanded((prev) => !prev)}
             >
                 <ChevronIcon size={14} color={mutedColor} />
-                <Text style={{ fontSize: 12, fontWeight: '600', color: mutedColor }}>{title}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: mutedColor }}>{title}</Text>
             </Pressable>
             {expanded &&
                 calendars.map((cal) => (
