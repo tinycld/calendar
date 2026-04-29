@@ -52,7 +52,7 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
     return (
         <View className="px-3 py-2">
             <View className="flex-row justify-between items-center mb-2">
-                <Text style={{ fontSize: 13, fontWeight: '600', color: fgColor }}>{monthLabel}</Text>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: fgColor }}>{monthLabel}</Text>
                 <View className="flex-row gap-2">
                     <Pressable onPress={() => setDisplayMonth((prev) => addMonths(prev, -1))} hitSlop={8}>
                         <ChevronLeft size={16} color={mutedColor} />
@@ -66,7 +66,7 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
             <View className="flex-row">
                 {DAY_LETTERS.map((day) => (
                     <View key={day.key} className="items-center py-px" style={{ width: '14.28%' }}>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: mutedColor }}>{day.label}</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: mutedColor }}>{day.label}</Text>
                     </View>
                 ))}
             </View>
@@ -84,8 +84,10 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
                             onPress={() => onDateSelect(cell.date)}
                         >
                             <View
-                                className="size-6 rounded-full items-center justify-center"
+                                className="rounded-full items-center justify-center"
                                 style={{
+                                    width: 28,
+                                    height: 28,
                                     backgroundColor: cell.isToday
                                         ? primaryColor
                                         : isSelected
@@ -95,7 +97,7 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
                             >
                                 <Text
                                     style={{
-                                        fontSize: 11,
+                                        fontSize: 13,
                                         fontWeight: cell.isToday ? '700' : undefined,
                                         color: cell.isToday
                                             ? primaryFgColor
