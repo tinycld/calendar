@@ -2,7 +2,7 @@ import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { useWorkspaceLayout } from '@tinycld/core/components/workspace/useWorkspaceLayout'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
-import { ChevronDown, ChevronLeft, ChevronRight, Menu } from 'lucide-react-native'
+import { ChevronLeft, ChevronRight, Menu } from 'lucide-react-native'
 import { Pressable, Text, View } from 'react-native'
 import { formatDateLabel } from '../hooks/useCalendarNavigation'
 import { useCalendarView, type ViewMode } from '../hooks/useCalendarView'
@@ -18,7 +18,6 @@ const VIEW_LABELS: Record<ViewMode, string> = {
 export function CalendarHeader() {
     const { viewMode, setViewMode, focusDate, goToday, goNext, goPrevious } = useCalendarView()
     const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted-foreground')
     const borderColor = useThemeColor('border')
     const primaryColor = useThemeColor('primary')
     const primaryFgColor = useThemeColor('primary-foreground')
@@ -35,10 +34,7 @@ export function CalendarHeader() {
                     <Menu size={22} color={fgColor} />
                 </Pressable>
 
-                <Pressable onPress={() => setViewMode('month')} className="flex-row items-center gap-0.5" hitSlop={4}>
-                    <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor }}>{dateLabel}</Text>
-                    <ChevronDown size={16} color={mutedColor} />
-                </Pressable>
+                <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor }}>{dateLabel}</Text>
 
                 <View className="flex-1" />
 
