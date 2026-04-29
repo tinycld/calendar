@@ -27,8 +27,10 @@ export function DayColumnHeader({ date, isToday }: DayColumnHeaderProps) {
                 {dayName}
             </Text>
             <View
-                className="size-7 rounded-full items-center justify-center"
+                className="rounded-full items-center justify-center"
                 style={{
+                    width: 28,
+                    height: 28,
                     backgroundColor: isToday ? primaryColor : 'transparent',
                 }}
             >

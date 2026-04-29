@@ -46,8 +46,10 @@ export function MonthCell({
             onPress={() => onDatePress(date)}
         >
             <View
-                className="size-6 rounded-full items-center justify-center self-end mb-0.5 mr-0.5"
+                className="rounded-full items-center justify-center self-end mb-0.5 mr-0.5"
                 style={{
+                    width: 24,
+                    height: 24,
                     backgroundColor: isToday ? primaryColor : undefined,
                 }}
             >
