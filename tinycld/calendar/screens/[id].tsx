@@ -12,7 +12,7 @@ import { useForm, z, zodResolver } from '@tinycld/core/ui/form'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native'
 import { EventForm } from '../components/EventForm'
 import { EventGuestList } from '../components/EventGuestList'
 import { useVisibleCalendars } from '../hooks/useCalendarEvents'
@@ -223,34 +223,42 @@ export default function EventEditorScreen() {
     const guestContent = <EventGuestList guests={guests} />
 
     return (
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ backgroundColor: bgColor }}>
-            <View className="flex-1 p-5">
-                <View className="flex-row justify-between items-center mb-5">
-                    <View className="flex-row gap-3 items-center">
-                        <Pressable onPress={() => router.back()}>
-                            <ArrowLeft size={24} color={fgColor} />
-                        </Pressable>
-                        <Text style={{ fontSize: 24, fontWeight: 'bold', color: fgColor }}>
-                            {event ? 'Edit Event' : 'New Event'}
-                        </Text>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ flex: 1, backgroundColor: bgColor }}
+        >
+            <ScrollView
+                contentContainerStyle={{ flexGrow: 1 }}
+                keyboardShouldPersistTaps="handled"
+            >
+                <View className="flex-1 p-5">
+                    <View className="flex-row justify-between items-center mb-5">
+                        <View className="flex-row gap-3 items-center">
+                            <Pressable onPress={() => router.back()}>
+                                <ArrowLeft size={24} color={fgColor} />
+                            </Pressable>
+                            <Text style={{ fontSize: 24, fontWeight: 'bold', color: fgColor }}>
+                                {event ? 'Edit Event' : 'New Event'}
+                            </Text>
+                        </View>
+                        <Button onPress={onSubmit} isDisabled={!canSubmit} size="sm">
+                            <ButtonText>{activeMutation.isPending ? 'Saving...' : 'Save'}</ButtonText>
+                        </Button>
                     </View>
-                    <Button onPress={onSubmit} isDisabled={!canSubmit} size="sm">
-                        <ButtonText>{activeMutation.isPending ? 'Saving...' : 'Save'}</ButtonText>
-                    </Button>
-                </View>
 
-                {isDesktop ? (
-                    <View className="flex-row gap-5 flex-1">
-                        <View className="flex-[2]">{formContent}</View>
-                        <View className="flex-1">{guestContent}</View>
-                    </View>
-                ) : (
-                    <View className="gap-4">
-                        {formContent}
-                        {guestContent}
-                    </View>
-                )}
-            </View>
-        </ScrollView>
+                    {isDesktop ? (
+                        <View className="flex-row gap-5 flex-1">
+                            <View className="flex-[2]">{formContent}</View>
+                            <View className="flex-1">{guestContent}</View>
+                        </View>
+                    ) : (
+                        <View className="gap-4">
+                            {formContent}
+                            {guestContent}
+                        </View>
+                    )}
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     )
 }
