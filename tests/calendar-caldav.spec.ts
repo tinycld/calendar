@@ -30,6 +30,11 @@ test.describe('Calendar — CalDAV Integration', () => {
 
         await login(page)
         await navigateToPackage(page, 'calendar')
+        // EventBlock renders title with numberOfLines={1}, which truncates
+        // with ellipsis when the column is narrow (week view). Day view
+        // gives one wide column where the full summary always fits, so
+        // getByText matches the rendered text exactly.
+        await page.getByRole('button', { name: 'Day', exact: true }).click()
         await expect(page.getByText(summary)).toBeVisible({ timeout: 10_000 })
     })
 
@@ -38,32 +43,34 @@ test.describe('Calendar — CalDAV Integration', () => {
         expect(calendars.length).toBeGreaterThan(0)
         const title = `Web event ${Date.now()}`
 
-        // Navigate via the calendar view so router has a back-stack entry
-        // for the form's onSuccess: () => router.back() to consume. Direct
-        // page.goto('/new') leaves the history stack empty and back() noops
-        // with "GO_BACK was not handled by any navigator", so the form
-        // never unmounts even though the API call succeeds.
+        // Click "+ Create" rather than goto('/calendar/new') so the router
+        // has a back-stack entry for onSuccess to consume. Direct deep-link
+        // arrivals leave the stack empty; useNavigateBack handles that for
+        // real users by replacing with the package root, but the spec wants
+        // to assert the normal flow — form unmounts on save.
         await login(page)
         await navigateToPackage(page, 'calendar')
         await page.getByText('+ Create', { exact: true }).click()
         await expect(page.getByPlaceholder('Event title')).toBeVisible()
         await page.getByPlaceholder('Event title').fill(title)
 
-        // Save is disabled until userOrg + defaultCalendar resolve from
+        // Save stays disabled until userOrg + defaultCalendar resolve from
         // the live queries. Gluestack's <Button isDisabled> sets a CSS
-        // data-disabled attribute that Playwright's toBeEnabled cannot
-        // see, so wait for the attribute directly.
+        // data-disabled attribute, not the HTML disabled property, so
+        // Playwright's toBeEnabled can't see it — assert the attribute
+        // explicitly. toHaveAttribute(name, 'false') fails closed if the
+        // disabled-state contract ever changes.
         const saveButton = page.getByRole('button', { name: 'Save' })
-        await expect(saveButton).not.toHaveAttribute('data-disabled', 'true', { timeout: 10_000 })
+        await expect(saveButton).toHaveAttribute('data-disabled', 'false', { timeout: 10_000 })
         await saveButton.click()
 
-        // Save → router.back() (calendar/screens/[id].tsx#L137).
+        // After save, the form unmounts (onSuccess navigates away).
         await expect(page.getByPlaceholder('Event title')).toBeHidden({ timeout: 5_000 })
 
-        // The form picks the user's "default" calendar via useDefaultCalendar,
-        // which may not be calendars[0] from PROPFIND. Search across all of
-        // them — the test asserts the cross-tier contract, not which calendar
-        // the form happens to default to.
+        // The form's default calendar comes from useVisibleCalendars, which
+        // may not be calendars[0] from PROPFIND. Search across all of them —
+        // this test asserts the cross-tier contract, not which calendar the
+        // form happens to default to.
         await expect(async () => {
             for (const cal of calendars) {
                 const events = await propfindEvents(cal.id)
@@ -88,6 +95,9 @@ test.describe('Calendar — CalDAV Integration', () => {
 
         await login(page)
         await navigateToPackage(page, 'calendar')
+        // Day view ensures the full summary text is rendered (week view
+        // truncates with ellipsis under default viewport width).
+        await page.getByRole('button', { name: 'Day', exact: true }).click()
         await expect(page.getByText(summary)).toBeVisible({ timeout: 10_000 })
 
         await deleteEvent(calId, uid)
