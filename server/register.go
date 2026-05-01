@@ -136,7 +136,7 @@ func Register(app *pocketbase.PocketBase) {
 		go startSubscriptionSync(app)
 		go startReminderScheduler(app)
 
-		backend := &CalDAVBackend{app: app}
+		backend := newInstrumentedBackend(&CalDAVBackend{app: app})
 		handler := caldav.Handler{Backend: backend, Prefix: "/caldav"}
 
 		serveCalDAV := func(re *core.RequestEvent) error {
