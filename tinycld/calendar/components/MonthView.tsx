@@ -2,7 +2,7 @@ import { LoadingState } from '@tinycld/core/components/LoadingState'
 import { useMemo } from 'react'
 import { type GestureResponderEvent, Pressable, Text, View } from 'react-native'
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
-import { addDays, eventOverlapsRange } from '../hooks/useCalendarNavigation'
+import { addDays, endOfDay, eventOverlapsRange } from '../hooks/useCalendarNavigation'
 import { useCalendarView } from '../hooks/useCalendarView'
 import { getMonthGrid, type MonthGridCell } from '../hooks/useMonthGrid'
 import { type LayoutEvent, layoutMonthEvents, type MonthCellLayout } from '../layout'
@@ -22,7 +22,9 @@ export function MonthView() {
     const grid = useMemo(() => getMonthGrid(focusDate), [focusDate])
 
     const gridStart = grid[0].date
-    const gridEnd = grid[grid.length - 1].date
+    // Use endOfDay so events on the last cell aren't filtered out — see
+    // eventOverlapsRange's exclusive right bound.
+    const gridEnd = useMemo(() => endOfDay(grid[grid.length - 1].date), [grid])
 
     const { events, isLoading } = useCalendarEvents(gridStart, gridEnd)
 
@@ -40,9 +42,7 @@ export function MonthView() {
         () =>
             rows.map((row) => {
                 const weekStart = row[0].date
-                const weekEnd = addDays(weekStart, 6)
-                const weekEndFull = new Date(weekEnd)
-                weekEndFull.setHours(23, 59, 59, 999)
+                const weekEndFull = endOfDay(addDays(weekStart, 6))
 
                 const weekEvents = events.filter((e) => eventOverlapsRange(e, weekStart, weekEndFull))
 

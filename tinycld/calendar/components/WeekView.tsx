@@ -3,7 +3,13 @@ import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { useMemo } from 'react'
 import { View } from 'react-native'
 import { useCalendarEvents } from '../hooks/useCalendarEvents'
-import { addDays, eventOverlapsRange, isToday, startOfWeek } from '../hooks/useCalendarNavigation'
+import {
+    addDays,
+    endOfDay,
+    eventOverlapsRange,
+    isToday,
+    startOfWeek,
+} from '../hooks/useCalendarNavigation'
 import { useCalendarView } from '../hooks/useCalendarView'
 import type { CalendarEvents } from '../types'
 import { AllDayBar } from './AllDayBar'
@@ -25,7 +31,12 @@ export function WeekView() {
     const dayCount = isMobile ? 3 : 7
 
     const rangeStart = useMemo(() => (isMobile ? focusDate : startOfWeek(focusDate)), [focusDate, isMobile])
-    const rangeEnd = useMemo(() => addDays(rangeStart, dayCount - 1), [rangeStart, dayCount])
+    // Use endOfDay so events on the last shown day aren't filtered out —
+    // see eventOverlapsRange's exclusive right bound.
+    const rangeEnd = useMemo(
+        () => endOfDay(addDays(rangeStart, dayCount - 1)),
+        [rangeStart, dayCount]
+    )
     const days = useMemo(
         () => Array.from({ length: dayCount }, (_, i) => addDays(rangeStart, i)),
         [rangeStart, dayCount]

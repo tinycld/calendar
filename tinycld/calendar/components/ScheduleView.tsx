@@ -6,6 +6,7 @@ import { FlatList, type GestureResponderEvent, Platform, Pressable, StyleSheet, 
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
 import {
     addDays,
+    endOfDay,
     isToday as checkIsToday,
     eventOverlapsRange,
     getShortDayName,
@@ -168,7 +169,7 @@ function DaySection({
 
 export function ScheduleView() {
     const { focusDate, openQuickCreate, openEventDetail } = useCalendarView()
-    const endDate = useMemo(() => addDays(focusDate, SCHEDULE_DAYS - 1), [focusDate])
+    const endDate = useMemo(() => endOfDay(addDays(focusDate, SCHEDULE_DAYS - 1)), [focusDate])
     const { events, isLoading } = useCalendarEvents(focusDate, endDate)
 
     const rows = useMemo(() => {

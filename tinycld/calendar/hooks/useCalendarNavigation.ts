@@ -33,6 +33,19 @@ export function endOfMonth(date: Date): Date {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0)
 }
 
+/**
+ * Returns a new Date set to the last representable instant of the same day
+ * (23:59:59.999). Use when passing an end-of-range to eventOverlapsRange
+ * — the overlap check is exclusive on the right time bound, so a midnight
+ * Date for "end of Saturday" would silently drop every event after 00:00:00
+ * on Saturday (the entire day).
+ */
+export function endOfDay(date: Date): Date {
+    const result = new Date(date)
+    result.setHours(23, 59, 59, 999)
+    return result
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
