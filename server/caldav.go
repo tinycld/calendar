@@ -56,16 +56,11 @@ func (b *CalDAVBackend) ListCalendars(ctx context.Context) ([]caldav.Calendar, e
 		return nil, nil
 	}
 
-	// Collect user_org IDs
-	userOrgIDs := make([]any, len(userOrgs))
-	for i, uo := range userOrgs {
-		userOrgIDs[i] = uo.Id
-	}
+	// PB's filter grammar (fexpr) has no IN operator — only =, !=, <, <=, >,
+	// >=, ~, !~ joined by && / ||. Expand to "user_org = {:uo0} || ..."
+	filter, params := orEqualsFilter("user_org", recordIDs(userOrgs), nil)
 
-	// Find all calendar memberships for these user_org records
-	members, err := b.app.FindRecordsByFilter("calendar_members",
-		"user_org IN {:userOrgIds}", "", 0, 0,
-		map[string]any{"userOrgIds": userOrgIDs})
+	members, err := b.app.FindRecordsByFilter("calendar_members", filter, "", 0, 0, params)
 	if err != nil {
 		return nil, err
 	}
@@ -350,19 +345,44 @@ func (b *CalDAVBackend) resolveCalendarMembership(userId, calId string) (*core.R
 		return nil, fmt.Errorf("user has no org memberships")
 	}
 
-	userOrgIDs := make([]any, len(userOrgs))
-	for i, uo := range userOrgs {
-		userOrgIDs[i] = uo.Id
-	}
+	uoFilter, params := orEqualsFilter("user_org", recordIDs(userOrgs), map[string]any{"calId": calId})
+	filter := "calendar = {:calId} && (" + uoFilter + ")"
 
-	members, err := b.app.FindRecordsByFilter("calendar_members",
-		"calendar = {:calId} && user_org IN {:userOrgIds}", "", 1, 0,
-		map[string]any{"calId": calId, "userOrgIds": userOrgIDs})
+	members, err := b.app.FindRecordsByFilter("calendar_members", filter, "", 1, 0, params)
 	if err != nil || len(members) == 0 {
 		return nil, fmt.Errorf("user is not a member of calendar %s", calId)
 	}
 
 	return members[0], nil
+}
+
+// recordIDs extracts the Id field from each record into a string slice.
+func recordIDs(records []*core.Record) []string {
+	ids := make([]string, len(records))
+	for i, r := range records {
+		ids[i] = r.Id
+	}
+	return ids
+}
+
+// orEqualsFilter builds a PB filter clause that matches when `field` equals
+// any of `values`, joining N `field = {:keyN}` predicates with ||. Returns
+// the clause and a params map. Pass an existing `extra` params map to merge
+// additional placeholders (e.g. "calId"); pass nil to allocate a fresh one.
+//
+// PB's fexpr parser has no IN operator. This is the standard workaround.
+func orEqualsFilter(field string, values []string, extra map[string]any) (string, map[string]any) {
+	params := extra
+	if params == nil {
+		params = make(map[string]any, len(values))
+	}
+	clauses := make([]string, len(values))
+	for i, v := range values {
+		key := fmt.Sprintf("%s_%d", field, i)
+		clauses[i] = field + " = {:" + key + "}"
+		params[key] = v
+	}
+	return strings.Join(clauses, " || "), params
 }
 
 func requireEditorRole(membership *core.Record) error {
