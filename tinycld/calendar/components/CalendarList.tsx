@@ -14,6 +14,9 @@ interface CalendarListProps {
     onShowOnly: (calendarId: string) => void
     onRefreshSubscription?: (calendarId: string) => void
     onDeleteCalendar?: (calendarId: string) => void
+    /** Called when the user picks "Settings & sharing" on a calendar.
+     *  Caller decides whether to expose this per-calendar (e.g. only owners). */
+    onOpenSettings?: (calendarId: string) => void
 }
 
 function CalendarCheckbox({
@@ -24,6 +27,7 @@ function CalendarCheckbox({
     onShowOnly,
     onRefreshSubscription,
     onDeleteCalendar,
+    onOpenSettings,
 }: {
     calendar: CalendarWithGroup
     isChecked: boolean
@@ -32,6 +36,7 @@ function CalendarCheckbox({
     onShowOnly: (calendarId: string) => void
     onRefreshSubscription?: (calendarId: string) => void
     onDeleteCalendar?: (calendarId: string) => void
+    onOpenSettings?: (calendarId: string) => void
 }) {
     const dangerColor = useThemeColor('danger')
     const colors = getCalendarColorResolved(calendar.color)
@@ -69,6 +74,7 @@ function CalendarCheckbox({
                     calendar={calendar}
                     onRefresh={onRefreshSubscription ? () => onRefreshSubscription(calendar.id) : undefined}
                     onDelete={onDeleteCalendar ? () => onDeleteCalendar(calendar.id) : undefined}
+                    onOpenSettings={onOpenSettings ? () => onOpenSettings(calendar.id) : undefined}
                 />
             </View>
             {calendar.subscription_error ? (
@@ -93,6 +99,7 @@ function CalendarSection({
     onShowOnly,
     onRefreshSubscription,
     onDeleteCalendar,
+    onOpenSettings,
 }: {
     title: string
     calendars: CalendarWithGroup[]
@@ -102,6 +109,7 @@ function CalendarSection({
     onShowOnly: (calendarId: string) => void
     onRefreshSubscription?: (calendarId: string) => void
     onDeleteCalendar?: (calendarId: string) => void
+    onOpenSettings?: (calendarId: string) => void
 }) {
     const [expanded, setExpanded] = useState(true)
     const mutedColor = useThemeColor('muted-foreground')
@@ -127,6 +135,7 @@ function CalendarSection({
                         onShowOnly={onShowOnly}
                         onRefreshSubscription={onRefreshSubscription}
                         onDeleteCalendar={onDeleteCalendar}
+                        onOpenSettings={onOpenSettings}
                     />
                 ))}
         </View>
@@ -141,6 +150,7 @@ export function CalendarList({
     onShowOnly,
     onRefreshSubscription,
     onDeleteCalendar,
+    onOpenSettings,
 }: CalendarListProps) {
     const mine = calendars.filter((c) => c.group === 'mine')
     const other = calendars.filter((c) => c.group === 'other')
@@ -156,6 +166,7 @@ export function CalendarList({
                 onColorChange={onColorChange}
                 onShowOnly={onShowOnly}
                 onDeleteCalendar={onDeleteCalendar}
+                onOpenSettings={onOpenSettings}
             />
             <CalendarSection
                 title="Other calendars"
@@ -165,6 +176,7 @@ export function CalendarList({
                 onColorChange={onColorChange}
                 onShowOnly={onShowOnly}
                 onDeleteCalendar={onDeleteCalendar}
+                onOpenSettings={onOpenSettings}
             />
             {subscribed.length > 0 && (
                 <CalendarSection
@@ -176,6 +188,7 @@ export function CalendarList({
                     onShowOnly={onShowOnly}
                     onRefreshSubscription={onRefreshSubscription}
                     onDeleteCalendar={onDeleteCalendar}
+                    onOpenSettings={onOpenSettings}
                 />
             )}
         </View>

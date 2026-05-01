@@ -38,7 +38,8 @@ export default function CalendarSidebar(props: CalendarSidebarProps) {
 function CalendarSidebarInner(_props: CalendarSidebarProps) {
     const router = useRouter()
     const orgHref = useOrgHref()
-    const { calendars, visibleIds, toggleCalendar, setCalendarColor, showOnlyCalendar } = useVisibleCalendars()
+    const { calendars, visibleIds, toggleCalendar, setCalendarColor, showOnlyCalendar } =
+        useVisibleCalendars()
     const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
     const isMobile = useBreakpoint() === 'mobile'
     const { setDrawerOpen } = useWorkspaceLayout()
@@ -86,6 +87,18 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
         [deleteCalendarMutation]
     )
 
+    // Settings & sharing is shown for every calendar the user has access
+    // to; the screen itself renders read-only for non-owners and a
+    // not-found state for non-members, so permission logic stays in one
+    // place rather than being mirrored in the menu.
+    const handleOpenSettings = useCallback(
+        (calendarId: string) => {
+            router.push(orgHref('calendar/settings/[id]', { id: calendarId }))
+            if (isMobile) setTimeout(() => setDrawerOpen(false), 500)
+        },
+        [router, orgHref, isMobile, setDrawerOpen]
+    )
+
     return (
         <SidebarNav>
             {isMobile && (
@@ -120,6 +133,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
                 onShowOnly={showOnlyCalendar}
                 onRefreshSubscription={handleRefreshSubscription}
                 onDeleteCalendar={handleDeleteCalendar}
+                onOpenSettings={handleOpenSettings}
             />
 
             <SidebarDivider />

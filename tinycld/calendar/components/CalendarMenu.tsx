@@ -14,6 +14,9 @@ interface CalendarMenuProps {
     calendar?: CalendarWithGroup
     onRefresh?: () => void
     onDelete?: () => void
+    /** When provided, renders a "Settings & sharing" item. Caller decides
+     *  whether the current user can manage this calendar. */
+    onOpenSettings?: () => void
 }
 
 function formatLastSync(dateStr: string): string {
@@ -36,6 +39,7 @@ export function CalendarMenu({
     calendar,
     onRefresh,
     onDelete,
+    onOpenSettings,
 }: CalendarMenuProps) {
     const mutedColor = useThemeColor('muted-foreground')
     const dangerColor = useThemeColor('danger')
@@ -61,6 +65,12 @@ export function CalendarMenu({
                             <Menu.Item onPress={onShowOnly}>
                                 <Menu.ItemTitle>Display this only</Menu.ItemTitle>
                             </Menu.Item>
+
+                            {onOpenSettings && (
+                                <Menu.Item onPress={onOpenSettings}>
+                                    <Menu.ItemTitle>Settings &amp; sharing</Menu.ItemTitle>
+                                </Menu.Item>
+                            )}
 
                             {isSubscribed && (
                                 <>
