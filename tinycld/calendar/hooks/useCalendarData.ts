@@ -19,13 +19,13 @@ export function useCalendarData() {
     const [calendarsCollection] = useStore('calendar_calendars')
     const [membersCollection] = useStore('calendar_members')
 
-    const { data: allCalendars } = useOrgLiveQuery((query, { orgId }) =>
+    const { data: allCalendars, isLoading: calendarsLoading } = useOrgLiveQuery((query, { orgId }) =>
         query.from({ cal: calendarsCollection }).where(({ cal }) => eq(cal.org, orgId))
     )
 
     const userOrgId = userOrg?.id ?? ''
 
-    const { data: memberships } = useOrgLiveQuery(
+    const { data: memberships, isLoading: membershipsLoading } = useOrgLiveQuery(
         (query) => query.from({ mem: membersCollection }).where(({ mem }) => eq(mem.user_org, userOrgId)),
         [userOrgId]
     )
@@ -65,7 +65,7 @@ export function useCalendarData() {
 
     const calendarMap = useMemo(() => new Map(calendars.map((c) => [c.id, c])), [calendars])
 
-    const isLoading = !allCalendars || !memberships
+    const isLoading = calendarsLoading || membershipsLoading
 
     const colorMutation = useMutation({
         mutationFn: mutation(function* ({ membershipId, color }: { membershipId: string; color: CalendarColorKey }) {

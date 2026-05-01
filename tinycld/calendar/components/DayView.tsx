@@ -1,3 +1,4 @@
+import { LoadingState } from '@tinycld/core/components/LoadingState'
 import { useMemo } from 'react'
 import { View } from 'react-native'
 import { useCalendarEvents } from '../hooks/useCalendarEvents'
@@ -9,7 +10,7 @@ import { TimeGrid } from './TimeGrid'
 
 export function DayView() {
     const { focusDate, openQuickCreate, openEventDetail } = useCalendarView()
-    const events = useCalendarEvents(focusDate, focusDate)
+    const { events, isLoading } = useCalendarEvents(focusDate, focusDate)
 
     const { allDayEvents, timedEvents } = useMemo(() => {
         const allDay = events.filter((e) => e.all_day)
@@ -18,6 +19,8 @@ export function DayView() {
     }, [events])
 
     const columns = useMemo(() => [{ date: focusDate, events: timedEvents }], [focusDate, timedEvents])
+
+    if (isLoading && events.length === 0) return <LoadingState />
 
     return (
         <View className="flex-1">

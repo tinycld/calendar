@@ -56,11 +56,11 @@ export function useCalendarMap(): Map<string, CalendarWithGroup> {
 }
 
 export function useCalendarEvents(startDate: Date, endDate: Date) {
-    const { visibleIds } = useVisibleCalendars()
+    const { visibleIds, isLoading: calendarsLoading } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
     const [calendarsCollection] = useStore('calendar_calendars')
 
-    const { data: allEvents } = useOrgLiveQuery((query, { orgId }) =>
+    const { data: allEvents, isLoading: eventsLoading } = useOrgLiveQuery((query, { orgId }) =>
         query
             .from({ evt: eventsCollection })
             .join({ cal: calendarsCollection }, ({ evt, cal }) => eq(evt.calendar, cal.id))
@@ -68,7 +68,7 @@ export function useCalendarEvents(startDate: Date, endDate: Date) {
             .select(({ evt }) => evt)
     )
 
-    return useMemo(() => {
+    const events = useMemo(() => {
         if (!allEvents) return []
         const visible = allEvents.filter((e) => visibleIds.has(e.calendar))
         return expandRecurringEvents({
@@ -77,6 +77,8 @@ export function useCalendarEvents(startDate: Date, endDate: Date) {
             rangeEnd: endDate,
         })
     }, [allEvents, startDate, endDate, visibleIds])
+
+    return { events, isLoading: calendarsLoading || eventsLoading }
 }
 
 export function useEventDetail(eventId: string | undefined): {
