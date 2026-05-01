@@ -2,14 +2,16 @@ import { eq } from '@tanstack/db'
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { handleMutationErrorsWithForm } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
+import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useCurrentUserOrg } from '@tinycld/core/lib/use-current-user-org'
+import { useNavigateBack } from '@tinycld/core/lib/use-navigate-back'
 import { useOrgInfo } from '@tinycld/core/lib/use-org-info'
 import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { useForm, z, zodResolver } from '@tinycld/core/ui/form'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native'
@@ -38,9 +40,20 @@ function combineDateAndTime(dateStr: string, timeStr: string): string {
     return new Date(`${dateStr}T${timeStr}:00`).toISOString()
 }
 
+// Rounds a Date forward to the next full half-hour. Seconds and ms cleared
+// so the form fields show clean HH:00 / HH:30 values.
+function nextHalfHour(d: Date): Date {
+    const out = new Date(d)
+    out.setSeconds(0, 0)
+    const minutes = out.getMinutes()
+    const target = minutes < 30 ? 30 : 60
+    out.setMinutes(target)
+    return out
+}
+
 export default function EventEditorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>()
-    const router = useRouter()
+    const orgHref = useOrgHref()
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
     const breakpoint = useBreakpoint()
@@ -48,13 +61,14 @@ export default function EventEditorScreen() {
     const userOrg = useCurrentUserOrg(orgSlug)
     const { calendars, mineCalendars, calendarMap } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
+    const navigateBack = useNavigateBack(() => orgHref('calendar'))
 
     const { baseId } = parseEventId(id ?? '')
     const isNew = !id || id === 'new'
     const lookupId = isNew ? '' : baseId
 
     const { data: existingEvents } = useOrgLiveQuery(
-        (query) => {
+        query => {
             if (!lookupId) return null
             return query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, lookupId))
         },
@@ -62,8 +76,12 @@ export default function EventEditorScreen() {
     )
     const event = existingEvents?.[0]
 
-    const startDate = event ? new Date(event.start) : new Date()
-    const endDate = event ? new Date(event.end) : new Date()
+    // For new events, default start to the next half-hour and end to one
+    // hour later — a common-sense default that avoids the zero-duration
+    // start==end footgun (a fresh `new Date()` for both fields produces
+    // two identical timestamps because they're computed in the same render).
+    const startDate = event ? new Date(event.start) : nextHalfHour(new Date())
+    const endDate = event ? new Date(event.end) : new Date(startDate.getTime() + 60 * 60 * 1000)
 
     const defaultCalendar = mineCalendars[0]?.id ?? calendars[0]?.id ?? ''
 
@@ -77,6 +95,10 @@ export default function EventEditorScreen() {
     } = useForm({
         mode: 'onChange',
         resolver: zodResolver(eventSchema),
+        // For new events, use `values` (not `defaultValues`) so the form
+        // re-syncs when defaultCalendar resolves from the live query —
+        // otherwise the form snapshots calendar='' on first render and
+        // submitting that yields a 400 from PB's required-field validation.
         values: event
             ? {
                   title: event.title,
@@ -93,22 +115,21 @@ export default function EventEditorScreen() {
                   visibility: event.visibility,
                   reminderMinutes: event.reminder,
               }
-            : undefined,
-        defaultValues: {
-            title: '',
-            description: '',
-            location: '',
-            startDate: startDate.toISOString().split('T')[0],
-            startTime: startDate.toTimeString().slice(0, 5),
-            endDate: endDate.toISOString().split('T')[0],
-            endTime: endDate.toTimeString().slice(0, 5),
-            all_day: false,
-            recurrence: '',
-            calendar: defaultCalendar,
-            busy_status: 'busy' as const,
-            visibility: 'default' as const,
-            reminderMinutes: 30,
-        },
+            : {
+                  title: '',
+                  description: '',
+                  location: '',
+                  startDate: startDate.toISOString().split('T')[0],
+                  startTime: startDate.toTimeString().slice(0, 5),
+                  endDate: endDate.toISOString().split('T')[0],
+                  endTime: endDate.toTimeString().slice(0, 5),
+                  all_day: false,
+                  recurrence: '',
+                  calendar: defaultCalendar,
+                  busy_status: 'busy' as const,
+                  visibility: 'default' as const,
+                  reminderMinutes: 30,
+              },
     })
 
     const startDateValue = watch('startDate')
@@ -134,13 +155,13 @@ export default function EventEditorScreen() {
                 ical_uid: '',
             })
         }),
-        onSuccess: () => router.back(),
+        onSuccess: navigateBack,
         onError: handleMutationErrorsWithForm({ setError, getValues }),
     })
 
     const updateEvent = useMutation({
         mutationFn: mutation(function* (data: z.infer<typeof eventSchema>) {
-            yield eventsCollection.update(baseId, (draft) => {
+            yield eventsCollection.update(baseId, draft => {
                 draft.title = data.title.trim()
                 draft.description = data.description
                 draft.location = data.location
@@ -154,7 +175,7 @@ export default function EventEditorScreen() {
                 draft.visibility = data.visibility
             })
         }),
-        onSuccess: () => router.back(),
+        onSuccess: navigateBack,
         onError: handleMutationErrorsWithForm({ setError, getValues }),
     })
 
@@ -170,7 +191,7 @@ export default function EventEditorScreen() {
                     Events from subscribed calendars cannot be edited
                 </Text>
                 <Pressable
-                    onPress={() => router.back()}
+                    onPress={navigateBack}
                     className="mt-3 px-3 py-1.5 rounded-md border"
                     style={{ borderColor: mutedColor }}
                 >
@@ -189,7 +210,7 @@ export default function EventEditorScreen() {
                     Event not found
                 </Text>
                 <Pressable
-                    onPress={() => router.back()}
+                    onPress={navigateBack}
                     className="mt-3 px-3 py-1.5 rounded-md border"
                     style={{
                         borderColor: mutedColor,
@@ -204,8 +225,12 @@ export default function EventEditorScreen() {
     }
 
     const activeMutation = isNew ? createEvent : updateEvent
-    const onSubmit = handleSubmit((data) => activeMutation.mutate(data))
-    const canSubmit = !activeMutation.isPending && !!userOrg && !isLoadingEvent
+    const onSubmit = handleSubmit(data => activeMutation.mutate(data))
+    const calendarValue = watch('calendar')
+    // For new events, the calendar field is populated from defaultCalendar
+    // once the live query resolves. Submitting before that yields a 400
+    // because `calendar` is a required relation in the PB schema.
+    const canSubmit = !activeMutation.isPending && !!userOrg && !isLoadingEvent && !!calendarValue
 
     const isDesktop = breakpoint === 'desktop'
     const guests = event?.guests ?? []
@@ -227,22 +252,24 @@ export default function EventEditorScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-background"
         >
-            <ScrollView
-                contentContainerStyle={{ flexGrow: 1 }}
-                keyboardShouldPersistTaps="handled"
-            >
+            <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
                 <View className="flex-1 p-5">
                     <View className="flex-row justify-between items-center mb-5">
                         <View className="flex-row gap-3 items-center">
-                            <Pressable onPress={() => router.back()}>
+                            <Pressable onPress={navigateBack}>
                                 <ArrowLeft size={24} color={fgColor} />
                             </Pressable>
-                            <Text className="text-foreground" style={{ fontSize: 24, fontWeight: 'bold' }}>
+                            <Text
+                                className="text-foreground"
+                                style={{ fontSize: 24, fontWeight: 'bold' }}
+                            >
                                 {event ? 'Edit Event' : 'New Event'}
                             </Text>
                         </View>
                         <Button onPress={onSubmit} isDisabled={!canSubmit} size="sm">
-                            <ButtonText>{activeMutation.isPending ? 'Saving...' : 'Save'}</ButtonText>
+                            <ButtonText>
+                                {activeMutation.isPending ? 'Saving...' : 'Save'}
+                            </ButtonText>
                         </Button>
                     </View>
 
