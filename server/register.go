@@ -9,6 +9,7 @@ import (
 	"github.com/emersion/go-webdav/caldav"
 	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"tinycld.org/core/audit"
 	"tinycld.org/core/notify"
@@ -209,6 +210,61 @@ func Register(app *pocketbase.PocketBase) {
 		return e.Next()
 	})
 
+	// Authorize calendar_members create at the Go layer. The PB rule
+	// (calOwnerRule) traverses a back-relation through user_org, which
+	// PB v0.36 evaluates inconsistently — non-superuser creates always
+	// 400 even when the auth user IS an owner. Enforce here instead:
+	// only owners of the calendar can add members.
+	app.OnRecordCreateRequest("calendar_members").BindFunc(func(e *core.RecordRequestEvent) error {
+		auth := e.Auth
+		if auth == nil {
+			return apis.NewUnauthorizedError("Authentication required.", nil)
+		}
+		// Superusers bypass: the seed script and admin tooling create
+		// memberships without going through the calendar-owner flow.
+		if auth.Collection().Name == core.CollectionNameSuperusers {
+			return e.Next()
+		}
+		calendarID := e.Record.GetString("calendar")
+		if calendarID == "" {
+			return apis.NewBadRequestError("calendar is required.", nil)
+		}
+		isOwner, err := userIsOwner(app, calendarID, auth.Id)
+		if err != nil {
+			return err
+		}
+		if !isOwner {
+			return apis.NewForbiddenError("Only calendar owners can add members.", nil)
+		}
+		return e.Next()
+	})
+
+	// Refuse to remove the last owner of a calendar — otherwise no one can
+	// manage members or change subscriptions, and the calendar becomes
+	// orphaned. Catches both delete and demotion (role-update away from
+	// "owner") on the same membership.
+	app.OnRecordDeleteRequest("calendar_members").BindFunc(func(e *core.RecordRequestEvent) error {
+		if e.Record.GetString("role") == "owner" {
+			calId := e.Record.GetString("calendar")
+			if err := guardLastOwner(app, calId, e.Record.Id); err != nil {
+				return err
+			}
+		}
+		return e.Next()
+	})
+
+	app.OnRecordUpdateRequest("calendar_members").BindFunc(func(e *core.RecordRequestEvent) error {
+		// Only block if this is a demotion away from owner.
+		original := e.Record.Original()
+		if original.GetString("role") == "owner" && e.Record.GetString("role") != "owner" {
+			calId := e.Record.GetString("calendar")
+			if err := guardLastOwner(app, calId, e.Record.Id); err != nil {
+				return err
+			}
+		}
+		return e.Next()
+	})
+
 	// Auto-generate ical_uid for events created via the web UI
 	app.OnRecordCreate("calendar_events").BindFunc(func(e *core.RecordEvent) error {
 		if e.Record.GetString("ical_uid") == "" {
@@ -256,4 +312,53 @@ func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record)
 		Body:    fmt.Sprintf("You now have %s access", role),
 		URL:     fmt.Sprintf("/a/%s/calendar", orgSlug),
 	})
+}
+
+// userIsOwner reports whether the given user holds an "owner" calendar_members
+// row for the given calendar (via any of their user_org records).
+func userIsOwner(app core.App, calendarID, userID string) (bool, error) {
+	userOrgs, err := app.FindRecordsByFilter(
+		"user_org",
+		"user = {:userId}",
+		"", 0, 0,
+		map[string]any{"userId": userID},
+	)
+	if err != nil {
+		return false, err
+	}
+	for _, uo := range userOrgs {
+		owners, err := app.FindRecordsByFilter(
+			"calendar_members",
+			"calendar = {:calId} && user_org = {:uoId} && role = 'owner'",
+			"", 1, 0,
+			map[string]any{"calId": calendarID, "uoId": uo.Id},
+		)
+		if err != nil {
+			return false, err
+		}
+		if len(owners) > 0 {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// guardLastOwner returns an error if removing or demoting the membership
+// identified by excludeMemberID would leave the calendar with zero owners.
+// excludeMemberID is the row about to be deleted/demoted; it's excluded from
+// the count so the caller's own record doesn't keep itself alive.
+func guardLastOwner(app core.App, calendarID, excludeMemberID string) error {
+	owners, err := app.FindRecordsByFilter(
+		"calendar_members",
+		"calendar = {:calId} && role = 'owner' && id != {:excludeId}",
+		"", 0, 0,
+		map[string]any{"calId": calendarID, "excludeId": excludeMemberID},
+	)
+	if err != nil {
+		return err
+	}
+	if len(owners) == 0 {
+		return apis.NewBadRequestError("A calendar must have at least one owner.", nil)
+	}
+	return nil
 }
