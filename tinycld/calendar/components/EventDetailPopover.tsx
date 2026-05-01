@@ -64,7 +64,6 @@ function MobileEventDetail({
 }: Omit<EventDetailPopoverProps, 'isVisible'> & { event: CalendarEvents }) {
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
-    const bgColor = useThemeColor('background')
     const router = useRouter()
     const orgHref = useOrgHref()
     const colors = getCalendarColorResolved(calendarColorKey)
@@ -77,7 +76,7 @@ function MobileEventDetail({
     }
 
     return (
-        <View className="flex-1" style={{ backgroundColor: bgColor }}>
+        <View className="flex-1 bg-background">
             <View className="flex-row justify-between items-center px-4 py-3">
                 <Pressable onPress={onClose} hitSlop={8}>
                     <X size={22} color={fgColor} />
@@ -108,19 +107,23 @@ function MobileEventDetail({
                             backgroundColor: colors.bg,
                         }}
                     />
-                    <Text style={{ fontSize: 22, fontWeight: '700', color: fgColor, flex: 1 }}>{event.title}</Text>
+                    <Text className="flex-1 text-foreground" style={{ fontSize: 22, fontWeight: '700' }}>
+                        {event.title}
+                    </Text>
                 </View>
 
                 <View className="flex-row items-start gap-3 mb-3">
                     <Clock size={18} color={mutedColor} />
-                    <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>{dateTimeStr}</Text>
+                    <Text className="flex-1 text-foreground" style={{ fontSize: 15 }}>
+                        {dateTimeStr}
+                    </Text>
                 </View>
 
                 {event.recurrence ? (
                     <Text
+                        className="text-muted-foreground"
                         style={{
                             fontSize: 14,
-                            color: mutedColor,
                             marginBottom: 12,
                             paddingLeft: 30,
                         }}
@@ -132,7 +135,9 @@ function MobileEventDetail({
                 {event.location ? (
                     <View className="flex-row items-start gap-3 mb-3">
                         <MapPin size={18} color={mutedColor} />
-                        <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>{event.location}</Text>
+                        <Text className="flex-1 text-foreground" style={{ fontSize: 15 }}>
+                            {event.location}
+                        </Text>
                     </View>
                 ) : null}
 
@@ -140,7 +145,7 @@ function MobileEventDetail({
                     <View className="mb-2">
                         <View className="flex-row items-start gap-3 mb-3">
                             <Users size={18} color={mutedColor} />
-                            <Text style={{ fontSize: 15, color: fgColor, flex: 1 }}>
+                            <Text className="flex-1 text-foreground" style={{ fontSize: 15 }}>
                                 {event.guests.length} guest
                                 {event.guests.length !== 1 ? 's' : ''}
                             </Text>
@@ -151,9 +156,9 @@ function MobileEventDetail({
 
                 {event.description ? (
                     <Text
+                        className="text-foreground"
                         style={{
                             fontSize: 15,
-                            color: fgColor,
                             marginTop: 8,
                             marginBottom: 12,
                             lineHeight: 22,
@@ -163,7 +168,9 @@ function MobileEventDetail({
                     </Text>
                 ) : null}
 
-                <Text style={{ fontSize: 13, color: mutedColor, marginTop: 16 }}>{calendarName}</Text>
+                <Text className="text-muted-foreground" style={{ fontSize: 13, marginTop: 16 }}>
+                    {calendarName}
+                </Text>
             </ScrollView>
         </View>
     )
@@ -238,7 +245,6 @@ export function EventDetailPopover({
     onDelete,
     isReadOnly,
 }: EventDetailPopoverProps) {
-    const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
     const bgColor = useThemeColor('background')
     const borderColor = useThemeColor('border')
@@ -350,14 +356,11 @@ export function EventDetailPopover({
         >
             <View
                 ref={popoverRef}
+                className="absolute border border-border bg-background"
                 style={{
-                    position: 'absolute',
                     width: POPOVER_WIDTH,
                     borderRadius: 12,
-                    borderWidth: 1,
                     padding: 16,
-                    backgroundColor: bgColor,
-                    borderColor,
                     shadowColor,
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.15,
@@ -416,19 +419,23 @@ export function EventDetailPopover({
                                 backgroundColor: colors.bg,
                             }}
                         />
-                        <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor, flex: 1 }}>{event.title}</Text>
+                        <Text className="flex-1 text-foreground" style={{ fontSize: 18, fontWeight: '600' }}>
+                            {event.title}
+                        </Text>
                     </View>
 
                     <View className="flex-row items-start gap-2.5 mb-2 pl-0.5">
                         <Clock size={16} color={mutedColor} />
-                        <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>{dateTimeStr}</Text>
+                        <Text className="flex-1 text-foreground" style={{ fontSize: 14 }}>
+                            {dateTimeStr}
+                        </Text>
                     </View>
 
                     {event.recurrence ? (
                         <Text
+                            className="text-muted-foreground"
                             style={{
                                 fontSize: 13,
-                                color: mutedColor,
                                 marginBottom: 8,
                                 paddingLeft: 22,
                             }}
@@ -440,14 +447,16 @@ export function EventDetailPopover({
                     {event.location ? (
                         <View className="flex-row items-start gap-2.5 mb-2 pl-0.5">
                             <MapPin size={16} color={mutedColor} />
-                            <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>{event.location}</Text>
+                            <Text className="flex-1 text-foreground" style={{ fontSize: 14 }}>
+                                {event.location}
+                            </Text>
                         </View>
                     ) : null}
 
                     {event.guests.length > 0 ? (
                         <View className="flex-row items-start gap-2.5 mb-2 pl-0.5">
                             <Users size={16} color={mutedColor} />
-                            <Text style={{ fontSize: 14, color: fgColor, flex: 1 }}>
+                            <Text className="flex-1 text-foreground" style={{ fontSize: 14 }}>
                                 {event.guests.length} guest{event.guests.length !== 1 ? 's' : ''}
                             </Text>
                         </View>
@@ -455,24 +464,15 @@ export function EventDetailPopover({
 
                     {event.description ? (
                         <Text
-                            className="mt-1 mb-2 pl-0.5"
-                            style={{
-                                fontSize: 13,
-                                color: mutedColor,
-                            }}
+                            className="mt-1 mb-2 pl-0.5 text-muted-foreground"
+                            style={{ fontSize: 13 }}
                             numberOfLines={3}
                         >
                             {event.description}
                         </Text>
                     ) : null}
 
-                    <Text
-                        className="mt-2 pl-0.5"
-                        style={{
-                            fontSize: 12,
-                            color: mutedColor,
-                        }}
-                    >
+                    <Text className="mt-2 pl-0.5 text-muted-foreground" style={{ fontSize: 12 }}>
                         {calendarName}
                     </Text>
                 </Pressable>

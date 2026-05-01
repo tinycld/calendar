@@ -1,3 +1,4 @@
+import { LoadingState } from '@tinycld/core/components/LoadingState'
 import { type Shortcut, useRegisterShortcuts, useShortcutScope } from '@tinycld/core/lib/shortcuts'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useMemo, useState } from 'react'
@@ -42,9 +43,6 @@ function EventCard({
     onPress: (id: string, e: GestureResponderEvent) => void
 }) {
     const calendarMap = useCalendarMap()
-    const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted-foreground')
-    const surfaceBg = useThemeColor('surface-secondary')
     const activeIndicator = useThemeColor('active-indicator')
     const cal = calendarMap.get(event.calendar)
     const colors = getCalendarColorResolved(cal?.color ?? 'blue')
@@ -75,26 +73,19 @@ function EventCard({
             {...hoverWebProps}
         >
             <View style={{ width: 4, backgroundColor: colors.bg }} />
-            <View
-                className="flex-1 py-2 px-2.5"
-                style={{
-                    backgroundColor: surfaceBg,
-                }}
-            >
+            <View className="flex-1 py-2 px-2.5 bg-surface-secondary">
                 <Text
-                    style={{
-                        fontSize: 14,
-                        fontWeight: '600',
-                        color: fgColor,
-                        marginBottom: 2,
-                    }}
+                    className="text-foreground"
+                    style={{ fontSize: 14, fontWeight: '600', marginBottom: 2 }}
                     numberOfLines={1}
                 >
                     {event.title}
                 </Text>
-                <Text style={{ fontSize: 12, color: mutedColor }}>{formatTimeRange(event)}</Text>
+                <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+                    {formatTimeRange(event)}
+                </Text>
                 {event.location ? (
-                    <Text style={{ fontSize: 12, color: mutedColor, marginTop: 1 }} numberOfLines={1}>
+                    <Text className="text-muted-foreground" style={{ fontSize: 12, marginTop: 1 }} numberOfLines={1}>
                         {event.location}
                     </Text>
                 ) : null}
@@ -118,17 +109,12 @@ function DaySection({
     const mutedColor = useThemeColor('muted-foreground')
     const primaryColor = useThemeColor('primary')
     const primaryFgColor = useThemeColor('primary-foreground')
-    const borderColor = useThemeColor('border')
 
     return (
         <View
+            className="flex-row py-3 px-4 gap-4 border-border"
             style={{
-                flexDirection: 'row',
                 borderBottomWidth: StyleSheet.hairlineWidth,
-                borderBottomColor: borderColor,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                gap: 16,
             }}
         >
             <View className="w-[44px] items-center">
@@ -183,7 +169,7 @@ function DaySection({
 export function ScheduleView() {
     const { focusDate, openQuickCreate, openEventDetail } = useCalendarView()
     const endDate = useMemo(() => addDays(focusDate, SCHEDULE_DAYS - 1), [focusDate])
-    const events = useCalendarEvents(focusDate, endDate)
+    const { events, isLoading } = useCalendarEvents(focusDate, endDate)
 
     const rows = useMemo(() => {
         const result: DayRow[] = []
@@ -221,6 +207,8 @@ export function ScheduleView() {
     const handleEmptyPress = (date: Date) => {
         openQuickCreate(date, 9)
     }
+
+    if (isLoading && flatEvents.length === 0) return <LoadingState />
 
     return (
         <FlatList

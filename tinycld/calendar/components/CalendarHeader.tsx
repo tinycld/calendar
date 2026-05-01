@@ -19,8 +19,6 @@ export function CalendarHeader() {
     const { viewMode, setViewMode, focusDate, goToday, goNext, goPrevious } = useCalendarView()
     const fgColor = useThemeColor('foreground')
     const borderColor = useThemeColor('border')
-    const primaryColor = useThemeColor('primary')
-    const primaryFgColor = useThemeColor('primary-foreground')
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'
     const { setDrawerOpen } = useWorkspaceLayout()
@@ -67,30 +65,23 @@ export function CalendarHeader() {
 
             <Text style={{ fontSize: 20, fontWeight: '600', color: fgColor, flex: 1 }}>{dateLabel}</Text>
 
-            <View
-                className="flex-row border rounded-md overflow-hidden"
-                style={{
-                    borderColor,
-                }}
-            >
+            <View className="flex-row border border-border rounded-md overflow-hidden">
                 {DESKTOP_VIEW_MODES.map((mode, i) => (
                     <Button
                         key={mode}
                         onPress={() => setViewMode(mode)}
                         variant="ghost"
                         size="sm"
+                        className={viewMode === mode ? 'bg-primary' : ''}
                         style={{
                             borderRadius: 0,
-                            backgroundColor: viewMode === mode ? primaryColor : undefined,
                             borderLeftWidth: i > 0 ? 1 : 0,
                             borderLeftColor: borderColor,
                         }}
                     >
                         <Text
-                            style={{
-                                fontSize: 14,
-                                color: viewMode === mode ? primaryFgColor : fgColor,
-                            }}
+                            className={viewMode === mode ? 'text-primary-foreground' : 'text-foreground'}
+                            style={{ fontSize: 14 }}
                         >
                             {VIEW_LABELS[mode]}
                         </Text>

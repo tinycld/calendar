@@ -1,5 +1,5 @@
+import { LoadingState } from '@tinycld/core/components/LoadingState'
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
-import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useMemo } from 'react'
 import { View } from 'react-native'
 import { useCalendarEvents } from '../hooks/useCalendarEvents'
@@ -22,7 +22,6 @@ function getEventsForDay(events: CalendarEvents[], date: Date): CalendarEvents[]
 export function WeekView() {
     const { focusDate, openQuickCreate, openEventDetail } = useCalendarView()
     const isMobile = useBreakpoint() === 'mobile'
-    const borderColor = useThemeColor('border')
     const dayCount = isMobile ? 3 : 7
 
     const rangeStart = useMemo(() => (isMobile ? focusDate : startOfWeek(focusDate)), [focusDate, isMobile])
@@ -32,7 +31,7 @@ export function WeekView() {
         [rangeStart, dayCount]
     )
 
-    const events = useCalendarEvents(rangeStart, rangeEnd)
+    const { events, isLoading } = useCalendarEvents(rangeStart, rangeEnd)
 
     const { allDayEvents, columns } = useMemo(() => {
         const allDay = events.filter((e) => e.all_day)
@@ -44,15 +43,11 @@ export function WeekView() {
         return { allDayEvents: allDay, columns: cols }
     }, [events, days])
 
+    if (isLoading && events.length === 0) return <LoadingState />
+
     return (
         <View className="flex-1">
-            <View
-                className="flex-row"
-                style={{
-                    borderBottomWidth: 1,
-                    borderBottomColor: borderColor,
-                }}
-            >
+            <View className="flex-row border-b border-border">
                 <View style={{ width: 50 }} />
                 {days.map((date) => (
                     <View key={date.toISOString()} className="flex-1 items-center">

@@ -28,10 +28,6 @@ interface RecurrencePickerProps {
 }
 
 export function RecurrencePicker({ value, onChange, eventStartDate }: RecurrencePickerProps) {
-    const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted-foreground')
-    const borderColor = useThemeColor('border')
-    const bgColor = useThemeColor('background')
     const [showCustom, setShowCustom] = useState(false)
     const [showPresets, setShowPresets] = useState(false)
     const presets = getContextualPresets(eventStartDate)
@@ -51,16 +47,16 @@ export function RecurrencePicker({ value, onChange, eventStartDate }: Recurrence
 
     return (
         <View className="gap-1.5 mb-3">
-            <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Recurrence</Text>
+            <Text className="text-foreground" style={{ fontSize: 14, fontWeight: '600' }}>
+                Recurrence
+            </Text>
             <Pressable
                 onPress={() => setShowPresets(true)}
-                className="border rounded-lg px-3 py-2.5"
-                style={{
-                    borderColor,
-                    backgroundColor: bgColor,
-                }}
+                className="border border-border bg-background rounded-lg px-3 py-2.5"
             >
-                <Text style={{ fontSize: 14, color: value ? fgColor : mutedColor }}>{displayLabel}</Text>
+                <Text className={value ? 'text-foreground' : 'text-muted-foreground'} style={{ fontSize: 14 }}>
+                    {displayLabel}
+                </Text>
             </Pressable>
 
             <PresetDialog
@@ -95,15 +91,15 @@ function PresetDialog({
     currentValue: string
     onSelect: (value: string) => void
 }) {
-    const fgColor = useThemeColor('foreground')
     const accentColor = useThemeColor('accent')
-    const accentFgColor = useThemeColor('accent-foreground')
 
     return (
         <Modal isOpen={open} onClose={() => onOpenChange(false)}>
             <ModalBackdrop />
             <ModalContent className="w-[320px] p-3">
-                <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor, marginBottom: 8 }}>Repeat</Text>
+                <Text className="text-foreground" style={{ fontSize: 18, fontWeight: '600', marginBottom: 8 }}>
+                    Repeat
+                </Text>
                 <View className="gap-1 pt-2">
                     {presets.map((preset) => {
                         const isSelected = preset.value === currentValue
@@ -119,9 +115,9 @@ function PresetDialog({
                                 }}
                             >
                                 <Text
+                                    className={isSelected ? 'text-accent-foreground' : 'text-foreground'}
                                     style={{
                                         fontSize: 14,
-                                        color: isSelected ? accentFgColor : fgColor,
                                         fontWeight: isSelected ? '600' : '400',
                                     }}
                                 >
@@ -250,20 +246,15 @@ function CustomRecurrenceDialog({
         <Modal isOpen={open} onClose={() => onOpenChange(false)}>
             <ModalBackdrop />
             <ModalContent className="w-[360px] p-4">
-                <Text
-                    style={{
-                        fontSize: 18,
-                        fontWeight: '600',
-                        color: fgColor,
-                        marginBottom: 16,
-                    }}
-                >
+                <Text className="text-foreground" style={{ fontSize: 18, fontWeight: '600', marginBottom: 16 }}>
                     Custom recurrence
                 </Text>
 
                 <View className="gap-3">
                     <View className="flex-row items-center gap-2">
-                        <Text style={{ fontSize: 14, color: fgColor }}>Repeat every</Text>
+                        <Text className="text-foreground" style={{ fontSize: 14 }}>
+                            Repeat every
+                        </Text>
                         <Pressable
                             onPress={() => {
                                 updateState({ interval: Math.min(state.interval + 1, 99) })
@@ -271,12 +262,11 @@ function CustomRecurrenceDialog({
                             onLongPress={() => {
                                 updateState({ interval: Math.max(state.interval - 1, 1) })
                             }}
-                            className="border rounded-md w-[44px] h-[36px] items-center justify-center"
-                            style={{
-                                borderColor,
-                            }}
+                            className="border border-border rounded-md w-[44px] h-[36px] items-center justify-center"
                         >
-                            <Text style={{ fontSize: 14, color: fgColor, textAlign: 'center' }}>{state.interval}</Text>
+                            <Text className="text-foreground" style={{ fontSize: 14, textAlign: 'center' }}>
+                                {state.interval}
+                            </Text>
                         </Pressable>
                         <View className="flex-row gap-1 flex-wrap flex-1">
                             {FREQ_OPTIONS.map((opt) => {
@@ -285,17 +275,14 @@ function CustomRecurrenceDialog({
                                     <Pressable
                                         key={opt.value}
                                         onPress={() => updateState({ freq: opt.value })}
-                                        className="px-2.5 py-1 rounded-md border"
+                                        className={`px-2.5 py-1 rounded-md border ${isSelected ? 'bg-primary' : ''}`}
                                         style={{
                                             borderColor: isSelected ? primaryColor : borderColor,
-                                            backgroundColor: isSelected ? primaryColor : undefined,
                                         }}
                                     >
                                         <Text
-                                            style={{
-                                                fontSize: 12,
-                                                color: isSelected ? primaryFgColor : fgColor,
-                                            }}
+                                            className={isSelected ? 'text-primary-foreground' : 'text-foreground'}
+                                            style={{ fontSize: 12 }}
                                         >
                                             {state.interval > 1 ? `${opt.label}s` : opt.label}
                                         </Text>
@@ -330,7 +317,9 @@ function CustomRecurrenceDialog({
                     />
 
                     <View className="gap-2">
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Ends</Text>
+                        <Text className="text-foreground" style={{ fontSize: 14, fontWeight: '600' }}>
+                            Ends
+                        </Text>
                         <View className="flex-row gap-2 flex-wrap">
                             {(['never', 'on', 'after'] as const).map((type) => {
                                 const isSelected = state.endType === type
@@ -339,17 +328,14 @@ function CustomRecurrenceDialog({
                                     <Pressable
                                         key={type}
                                         onPress={() => updateState({ endType: type })}
-                                        className="px-2.5 py-1 rounded-md border"
+                                        className={`px-2.5 py-1 rounded-md border ${isSelected ? 'bg-primary' : ''}`}
                                         style={{
                                             borderColor: isSelected ? primaryColor : borderColor,
-                                            backgroundColor: isSelected ? primaryColor : undefined,
                                         }}
                                     >
                                         <Text
-                                            style={{
-                                                fontSize: 12,
-                                                color: isSelected ? primaryFgColor : fgColor,
-                                            }}
+                                            className={isSelected ? 'text-primary-foreground' : 'text-foreground'}
+                                            style={{ fontSize: 12 }}
                                         >
                                             {label}
                                         </Text>
@@ -376,21 +362,16 @@ function CustomRecurrenceDialog({
                 <View className="flex-row justify-end gap-2 pt-2">
                     <Pressable
                         onPress={() => onOpenChange(false)}
-                        className="px-3 py-1.5 rounded-md border"
-                        style={{
-                            borderColor,
-                        }}
+                        className="px-3 py-1.5 rounded-md border border-border"
                     >
-                        <Text style={{ fontSize: 14, color: fgColor }}>Cancel</Text>
+                        <Text className="text-foreground" style={{ fontSize: 14 }}>
+                            Cancel
+                        </Text>
                     </Pressable>
-                    <Pressable
-                        onPress={handleDone}
-                        className="px-3 py-1.5 rounded-md"
-                        style={{
-                            backgroundColor: primaryColor,
-                        }}
-                    >
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: primaryFgColor }}>Done</Text>
+                    <Pressable onPress={handleDone} className="px-3 py-1.5 rounded-md bg-primary">
+                        <Text className="text-primary-foreground" style={{ fontSize: 14, fontWeight: '600' }}>
+                            Done
+                        </Text>
                     </Pressable>
                 </View>
             </ModalContent>
@@ -407,7 +388,6 @@ function WeekDaySelector({
     selectedDays: string[]
     onToggle: (day: string) => void
 }) {
-    const fgColor = useThemeColor('foreground')
     const borderColor = useThemeColor('border')
     const primaryColor = useThemeColor('primary')
 
@@ -415,7 +395,9 @@ function WeekDaySelector({
 
     return (
         <View className="gap-1.5">
-            <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Repeat on</Text>
+            <Text className="text-foreground" style={{ fontSize: 14, fontWeight: '600' }}>
+                Repeat on
+            </Text>
             <View className="flex-row gap-1.5 justify-center">
                 {DAY_CODES.map((code, i) => {
                     const isSelected = selectedDays.includes(code)
@@ -423,18 +405,14 @@ function WeekDaySelector({
                         <Pressable
                             key={code}
                             onPress={() => onToggle(code)}
-                            className="size-9 rounded-full border items-center justify-center"
+                            className={`size-9 rounded-full border items-center justify-center ${isSelected ? 'bg-primary' : ''}`}
                             style={{
-                                backgroundColor: isSelected ? primaryColor : 'transparent',
                                 borderColor: isSelected ? primaryColor : borderColor,
                             }}
                         >
                             <Text
-                                style={{
-                                    fontSize: 12,
-                                    color: isSelected ? 'white' : fgColor,
-                                    fontWeight: isSelected ? '600' : '400',
-                                }}
+                                className={isSelected ? 'text-white' : 'text-foreground'}
+                                style={{ fontSize: 12, fontWeight: isSelected ? '600' : '400' }}
                             >
                                 {DAY_LABELS[i]}
                             </Text>
@@ -457,10 +435,8 @@ function MonthlyModeSelector({
     eventStartDate: Date
     onChange: (mode: 'dayOfMonth' | 'dayOfWeek') => void
 }) {
-    const fgColor = useThemeColor('foreground')
     const borderColor = useThemeColor('border')
     const primaryColor = useThemeColor('primary')
-    const primaryFgColor = useThemeColor('primary-foreground')
 
     if (!isVisible) return null
 
@@ -473,38 +449,34 @@ function MonthlyModeSelector({
 
     return (
         <View className="gap-1.5">
-            <Text style={{ fontSize: 14, fontWeight: '600', color: fgColor }}>Monthly on</Text>
+            <Text className="text-foreground" style={{ fontSize: 14, fontWeight: '600' }}>
+                Monthly on
+            </Text>
             <View className="flex-row gap-2">
                 <Pressable
                     onPress={() => onChange('dayOfMonth')}
-                    className="px-2.5 py-1 rounded-md border"
+                    className={`px-2.5 py-1 rounded-md border ${monthlyMode === 'dayOfMonth' ? 'bg-primary' : ''}`}
                     style={{
                         borderColor: monthlyMode === 'dayOfMonth' ? primaryColor : borderColor,
-                        backgroundColor: monthlyMode === 'dayOfMonth' ? primaryColor : undefined,
                     }}
                 >
                     <Text
-                        style={{
-                            fontSize: 12,
-                            color: monthlyMode === 'dayOfMonth' ? primaryFgColor : fgColor,
-                        }}
+                        className={monthlyMode === 'dayOfMonth' ? 'text-primary-foreground' : 'text-foreground'}
+                        style={{ fontSize: 12 }}
                     >
                         Day {dayOfMonth}
                     </Text>
                 </Pressable>
                 <Pressable
                     onPress={() => onChange('dayOfWeek')}
-                    className="px-2.5 py-1 rounded-md border"
+                    className={`px-2.5 py-1 rounded-md border ${monthlyMode === 'dayOfWeek' ? 'bg-primary' : ''}`}
                     style={{
                         borderColor: monthlyMode === 'dayOfWeek' ? primaryColor : borderColor,
-                        backgroundColor: monthlyMode === 'dayOfWeek' ? primaryColor : undefined,
                     }}
                 >
                     <Text
-                        style={{
-                            fontSize: 12,
-                            color: monthlyMode === 'dayOfWeek' ? primaryFgColor : fgColor,
-                        }}
+                        className={monthlyMode === 'dayOfWeek' ? 'text-primary-foreground' : 'text-foreground'}
+                        style={{ fontSize: 12 }}
                     >
                         {ordinal} {dayName}
                     </Text>
@@ -523,26 +495,22 @@ function EndDateInput({
     value: string
     onChange: (val: string) => void
 }) {
-    const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('field-placeholder')
-    const borderColor = useThemeColor('border')
 
     if (!isVisible) return null
 
     return (
         <View className="flex-row items-center gap-2">
-            <Text style={{ fontSize: 14, color: fgColor }}>End date:</Text>
+            <Text className="text-foreground" style={{ fontSize: 14 }}>
+                End date:
+            </Text>
             <PlainInput
                 value={value}
                 onChangeText={onChange}
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor={mutedColor}
-                className="border rounded-md px-2.5 py-1.5 flex-1"
-                style={{
-                    borderColor,
-                    color: fgColor,
-                    fontSize: 14,
-                }}
+                className="border border-border text-foreground rounded-md px-2.5 py-1.5 flex-1"
+                style={{ fontSize: 14 }}
             />
         </View>
     )
@@ -559,45 +527,31 @@ function EndCountInput({
     onIncrement: () => void
     onDecrement: () => void
 }) {
-    const fgColor = useThemeColor('foreground')
-    const borderColor = useThemeColor('border')
-
     if (!isVisible) return null
 
     return (
         <View className="flex-row items-center gap-2">
-            <Text style={{ fontSize: 14, color: fgColor }}>After</Text>
+            <Text className="text-foreground" style={{ fontSize: 14 }}>
+                After
+            </Text>
             <View className="flex-row items-center gap-1">
-                <Pressable
-                    onPress={onDecrement}
-                    className="px-2.5 py-1 rounded-md border"
-                    style={{
-                        borderColor,
-                    }}
-                >
-                    <Text style={{ fontSize: 12, color: fgColor }}>-</Text>
+                <Pressable onPress={onDecrement} className="px-2.5 py-1 rounded-md border border-border">
+                    <Text className="text-foreground" style={{ fontSize: 12 }}>
+                        -
+                    </Text>
                 </Pressable>
-                <Text
-                    style={{
-                        fontSize: 14,
-                        color: fgColor,
-                        textAlign: 'center',
-                        width: 40,
-                    }}
-                >
+                <Text className="text-foreground" style={{ fontSize: 14, textAlign: 'center', width: 40 }}>
                     {value}
                 </Text>
-                <Pressable
-                    onPress={onIncrement}
-                    className="px-2.5 py-1 rounded-md border"
-                    style={{
-                        borderColor,
-                    }}
-                >
-                    <Text style={{ fontSize: 12, color: fgColor }}>+</Text>
+                <Pressable onPress={onIncrement} className="px-2.5 py-1 rounded-md border border-border">
+                    <Text className="text-foreground" style={{ fontSize: 12 }}>
+                        +
+                    </Text>
                 </Pressable>
             </View>
-            <Text style={{ fontSize: 14, color: fgColor }}>occurrences</Text>
+            <Text className="text-foreground" style={{ fontSize: 14 }}>
+                occurrences
+            </Text>
         </View>
     )
 }

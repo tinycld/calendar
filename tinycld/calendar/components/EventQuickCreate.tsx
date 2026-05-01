@@ -139,7 +139,9 @@ function MobileQuickCreate({ isVisible, initialDate, initialHour, onClose }: Eve
                 <View className="p-5 gap-3 w-full">
                     <View className="flex-row justify-between items-center">
                         <Pressable onPress={onClose}>
-                            <Text style={{ fontSize: 14, color: mutedColor }}>Cancel</Text>
+                            <Text className="text-muted-foreground" style={{ fontSize: 14 }}>
+                                Cancel
+                            </Text>
                         </Pressable>
                         <Button onPress={onSave} size="sm">
                             <ButtonText>Save</ButtonText>
@@ -149,13 +151,19 @@ function MobileQuickCreate({ isVisible, initialDate, initialHour, onClose }: Eve
                     <TextInput control={control} name="title" placeholder="Add title" autoFocus />
 
                     <View className="gap-1">
-                        <Text style={{ fontSize: 12, color: mutedColor }}>{dayLabel}</Text>
-                        <Text style={{ fontSize: 12, color: mutedColor }}>{timeLabel}</Text>
+                        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+                            {dayLabel}
+                        </Text>
+                        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+                            {timeLabel}
+                        </Text>
                     </View>
 
                     <Pressable className="flex-row items-center gap-2.5 py-2" onPress={onMoreOptions}>
                         <Users size={18} color={mutedColor} />
-                        <Text style={{ fontSize: 14, color: mutedColor }}>Add guests</Text>
+                        <Text className="text-muted-foreground" style={{ fontSize: 14 }}>
+                            Add guests
+                        </Text>
                     </Pressable>
                 </View>
             </ActionsheetContent>
@@ -164,11 +172,7 @@ function MobileQuickCreate({ isVisible, initialDate, initialHour, onClose }: Eve
 }
 
 function DesktopQuickCreate({ isVisible, initialDate, initialHour, onClose }: EventQuickCreateProps) {
-    const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
-    const bgColor = useThemeColor('background')
-    const borderColor = useThemeColor('border')
-    const primaryColor = useThemeColor('primary')
     const shadowColor = useThemeColor('overlay-backdrop')
     const router = useRouter()
     const orgHref = useOrgHref()
@@ -187,10 +191,8 @@ function DesktopQuickCreate({ isVisible, initialDate, initialHour, onClose }: Ev
             onPress={onClose}
         >
             <Pressable
-                className="w-[340px] rounded-xl border p-4"
+                className="w-[340px] rounded-xl border border-border bg-background p-4"
                 style={{
-                    backgroundColor: bgColor,
-                    borderColor,
                     shadowColor,
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.15,
@@ -200,7 +202,9 @@ function DesktopQuickCreate({ isVisible, initialDate, initialHour, onClose }: Ev
                 onPress={(e) => e.stopPropagation()}
             >
                 <View className="flex-row justify-between items-center">
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: fgColor }}>New Event</Text>
+                    <Text className="text-foreground" style={{ fontSize: 16, fontWeight: '600' }}>
+                        New Event
+                    </Text>
                     <Pressable onPress={onClose} hitSlop={8}>
                         <X size={18} color={mutedColor} />
                     </Pressable>
@@ -210,14 +214,20 @@ function DesktopQuickCreate({ isVisible, initialDate, initialHour, onClose }: Ev
                     <TextInput control={control} name="title" placeholder="Add title" autoFocus />
 
                     <View className="gap-1">
-                        <Text style={{ fontSize: 12, color: mutedColor }}>{dayLabel}</Text>
-                        <Text style={{ fontSize: 12, color: mutedColor }}>{timeLabel}</Text>
+                        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+                            {dayLabel}
+                        </Text>
+                        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+                            {timeLabel}
+                        </Text>
                     </View>
                 </View>
 
                 <View className="flex-row justify-between items-center mt-2">
                     <Pressable onPress={onMoreOptions}>
-                        <Text style={{ fontSize: 12, color: primaryColor }}>More options</Text>
+                        <Text className="text-primary" style={{ fontSize: 12 }}>
+                            More options
+                        </Text>
                     </Pressable>
                     <Button onPress={onSave} size="sm">
                         <ButtonText>Save</ButtonText>

@@ -25,10 +25,6 @@ export function MonthCell({
     onDatePress,
     onEventPress,
 }: MonthCellProps) {
-    const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted-foreground')
-    const primaryColor = useThemeColor('primary')
-    const primaryFgColor = useThemeColor('primary-foreground')
     const borderColor = useThemeColor('border')
     const calendarMap = useCalendarMap()
     const dateNum = date.getDate()
@@ -46,19 +42,18 @@ export function MonthCell({
             onPress={() => onDatePress(date)}
         >
             <View
-                className="rounded-full items-center justify-center self-end mb-0.5 mr-0.5"
-                style={{
-                    width: 24,
-                    height: 24,
-                    backgroundColor: isToday ? primaryColor : undefined,
-                }}
+                className={`rounded-full items-center justify-center self-end mb-0.5 mr-0.5 ${isToday ? 'bg-primary' : ''}`}
+                style={{ width: 24, height: 24 }}
             >
                 <Text
-                    style={{
-                        fontSize: 12,
-                        fontWeight: '500',
-                        color: isToday ? primaryFgColor : isCurrentMonth ? fgColor : mutedColor,
-                    }}
+                    className={
+                        isToday
+                            ? 'text-primary-foreground'
+                            : isCurrentMonth
+                              ? 'text-foreground'
+                              : 'text-muted-foreground'
+                    }
+                    style={{ fontSize: 12, fontWeight: '500' }}
                 >
                     {dateNum}
                 </Text>
@@ -108,8 +103,10 @@ export function MonthCell({
                                     backgroundColor: colors.bg,
                                 }}
                             />
-                            <Text style={{ fontSize: 10, color: mutedColor }}>{timeStr}</Text>
-                            <Text style={{ fontSize: 11, color: fgColor, flex: 1 }} numberOfLines={1}>
+                            <Text className="text-muted-foreground" style={{ fontSize: 10 }}>
+                                {timeStr}
+                            </Text>
+                            <Text className="flex-1 text-foreground" style={{ fontSize: 11 }} numberOfLines={1}>
                                 {event.title}
                             </Text>
                         </View>
@@ -120,10 +117,10 @@ export function MonthCell({
             {overflowCount > 0 && (
                 <Pressable onPress={() => onDatePress(date)}>
                     <Text
+                        className="text-muted-foreground"
                         style={{
                             fontSize: 11,
                             fontWeight: '600',
-                            color: mutedColor,
                             paddingVertical: 2,
                             textAlign: 'center',
                         }}

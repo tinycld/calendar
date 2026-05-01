@@ -33,7 +33,6 @@ function CalendarCheckbox({
     onRefreshSubscription?: (calendarId: string) => void
     onDeleteCalendar?: (calendarId: string) => void
 }) {
-    const fgColor = useThemeColor('foreground')
     const dangerColor = useThemeColor('danger')
     const colors = getCalendarColorResolved(calendar.color)
 
@@ -58,7 +57,7 @@ function CalendarCheckbox({
                     >
                         {isChecked && <Check size={12} color={colors.text} />}
                     </View>
-                    <Text style={{ fontSize: 15, color: fgColor, flex: 1 }} numberOfLines={1}>
+                    <Text className="flex-1 text-foreground" style={{ fontSize: 15 }} numberOfLines={1}>
                         {calendar.name}
                     </Text>
                     {calendar.subscription_error ? <AlertTriangle size={14} color={dangerColor} /> : null}
@@ -73,7 +72,11 @@ function CalendarCheckbox({
                 />
             </View>
             {calendar.subscription_error ? (
-                <Text style={{ fontSize: 11, color: dangerColor, paddingLeft: 60, paddingRight: 12 }} numberOfLines={2}>
+                <Text
+                    className="text-danger"
+                    style={{ fontSize: 11, paddingLeft: 60, paddingRight: 12 }}
+                    numberOfLines={2}
+                >
                     {calendar.subscription_error}
                 </Text>
             ) : null}

@@ -24,62 +24,46 @@ function RsvpIcon({ rsvp }: { rsvp: EventGuest['rsvp'] }) {
 }
 
 export function EventGuestList({ guests }: EventGuestListProps) {
-    const fgColor = useThemeColor('foreground')
-    const mutedColor = useThemeColor('muted-foreground')
-    const accentColor = useThemeColor('accent')
-    const accentFgColor = useThemeColor('accent-foreground')
-
     if (guests.length === 0) {
         return (
             <View className="p-4">
-                <Text style={{ fontSize: 14, color: mutedColor }}>No guests</Text>
+                <Text className="text-muted-foreground" style={{ fontSize: 14 }}>
+                    No guests
+                </Text>
             </View>
         )
     }
 
     return (
         <View className="gap-2">
-            <Text
-                className="px-1"
-                style={{
-                    fontSize: 16,
-                    fontWeight: '600',
-                    color: fgColor,
-                }}
-            >
+            <Text className="px-1 text-foreground" style={{ fontSize: 16, fontWeight: '600' }}>
                 Guests ({guests.length})
             </Text>
 
             {guests.map((guest) => (
                 <View key={guest.email} className="flex-row items-center gap-2.5 py-1.5 px-1">
-                    <View
-                        className="size-8 rounded-full items-center justify-center"
-                        style={{
-                            backgroundColor: accentColor,
-                        }}
-                    >
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: accentFgColor }}>
+                    <View className="size-8 rounded-full items-center justify-center bg-accent">
+                        <Text className="text-accent-foreground" style={{ fontSize: 12, fontWeight: '600' }}>
                             {getInitials(guest.name)}
                         </Text>
                     </View>
                     <View className="flex-1">
                         <View className="flex-row items-center gap-1.5">
                             <Text
-                                style={{
-                                    fontSize: 14,
-                                    fontWeight: '500',
-                                    color: fgColor,
-                                }}
+                                className="text-foreground"
+                                style={{ fontSize: 14, fontWeight: '500' }}
                                 numberOfLines={1}
                             >
                                 {guest.name}
                             </Text>
                             {guest.role === 'organizer' && (
-                                <Text style={{ fontSize: 11, color: mutedColor }}>Organizer</Text>
+                                <Text className="text-muted-foreground" style={{ fontSize: 11 }}>
+                                    Organizer
+                                </Text>
                             )}
                         </View>
                         <View className="flex-row items-center gap-1">
-                            <Text style={{ fontSize: 12, color: mutedColor, flex: 1 }} numberOfLines={1}>
+                            <Text className="flex-1 text-muted-foreground" style={{ fontSize: 12 }} numberOfLines={1}>
                                 {guest.email}
                             </Text>
                             <RsvpIcon rsvp={guest.rsvp} />

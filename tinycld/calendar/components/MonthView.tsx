@@ -1,4 +1,4 @@
-import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
+import { LoadingState } from '@tinycld/core/components/LoadingState'
 import { useMemo } from 'react'
 import { type GestureResponderEvent, Pressable, Text, View } from 'react-native'
 import { useCalendarEvents, useCalendarMap } from '../hooks/useCalendarEvents'
@@ -18,15 +18,13 @@ const DATE_HEADER_HEIGHT = 28
 export function MonthView() {
     const { focusDate, openEventDetail, setViewMode, goToDate } = useCalendarView()
     const calendarMap = useCalendarMap()
-    const mutedColor = useThemeColor('muted-foreground')
-    const borderColor = useThemeColor('border')
 
     const grid = useMemo(() => getMonthGrid(focusDate), [focusDate])
 
     const gridStart = grid[0].date
     const gridEnd = grid[grid.length - 1].date
 
-    const events = useCalendarEvents(gridStart, gridEnd)
+    const { events, isLoading } = useCalendarEvents(gridStart, gridEnd)
 
     const rows = useMemo(() => {
         const result: MonthGridCell[][] = []
@@ -65,18 +63,16 @@ export function MonthView() {
         setViewMode('day')
     }
 
+    if (isLoading && events.length === 0) return <LoadingState />
+
     return (
         <View className="flex-1 overflow-hidden">
-            <View
-                style={{
-                    flexDirection: 'row',
-                    borderBottomWidth: 1,
-                    borderBottomColor: borderColor,
-                }}
-            >
+            <View className="flex-row border-b border-border">
                 {DAY_LABELS.map((label) => (
                     <View key={label} className="flex-1 items-center py-2">
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: mutedColor }}>{label}</Text>
+                        <Text className="text-muted-foreground" style={{ fontSize: 12, fontWeight: '600' }}>
+                            {label}
+                        </Text>
                     </View>
                 ))}
             </View>

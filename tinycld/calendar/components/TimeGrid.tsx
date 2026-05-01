@@ -45,7 +45,6 @@ function toLayoutEvents(events: CalendarEvents[]): LayoutEvent[] {
 }
 
 export function TimeGrid({ columns, startHour = 0, endHour = 23, onSlotPress, onEventPress }: TimeGridProps) {
-    const mutedColor = useThemeColor('muted-foreground')
     const borderColor = useThemeColor('border')
     const calendarMap = useCalendarMap()
     const totalHours = endHour - startHour + 1
@@ -74,14 +73,14 @@ export function TimeGrid({ columns, startHour = 0, endHour = 23, onSlotPress, on
                         paddingRight: 8,
                     }}
                 >
-                    <Text style={{ fontSize: 11, marginTop: -6, color: mutedColor }}>
+                    <Text className="text-muted-foreground" style={{ fontSize: 11, marginTop: -6 }}>
                         {h === startHour ? '' : getTimeLabel(h)}
                     </Text>
                 </View>
             )
         }
         return labels
-    }, [startHour, endHour, mutedColor])
+    }, [startHour, endHour])
 
     const columnLayouts = useMemo(
         () =>

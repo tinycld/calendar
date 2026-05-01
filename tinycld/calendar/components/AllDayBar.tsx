@@ -1,4 +1,3 @@
-import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useMemo } from 'react'
 import { type GestureResponderEvent, Pressable, Text, View } from 'react-native'
 import { useCalendarMap } from '../hooks/useCalendarEvents'
@@ -17,8 +16,6 @@ interface AllDayBarProps {
 
 export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayBarProps) {
     const calendarMap = useCalendarMap()
-    const sidebarBg = useThemeColor('sidebar-background')
-    const borderColor = useThemeColor('border')
 
     const { layouts, eventMap, maxRow } = useMemo(() => {
         const layoutEvents: LayoutEvent[] = events.map((e) => ({
@@ -38,14 +35,7 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
     const containerHeight = (maxRow + 1) * ROW_HEIGHT + 4
 
     return (
-        <View
-            style={{
-                flexDirection: 'row',
-                borderBottomWidth: 1,
-                backgroundColor: sidebarBg,
-                borderBottomColor: borderColor,
-            }}
-        >
+        <View className="flex-row border-b border-border bg-sidebar-background">
             <View className="w-[50px]" />
             <View className="flex-1 relative" style={{ height: containerHeight }}>
                 {layouts.map((layout) => {

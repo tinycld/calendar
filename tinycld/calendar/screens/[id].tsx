@@ -43,7 +43,6 @@ export default function EventEditorScreen() {
     const router = useRouter()
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
-    const bgColor = useThemeColor('background')
     const breakpoint = useBreakpoint()
     const { orgSlug } = useOrgInfo()
     const userOrg = useCurrentUserOrg(orgSlug)
@@ -166,8 +165,8 @@ export default function EventEditorScreen() {
 
     if (!isNew && isReadOnly) {
         return (
-            <View className="flex-1 items-center justify-center" style={{ backgroundColor: bgColor }}>
-                <Text style={{ fontSize: 16, color: mutedColor }}>
+            <View className="flex-1 items-center justify-center bg-background">
+                <Text className="text-muted-foreground" style={{ fontSize: 16 }}>
                     Events from subscribed calendars cannot be edited
                 </Text>
                 <Pressable
@@ -175,7 +174,9 @@ export default function EventEditorScreen() {
                     className="mt-3 px-3 py-1.5 rounded-md border"
                     style={{ borderColor: mutedColor }}
                 >
-                    <Text style={{ fontSize: 14, color: fgColor }}>Go back</Text>
+                    <Text className="text-foreground" style={{ fontSize: 14 }}>
+                        Go back
+                    </Text>
                 </Pressable>
             </View>
         )
@@ -183,13 +184,10 @@ export default function EventEditorScreen() {
 
     if (isNotFound) {
         return (
-            <View
-                className="flex-1 items-center justify-center"
-                style={{
-                    backgroundColor: bgColor,
-                }}
-            >
-                <Text style={{ fontSize: 16, color: mutedColor }}>Event not found</Text>
+            <View className="flex-1 items-center justify-center bg-background">
+                <Text className="text-muted-foreground" style={{ fontSize: 16 }}>
+                    Event not found
+                </Text>
                 <Pressable
                     onPress={() => router.back()}
                     className="mt-3 px-3 py-1.5 rounded-md border"
@@ -197,7 +195,9 @@ export default function EventEditorScreen() {
                         borderColor: mutedColor,
                     }}
                 >
-                    <Text style={{ fontSize: 14, color: fgColor }}>Go back</Text>
+                    <Text className="text-foreground" style={{ fontSize: 14 }}>
+                        Go back
+                    </Text>
                 </Pressable>
             </View>
         )
@@ -225,7 +225,7 @@ export default function EventEditorScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={{ flex: 1, backgroundColor: bgColor }}
+            className="flex-1 bg-background"
         >
             <ScrollView
                 contentContainerStyle={{ flexGrow: 1 }}
@@ -237,7 +237,7 @@ export default function EventEditorScreen() {
                             <Pressable onPress={() => router.back()}>
                                 <ArrowLeft size={24} color={fgColor} />
                             </Pressable>
-                            <Text style={{ fontSize: 24, fontWeight: 'bold', color: fgColor }}>
+                            <Text className="text-foreground" style={{ fontSize: 24, fontWeight: 'bold' }}>
                                 {event ? 'Edit Event' : 'New Event'}
                             </Text>
                         </View>

@@ -1,7 +1,6 @@
 import { handleMutationErrorsWithForm } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
-import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useOrgInfo } from '@tinycld/core/lib/use-org-info'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { FormErrorSummary, TextInput, useForm, z, zodResolver } from '@tinycld/core/ui/form'
@@ -27,7 +26,6 @@ interface SubscriptionDialogProps {
 }
 
 export function SubscriptionDialog({ open, onClose }: SubscriptionDialogProps) {
-    const fgColor = useThemeColor('foreground')
     const { orgId } = useOrgInfo()
     const [calendarsCollection] = useStore('calendar_calendars')
 
@@ -81,7 +79,9 @@ export function SubscriptionDialog({ open, onClose }: SubscriptionDialogProps) {
             <ModalBackdrop />
             <ModalContent className="w-[420px] p-0">
                 <View className="px-5 pt-5 pb-3">
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: fgColor }}>Subscribe to calendar</Text>
+                    <Text className="text-foreground" style={{ fontSize: 16, fontWeight: '600' }}>
+                        Subscribe to calendar
+                    </Text>
                 </View>
 
                 <View className="px-5 pb-5 gap-3">
@@ -101,7 +101,9 @@ export function SubscriptionDialog({ open, onClose }: SubscriptionDialogProps) {
 
                     <View className="flex-row justify-end gap-2 pt-2">
                         <Pressable onPress={handleClose} className="px-3 py-1.5">
-                            <Text style={{ fontSize: 14, color: fgColor }}>Cancel</Text>
+                            <Text className="text-foreground" style={{ fontSize: 14 }}>
+                                Cancel
+                            </Text>
                         </Pressable>
                         <Button onPress={onSubmit} isDisabled={createSubscription.isPending} size="sm">
                             <ButtonText>{createSubscription.isPending ? 'Subscribing...' : 'Subscribe'}</ButtonText>

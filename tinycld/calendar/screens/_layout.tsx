@@ -3,7 +3,6 @@ import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { captureException } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
-import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { Slot } from 'expo-router'
 import { View } from 'react-native'
 import { CalendarFAB } from '../components/CalendarFAB'
@@ -17,7 +16,6 @@ export default function CalendarLayout() {
     const { popover, closePopover } = useCalendarView()
     const isMobile = useBreakpoint() === 'mobile'
     const [eventsCollection] = useStore('calendar_events')
-    const bgColor = useThemeColor('background')
 
     const eventId = popover.type === 'event-detail' ? popover.eventId : undefined
     const { event, calendar } = useEventDetail(eventId)
@@ -30,7 +28,7 @@ export default function CalendarLayout() {
     })
 
     return (
-        <View className="flex-1" style={{ backgroundColor: bgColor }}>
+        <View className="flex-1 bg-background">
             <ScreenHeader>
                 <CalendarHeader />
             </ScreenHeader>
