@@ -11,40 +11,29 @@ import {
 } from '../../../../tests/e2e/caldav-helpers'
 import { login, navigateToPackage, ORG_SLUG } from '../../../../tests/e2e/helpers'
 
-// Unique suffix per test invocation. Date.now() alone collides under
-// parallel workers (multiple specs hitting ms-resolution timestamps in
-// the same tick), which leads to one test asserting on another worker's
-// event by accident.
-function uniq(): string {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
-
 // PROPFIND returns calendars from every org the test user has membership
-// in, including the seeded "Acme Calendar" in the secondary org. The web
-// view is org-scoped to test-org, so an event PUT into the acme calendar
-// would never appear in the WeekView/DayView the test then asserts on.
-// Pick the auto-created personal calendar (named after the user) which
-// always exists in test-org.
+// in, so a multi-org test user has same-named entries (the user_org
+// lifecycle hook auto-creates a "Test User" calendar per org). The CalDAV
+// server suffixes displaynames with the org name when the user belongs to
+// more than one org, so the test-org personal calendar comes back as
+// "Test User (Test Organization)". The web view is org-scoped to test-org,
+// so an event PUT into the acme calendar would never appear in the
+// WeekView/DayView the test then asserts on — match the suffixed name to
+// pin to test-org.
+const TEST_ORG_NAME = 'Test Organization'
+const TEST_ORG_SUFFIX = ` (${TEST_ORG_NAME})`
 function pickTestOrgCalendar(calendars: CalDAVCalendar[]): CalDAVCalendar {
-    const personal = calendars.find(c => c.name === 'Test User')
+    const personal = calendars.find(c => c.name === `Test User${TEST_ORG_SUFFIX}`)
     if (personal) return personal
-    // Fallback: any calendar named like a test-org seed.
-    const testOrgNames = new Set(['Test User', 'Work', 'Personal', 'Team', 'Holidays'])
-    const match = calendars.find(c => testOrgNames.has(c.name))
-    if (match) return match
+    // Fallback for the single-org case (no disambiguation suffix).
+    const bare = calendars.find(c => c.name === 'Test User')
+    if (bare) return bare
     throw new Error(
-        `No test-org calendar in PROPFIND result; got: ${calendars.map(c => c.name).join(', ')}`
+        `No test-org "Test User" calendar in PROPFIND result; got: ${calendars
+            .map(c => c.name)
+            .join(', ')}`
     )
 }
-
-// Run these tests serially within the file. The CalDAV PUT → web-view
-// assert flow shares mutable PB state across workers (events written by
-// one worker can leak into another worker's live-query results), and the
-// pbtsdb SSE notification for a freshly-created event sometimes fails to
-// reach a parallel-worker page that just established its subscription.
-// Serial avoids both: each test has the PB to itself for the duration of
-// its assertions, and the live query has time to settle between tests.
-test.describe.configure({ mode: 'serial' })
 
 test.describe('Calendar — CalDAV Integration', () => {
     test("PROPFIND lists the user's calendars", async () => {
@@ -53,14 +42,7 @@ test.describe('Calendar — CalDAV Integration', () => {
         expect(calendars[0].id).toBeTruthy()
     })
 
-    // Known issue: under parallel-worker load the freshly-PUT event isn't
-    // visible to the page's live query within 10s, even though it persists
-    // to PB and PROPFIND immediately reads it back. Other events (seeded,
-    // and even cross-test events) DO render. Root cause is somewhere in
-    // the live-query SSE delivery path under contention; fixing it is a
-    // separate effort. Marked fixme so it documents the gap without
-    // blocking CI.
-    test.fixme('CalDAV PUT appears in web UI', async ({ page }) => {
+    test('CalDAV PUT appears in web UI', async ({ page }) => {
         const calendars = await propfindCalendars()
         const calId = pickTestOrgCalendar(calendars).id
         const uid = `caldav-roundtrip-${Date.now()}`
@@ -128,10 +110,7 @@ test.describe('Calendar — CalDAV Integration', () => {
         }).toPass({ timeout: 10_000 })
     })
 
-    // Same flake as the PUT test above — the delete + reload + assert
-    // chain depends on the live-query path. Fixme until the root cause
-    // (live-query SSE under parallel-worker contention) is resolved.
-    test.fixme('CalDAV DELETE removes from web UI', async ({ page }) => {
+    test('CalDAV DELETE removes from web UI', async ({ page }) => {
         const calendars = await propfindCalendars()
         const calId = pickTestOrgCalendar(calendars).id
         const uid = `caldav-delete-${Date.now()}`
@@ -181,13 +160,7 @@ test.describe('Calendar — CalDAV Integration', () => {
     // column of a Sun-start week), but the bug applied to any "last shown
     // day" in any view. Drive the bug from CalDAV (deterministic timing,
     // no form-race) and assert the event is rendered in the week view.
-    //
-    // Marked fixme: shares the same live-query flake as the PUT/DELETE
-    // tests above. The endOfDay fix in WeekView/MonthView/DayView/Schedule
-    // is what this test was written to guard, and that fix is verified
-    // working — but verifying it here requires the same live-query
-    // delivery that's currently flaky under parallel load.
-    test.fixme('event on this-week Saturday appears in week view', async ({ page }) => {
+    test('event on this-week Saturday appears in week view', async ({ page }) => {
         const calendars = await propfindCalendars()
         const calId = pickTestOrgCalendar(calendars).id
         const uid = `caldav-saturday-${Date.now()}`

@@ -6,9 +6,15 @@ import {
 import { login, navigateToPackage, ORG_SLUG } from '../../../../tests/e2e/helpers'
 
 // Pick the auto-created personal calendar (named after the user) which
-// always exists in test-org and is owned by the test user.
+// always exists in test-org and is owned by the test user. The CalDAV
+// server suffixes displaynames with the org name when a user belongs to
+// multiple orgs, so the test user (who has both test-org and acme) sees
+// "Test User (Test Organization)" — match that to pin to test-org.
+const TEST_ORG_NAME = 'Test Organization'
 function pickTestOrgCalendar(calendars: CalDAVCalendar[]): CalDAVCalendar {
-    const personal = calendars.find(c => c.name === 'Test User')
+    const personal =
+        calendars.find(c => c.name === `Test User (${TEST_ORG_NAME})`) ??
+        calendars.find(c => c.name === 'Test User')
     if (personal) return personal
     throw new Error(
         `No "Test User" calendar in PROPFIND result; got: ${calendars.map(c => c.name).join(', ')}`

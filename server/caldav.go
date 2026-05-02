@@ -65,6 +65,14 @@ func (b *CalDAVBackend) ListCalendars(ctx context.Context) ([]caldav.Calendar, e
 		return nil, err
 	}
 
+	// When the user has multiple orgs, calendar names can collide across
+	// orgs (e.g. the auto-created personal calendar is named after the
+	// user, so a multi-org user gets one "Test User" calendar per org).
+	// CalDAV clients show only `displayname`, so unsuffixed names appear
+	// as duplicates. Suffix with the org name in that case so each entry
+	// is unambiguous in the client and identifiable in tests.
+	multiOrg := len(userOrgs) > 1
+
 	var calendars []caldav.Calendar
 	for _, member := range members {
 		calId := member.GetString("calendar")
@@ -75,13 +83,36 @@ func (b *CalDAVBackend) ListCalendars(ctx context.Context) ([]caldav.Calendar, e
 
 		calendars = append(calendars, caldav.Calendar{
 			Path:                  fmt.Sprintf("/caldav/u/cal/%s/", calId),
-			Name:                  calRecord.GetString("name"),
+			Name:                  b.calendarDisplayName(calRecord, multiOrg),
 			Description:           calRecord.GetString("description"),
 			SupportedComponentSet: []string{ical.CompEvent},
 		})
 	}
 
 	return calendars, nil
+}
+
+// calendarDisplayName returns the calendar name to surface over CalDAV,
+// suffixed with the org name when multiOrg is true. Falls back to the
+// bare name if the org record can't be loaded.
+func (b *CalDAVBackend) calendarDisplayName(calRecord *core.Record, multiOrg bool) string {
+	name := calRecord.GetString("name")
+	if !multiOrg {
+		return name
+	}
+	orgID := calRecord.GetString("org")
+	if orgID == "" {
+		return name
+	}
+	orgRecord, err := b.app.FindRecordById("orgs", orgID)
+	if err != nil {
+		return name
+	}
+	orgName := orgRecord.GetString("name")
+	if orgName == "" {
+		return name
+	}
+	return fmt.Sprintf("%s (%s)", name, orgName)
 }
 
 func (b *CalDAVBackend) GetCalendar(ctx context.Context, path string) (*caldav.Calendar, error) {
@@ -105,9 +136,18 @@ func (b *CalDAVBackend) GetCalendar(ctx context.Context, path string) (*caldav.C
 		return nil, err
 	}
 
+	// Match ListCalendars: disambiguate the displayname when the user
+	// belongs to more than one org.
+	userOrgs, err := b.app.FindRecordsByFilter("user_org", "user = {:userId}", "", 0, 0,
+		map[string]any{"userId": user.Id})
+	if err != nil {
+		return nil, err
+	}
+	multiOrg := len(userOrgs) > 1
+
 	return &caldav.Calendar{
 		Path:                  fmt.Sprintf("/caldav/u/cal/%s/", calId),
-		Name:                  calRecord.GetString("name"),
+		Name:                  b.calendarDisplayName(calRecord, multiOrg),
 		Description:           calRecord.GetString("description"),
 		SupportedComponentSet: []string{ical.CompEvent},
 	}, nil
