@@ -18,7 +18,6 @@ const VIEW_LABELS: Record<ViewMode, string> = {
 export function CalendarHeader() {
     const { viewMode, setViewMode, focusDate, goToday, goNext, goPrevious } = useCalendarView()
     const fgColor = useThemeColor('foreground')
-    const borderColor = useThemeColor('border')
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'
     const { setDrawerOpen } = useWorkspaceLayout()
@@ -67,27 +66,44 @@ export function CalendarHeader() {
 
             <View className="flex-row border border-border rounded-md overflow-hidden">
                 {DESKTOP_VIEW_MODES.map((mode, i) => (
-                    <Button
+                    <ViewModeSegment
                         key={mode}
+                        mode={mode}
+                        isActive={viewMode === mode}
+                        isFirst={i === 0}
                         onPress={() => setViewMode(mode)}
-                        variant="ghost"
-                        size="sm"
-                        className={viewMode === mode ? 'bg-primary' : ''}
-                        style={{
-                            borderRadius: 0,
-                            borderLeftWidth: i > 0 ? 1 : 0,
-                            borderLeftColor: borderColor,
-                        }}
-                    >
-                        <Text
-                            className={viewMode === mode ? 'text-primary-foreground' : 'text-foreground'}
-                            style={{ fontSize: 14 }}
-                        >
-                            {VIEW_LABELS[mode]}
-                        </Text>
-                    </Button>
+                    />
                 ))}
             </View>
         </View>
+    )
+}
+
+// Segmented control item — built on Pressable directly with theme-token
+// classes so the active and hover states stay readable in both themes.
+// The gluestack ghost variant re-applies its own hover background, which
+// would mask the active fill and leave white text on a near-transparent
+// tint.
+function ViewModeSegment({
+    mode,
+    isActive,
+    isFirst,
+    onPress,
+}: {
+    mode: ViewMode
+    isActive: boolean
+    isFirst: boolean
+    onPress: () => void
+}) {
+    const bgClass = isActive ? 'bg-active-indicator/15' : 'hover:bg-hover-background'
+    const borderClass = isFirst ? '' : 'border-l border-border'
+    const textClass = isActive ? 'text-foreground font-semibold' : 'text-muted-foreground'
+
+    return (
+        <Pressable onPress={onPress} className={`px-3 py-1.5 ${borderClass} ${bgClass}`}>
+            <Text className={textClass} style={{ fontSize: 14 }}>
+                {VIEW_LABELS[mode]}
+            </Text>
+        </Pressable>
     )
 }
