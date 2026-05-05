@@ -272,6 +272,8 @@ func Register(app *pocketbase.PocketBase) {
 		}
 		return e.Next()
 	})
+
+	registerRecurrenceUntilHooks(app)
 }
 
 func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record) {

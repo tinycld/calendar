@@ -28,8 +28,15 @@ export function registerCollections(
     })
 
     const calendar_events = newCollection('calendar_events', {
-        omitOnInsert: ['created', 'updated'] as const,
-        expand: { calendar: calendar_calendars, created_by: coreStores.user_org },
+        // recurrence_until is computed by a server hook (see
+        // calendar/server/recurrence_until.go), so clients never write it.
+        omitOnInsert: ['created', 'updated', 'recurrence_until'] as const,
+        // No `expand`: on-demand fetches were carrying duplicate
+        // calendar_calendars + user_org rows per event. Both relations
+        // are already loaded eagerly (calendar_calendars, user_org), so
+        // consumers look them up by id locally — see useCalendarData
+        // and useCurrentUserOrg.
+        syncMode: 'on-demand' as const,
         collectionOptions: {
             autoIndex: 'eager' as const,
             defaultIndexType: BasicIndex,

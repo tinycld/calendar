@@ -62,6 +62,14 @@ export interface CalendarEvents {
     end: string
     all_day: boolean
     recurrence: string
+    /**
+     * Denormalized UNTIL boundary parsed out of the recurrence string by a
+     * server-side hook. Empty string for non-recurring events and for
+     * unbounded recurring events. Used as a queryable filter so the
+     * on-demand event list can drop recurring events whose recurrence
+     * window ended before the visible range.
+     */
+    recurrence_until: string
     guests: EventGuest[]
     reminder: number
     busy_status: 'busy' | 'free'
