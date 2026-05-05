@@ -7,7 +7,7 @@ import { Pressable, Text, View } from 'react-native'
 import { formatDateLabel } from '../hooks/useCalendarNavigation'
 import { useCalendarView, type ViewMode } from '../hooks/useCalendarView'
 
-const DESKTOP_VIEW_MODES: ViewMode[] = ['day', 'week', 'month']
+const DESKTOP_VIEW_MODES: ViewMode[] = ['day', 'week', 'month', 'schedule']
 const VIEW_LABELS: Record<ViewMode, string> = {
     day: 'Day',
     week: 'Week',

@@ -3,12 +3,15 @@ import {
     requestNotificationPermission,
     scheduleNotification,
 } from '@tinycld/core/lib/notifications'
-import { useEffect, useMemo, useRef } from 'react'
+import { useStore } from '@tinycld/core/lib/pocketbase'
+import { useEffect } from 'react'
+import { expandRecurringEvents } from '../lib/recurrence'
+import { useCalendarUIStore } from '../stores/calendar-ui-store'
 import type { CalendarEvents } from '../types'
-import { useCalendarEvents, useVisibleCalendars } from './useCalendarEvents'
 
 /** How far ahead to look for upcoming events to schedule reminders */
 const LOOKAHEAD_MS = 24 * 60 * 60 * 1000 // 24 hours
+const RECHECK_MS = 5 * 60 * 1000
 
 function getReminderTime(event: CalendarEvents): number | null {
     if (!event.reminder || event.reminder <= 0) return null
@@ -46,59 +49,64 @@ async function scheduleEventReminders(events: CalendarEvents[], alreadyScheduled
 }
 
 /**
- * Watches calendar events and schedules OS-level notifications
- * for events that have a reminder value > 0.
+ * Watches calendar events and schedules OS-level notifications for events
+ * with a reminder value > 0.
  *
- * Should be mounted once in the calendar provider. Backed by the same
- * scoped useCalendarEvents query that drives the visible views — passes
- * a forward 24h window so the server filter caps the result set.
+ * Implemented imperatively (collection iteration + subscribeChanges) rather
+ * than via useOrgLiveQuery. A live-query subscription here cross-fires with
+ * the screens' own live queries when views remount on mode change, producing
+ * "setState during render" warnings (TanStack DB starts sync synchronously
+ * on collection creation, which notifies sibling subscribers mid-render).
  */
 export function useEventReminders() {
-    const { visibleIds } = useVisibleCalendars()
-
-    // Forward 24h window. Computed once per render via useMemo against
-    // a quantized "now" so the date params are stable across reruns
-    // unless an actual minute boundary moves.
-    //
-    // The interval below polls every 5 min, which forces a fresh window
-    // and pulls in events newly entering the lookahead.
-    const [windowStart, windowEnd] = useMemo(() => {
-        const now = new Date()
-        // Round down to the nearest minute so memo identity is stable
-        // across the second-level renders react can trigger.
-        now.setSeconds(0, 0)
-        const end = new Date(now.getTime() + LOOKAHEAD_MS)
-        return [now, end] as const
-    }, [])
-
-    const { events: occurrences } = useCalendarEvents(windowStart, windowEnd)
-
-    const scheduledRef = useRef(new Set<string>())
+    const [eventsCollection] = useStore('calendar_events')
+    const visibleIds = useCalendarUIStore((s) => s.visibleIds)
 
     useEffect(() => {
-        if (occurrences.length === 0 && visibleIds.size === 0) return
+        if (visibleIds.length === 0) return
+        const visibleSet = new Set(visibleIds)
         let cancelled = false
+        let scheduled = new Set<string>()
 
         async function run() {
             const granted = await requestNotificationPermission()
             if (!granted || cancelled) return
-            scheduledRef.current = await scheduleEventReminders(occurrences, scheduledRef.current)
+
+            const now = new Date()
+            now.setSeconds(0, 0)
+            const end = new Date(now.getTime() + LOOKAHEAD_MS)
+
+            const rawEvents: CalendarEvents[] = []
+            for (const event of eventsCollection.values()) {
+                if (!visibleSet.has(event.calendar)) continue
+                if (new Date(event.start) > end) continue
+                if (!event.recurrence && new Date(event.end) <= now) continue
+                rawEvents.push(event as CalendarEvents)
+            }
+
+            const occurrences = expandRecurringEvents({
+                events: rawEvents,
+                rangeStart: now,
+                rangeEnd: end,
+            })
+
+            scheduled = await scheduleEventReminders(occurrences, scheduled)
         }
 
         run()
 
-        // Re-check every 5 minutes to pick up events entering the lookahead
-        // window (e.g. a meeting newly scheduled with a 90-min reminder
-        // becomes due 90 minutes before its start).
-        const interval = setInterval(run, 5 * 60 * 1000)
+        const subscription = eventsCollection.subscribeChanges(() => {
+            run()
+        })
+        const interval = setInterval(run, RECHECK_MS)
 
         return () => {
             cancelled = true
             clearInterval(interval)
+            subscription.unsubscribe()
         }
-    }, [occurrences, visibleIds])
+    }, [eventsCollection, visibleIds])
 
-    // Clean up all scheduled notifications on unmount
     useEffect(() => {
         return () => {
             cancelAllNotifications()
