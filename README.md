@@ -10,7 +10,7 @@ Part of [TinyCld](https://tinycld.org/) — the open-source, self-hosted Google 
 - **Day, Week, Month, Schedule views.** Keyboard-navigable, color-coded, with a live "now" indicator and all-day event bar.
 - **Recurring events.** Daily, weekly, monthly, yearly — stored as iCalendar RRULEs so they round-trip through CalDAV.
 - **Guests & RSVP.** Invite attendees by email with `accepted` / `declined` / `tentative` / `pending` status. Organizer vs. attendee roles.
-- **Reminders.** Per-event reminder offsets flow through core's unified notification bus (toast + drawer + Expo push).
+- **Reminders.** Per-event reminder offsets flow through the app shell's unified notification bus (toast + drawer + Expo push).
 - **Busy / free & visibility.** Mark events busy or free; keep event details private, public, or default per calendar.
 - **Color-coded categories.** 17 named colors (`blueberry`, `sage`, `tangerine`, …) that work in light and dark themes.
 - **Calendar subscriptions.** Subscribe to any external `.ics` URL (holidays, sports schedules, teammate calendars). The server polls and refreshes them on a schedule.
@@ -24,9 +24,9 @@ Part of [TinyCld](https://tinycld.org/) — the open-source, self-hosted Google 
 |----------|-----------|------|---------------------------------|
 | CalDAV   | RFC 4791  | 443  | Read/write calendars & events   |
 
-## Relationship to core
+## Relationship to the app shell
 
-`@tinycld/calendar` is a feature package for `@tinycld/core` — the [TinyCld](https://tinycld.org/) app shell that provides auth, routing, storage, and UI primitives. Core ships with **no** feature packages; install this one to add a Calendar app.
+`@tinycld/calendar` is a feature package for the [TinyCld app shell](https://github.com/tinycld/tinycld), which bundles `@tinycld/core` (auth, routing, storage, UI primitives). The app shell ships with **no** feature packages; install this one to add a Calendar app.
 
 This package contributes:
 
@@ -35,19 +35,19 @@ This package contributes:
 - **Nav entry** — sidebar icon with keyboard shortcut `t c` / `c`.
 - **Collections** — `calendar_calendars`, `calendar_members`, `calendar_events` (pbtsdb, live-queried).
 - **Migrations** — schema under `pb-migrations/`.
-- **Go server module** — CalDAV endpoint, iCalendar parser/serializer, subscription poller, and reminder scheduler wired into core's PocketBase binary.
+- **Go server module** — CalDAV endpoint, iCalendar parser/serializer, subscription poller, and reminder scheduler wired into the app shell's PocketBase binary.
 
-The package depends on core at runtime (React, pbtsdb, `~/lib/*`). Core has no knowledge of this package at compile time — everything is discovered at generator time from `tinycld.packages.ts`.
+The package depends on `@tinycld/core` at runtime (React, pbtsdb, `~/lib/*`). The app shell has no knowledge of this package at compile time — everything is discovered at generator time by scanning `tinycld/packages/`.
 
 ## Installation
 
-From inside your `core/` checkout:
+From inside your app shell checkout (`tinycld/tinycld`):
 
 ```sh
 bun run packages:install <this-repo-git-url>
 ```
 
-That clones the repo next to core, symlinks it into `core/packages/@tinycld/calendar`, appends the package name to `tinycld.packages.ts`, and runs the generator to wire up routes, collections, migrations, and Go server extensions.
+That clones the repo next to the app shell, symlinks it into `tinycld/packages/@tinycld/calendar`, and runs the generator to wire up routes, collections, migrations, and Go server extensions.
 
 To remove:
 
@@ -57,16 +57,16 @@ bun run packages:unlink @tinycld/calendar
 
 ## Development
 
-This package is not run standalone — it only makes sense inside a `core/` checkout.
+This package is not run standalone — it only makes sense inside an app shell checkout.
 
 ```sh
-cd ../core
+cd ../tinycld
 bun run dev              # expo + pocketbase with calendar linked
 bun run test:unit        # includes this package's layout tests
-bun run checks           # biome + tsc across core + linked packages
+bun run checks           # biome + tsc across the app shell + linked packages
 ```
 
-**Do not** run `bun install` inside this directory. Peer dependencies resolve through core's `node_modules/`; installing here creates duplicate copies of `react`, `react-native`, etc. and breaks TypeScript.
+**Do not** run `bun install` inside this directory. Peer dependencies resolve through the app shell's `node_modules/`; installing here creates duplicate copies of `react`, `react-native`, etc. and breaks TypeScript.
 
 ## License
 
