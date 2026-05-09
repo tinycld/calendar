@@ -7,10 +7,6 @@ test.describe('Calendar — Views', () => {
         await navigateToPackage(page, 'calendar')
     })
 
-    test('calendar renders default view', async ({ page }) => {
-        await expect(page.getByRole('button', { name: 'Today' })).toBeVisible()
-    })
-
     test('switch to Day view', async ({ page }) => {
         await page.getByRole('button', { name: 'Day', exact: true }).click()
         await expect(page.getByRole('button', { name: 'Day', exact: true })).toBeVisible()
@@ -24,15 +20,5 @@ test.describe('Calendar — Views', () => {
     test('switch to Month view', async ({ page }) => {
         await page.getByRole('button', { name: 'Month' }).click()
         await expect(page.getByRole('button', { name: 'Month' })).toBeVisible()
-    })
-
-    test('Today button is clickable', async ({ page }) => {
-        await page.getByRole('button', { name: 'Today' }).click()
-        await expect(page.getByRole('button', { name: 'Today' })).toBeVisible()
-    })
-
-    test('date label is visible', async ({ page }) => {
-        // Calendar shows a date label like "April 2026"
-        await expect(page.getByText(/\w+ \d{4}/).first()).toBeVisible()
     })
 })

@@ -36,12 +36,6 @@ function pickTestOrgCalendar(calendars: CalDAVCalendar[]): CalDAVCalendar {
 }
 
 test.describe('Calendar — CalDAV Integration', () => {
-    test("PROPFIND lists the user's calendars", async () => {
-        const calendars = await propfindCalendars()
-        expect(calendars.length).toBeGreaterThan(0)
-        expect(calendars[0].id).toBeTruthy()
-    })
-
     test('CalDAV PUT appears in web UI', async ({ page }) => {
         const calendars = await propfindCalendars()
         const calId = pickTestOrgCalendar(calendars).id

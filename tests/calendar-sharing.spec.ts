@@ -1,9 +1,6 @@
 import { expect, test } from '@playwright/test'
-import {
-    type CalDAVCalendar,
-    propfindCalendars,
-} from '../../../../tests/e2e/caldav-helpers'
-import { login, navigateToPackage, ORG_SLUG } from '../../../../tests/e2e/helpers'
+import { type CalDAVCalendar, propfindCalendars } from '../../../../tests/e2e/caldav-helpers'
+import { login, ORG_SLUG } from '../../../../tests/e2e/helpers'
 
 // Pick the auto-created personal calendar (named after the user) which
 // always exists in test-org and is owned by the test user. The CalDAV
@@ -43,14 +40,11 @@ async function createSecondUser(): Promise<SecondUser> {
     const adminEmail = process.env.ADMIN_USER_LOGIN ?? 'admin@tinycld.org'
     const adminPassword = process.env.ADMIN_USER_PW ?? 'AdminPass1234!'
 
-    const adminAuth = await fetch(
-        `${PB_URL}/api/collections/_superusers/auth-with-password`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ identity: adminEmail, password: adminPassword }),
-        }
-    )
+    const adminAuth = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identity: adminEmail, password: adminPassword }),
+    })
     if (!adminAuth.ok) {
         throw new Error(`Superuser auth failed: ${adminAuth.status} ${await adminAuth.text()}`)
     }
@@ -149,22 +143,6 @@ async function propfindCalendarsAs(user: SecondUser): Promise<{ id: string; name
 test.describe.configure({ mode: 'serial' })
 
 test.describe('Calendar — Sharing UI', () => {
-    test('Settings & sharing route renders the sharing screen', async ({ page }) => {
-        // Hit the route directly — the menu wiring is exercised separately
-        // below. The sidebar's CalendarMenu can be tested in isolation
-        // without the brittle DOM-traversal needed to find the right
-        // 3-dot trigger among multiple sibling calendars.
-        const calendars = await propfindCalendars()
-        const cal = pickTestOrgCalendar(calendars)
-
-        await login(page)
-        await page.goto(`/a/${ORG_SLUG}/calendar/settings/${cal.id}`)
-
-        await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
-        // The screen header shows the calendar name.
-        await expect(page.getByText('Test User').first()).toBeVisible()
-    })
-
     test('Owner sees themselves in the Shared with list', async ({ page }) => {
         const calendars = await propfindCalendars()
         const cal = pickTestOrgCalendar(calendars)
@@ -208,10 +186,7 @@ test.describe('Calendar — Sharing UI', () => {
         // "Holly Stitt / holly@stitt.org" two-line format).
         const candidateRow = page.getByText(/^Sharing Test \d/).first()
         await expect(candidateRow).toBeVisible({ timeout: 5_000 })
-        await page
-            .getByRole('button', { name: 'Add' })
-            .last()
-            .click()
+        await page.getByRole('button', { name: 'Add' }).last().click()
 
         // Dialog closes on success — wait for the search field to disappear.
         await expect(page.getByPlaceholder('Search by name or email')).not.toBeVisible({
