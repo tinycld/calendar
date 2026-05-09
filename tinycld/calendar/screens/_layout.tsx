@@ -1,9 +1,9 @@
 import { ScreenHeader } from '@tinycld/core/components/ScreenHeader'
+import { FrozenSlideStack } from '@tinycld/core/components/workspace/FrozenStack'
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { captureException } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
-import { Slot } from 'expo-router'
 import { View } from 'react-native'
 import { CalendarFAB } from '../components/CalendarFAB'
 import { CalendarHeader } from '../components/CalendarHeader'
@@ -33,7 +33,7 @@ export default function CalendarLayout() {
                 <CalendarHeader />
             </ScreenHeader>
             <View className="flex-1">
-                <Slot />
+                <FrozenSlideStack />
             </View>
 
             <CalendarFAB isVisible={isMobile} />

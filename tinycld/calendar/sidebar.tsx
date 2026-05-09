@@ -5,10 +5,10 @@ import {
     SidebarNav,
 } from '@tinycld/core/components/sidebar-primitives'
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
-import { useWorkspaceLayout } from '@tinycld/core/components/workspace/useWorkspaceLayout'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
+import { useWorkspaceStore } from '@tinycld/core/lib/stores/workspace-store'
 import { useGlobalSearchParams, useRouter } from 'expo-router'
 import { CalendarDays, Columns3, Grid3X3, Link2, List } from 'lucide-react-native'
 import { useCallback, useMemo, useState } from 'react'
@@ -42,7 +42,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
         useVisibleCalendars()
     const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
     const isMobile = useBreakpoint() === 'mobile'
-    const { setDrawerOpen } = useWorkspaceLayout()
+    const setDrawerOpen = useWorkspaceStore((s) => s.setDrawerOpen)
     const [subscribeOpen, setSubscribeOpen] = useState(false)
 
     const [calendarsCollection] = useStore('calendar_calendars')

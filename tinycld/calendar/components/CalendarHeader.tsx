@@ -1,5 +1,5 @@
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
-import { useWorkspaceLayout } from '@tinycld/core/components/workspace/useWorkspaceLayout'
+import { useWorkspaceStore } from '@tinycld/core/lib/stores/workspace-store'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { ChevronLeft, ChevronRight, Menu } from 'lucide-react-native'
@@ -20,7 +20,7 @@ export function CalendarHeader() {
     const fgColor = useThemeColor('foreground')
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'
-    const { setDrawerOpen } = useWorkspaceLayout()
+    const setDrawerOpen = useWorkspaceStore((s) => s.setDrawerOpen)
 
     const dateLabel = formatDateLabel(focusDate, viewMode)
 
@@ -104,7 +104,12 @@ function ViewModeSegment({
     const textClass = isActive ? 'text-foreground font-semibold' : 'text-muted-foreground'
 
     return (
-        <Pressable onPress={onPress} className={`px-3 py-1.5 ${borderClass} ${bgClass}`}>
+        <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={VIEW_LABELS[mode]}
+            onPress={onPress}
+            className={`px-3 py-1.5 ${borderClass} ${bgClass}`}
+        >
             <Text className={textClass} style={{ fontSize: 14 }}>
                 {VIEW_LABELS[mode]}
             </Text>
