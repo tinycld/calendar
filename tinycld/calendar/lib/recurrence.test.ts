@@ -22,6 +22,7 @@ function makeEvent(id: string, start: string, end: string, recurrence = ''): Cal
         end,
         all_day: false,
         recurrence,
+        recurrence_until: '',
         guests: [],
         reminder: 30,
         busy_status: 'busy',
