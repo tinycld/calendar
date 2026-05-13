@@ -44,7 +44,7 @@ The package depends on `@tinycld/core` at runtime (React, pbtsdb, `~/lib/*`). Th
 From inside your app shell checkout (`tinycld/tinycld`):
 
 ```sh
-bun run packages:install <this-repo-git-url>
+pnpm run packages:install <this-repo-git-url>
 ```
 
 That clones the repo next to the app shell, symlinks it into `tinycld/packages/@tinycld/calendar`, and runs the generator to wire up routes, collections, migrations, and Go server extensions.
@@ -52,7 +52,7 @@ That clones the repo next to the app shell, symlinks it into `tinycld/packages/@
 To remove:
 
 ```sh
-bun run packages:unlink @tinycld/calendar
+pnpm run packages:unlink @tinycld/calendar
 ```
 
 ## Development
@@ -61,12 +61,12 @@ This package is not run standalone — it only makes sense inside an app shell c
 
 ```sh
 cd ../tinycld
-bun run dev              # expo + pocketbase with calendar linked
-bun run test:unit        # includes this package's layout tests
-bun run checks           # biome + tsc across the app shell + linked packages
+pnpm run dev              # expo + pocketbase with calendar linked
+pnpm run test:unit        # includes this package's layout tests
+pnpm run checks           # biome + tsc across the app shell + linked packages
 ```
 
-**Do not** run `bun install` inside this directory. Peer dependencies resolve through the app shell's `node_modules/`; installing here creates duplicate copies of `react`, `react-native`, etc. and breaks TypeScript.
+**Do not** run `pnpm install` (or any other package manager's install) inside this directory. Peer dependencies resolve through the app shell's `node_modules/`; installing here creates duplicate copies of `react`, `react-native`, etc. and breaks TypeScript.
 
 ## License
 
