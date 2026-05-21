@@ -21,17 +21,24 @@ interface VisibleCalendarsState {
 }
 
 export function useVisibleCalendars(): VisibleCalendarsState {
-    const { calendars, mineCalendars, otherCalendars, calendarMap, membershipByCalendar, setCalendarColor, isLoading } =
-        useCalendarData()
+    const {
+        calendars,
+        mineCalendars,
+        otherCalendars,
+        calendarMap,
+        membershipByCalendar,
+        setCalendarColor,
+        isLoading,
+    } = useCalendarData()
 
-    const visibleIdsArray = useCalendarUIStore((s) => s.visibleIds)
-    const toggleCalendar = useCalendarUIStore((s) => s.toggleCalendar)
-    const showOnlyCalendar = useCalendarUIStore((s) => s.showOnlyCalendar)
-    const initVisibleIds = useCalendarUIStore((s) => s.initVisibleIds)
+    const visibleIdsArray = useCalendarUIStore(s => s.visibleIds)
+    const toggleCalendar = useCalendarUIStore(s => s.toggleCalendar)
+    const showOnlyCalendar = useCalendarUIStore(s => s.showOnlyCalendar)
+    const initVisibleIds = useCalendarUIStore(s => s.initVisibleIds)
 
     useEffect(() => {
         if (visibleIdsArray.length === 0 && calendars.length > 0) {
-            initVisibleIds(calendars.map((c) => c.id))
+            initVisibleIds(calendars.map(c => c.id))
         }
     }, [visibleIdsArray.length, calendars, initVisibleIds])
 
@@ -82,7 +89,7 @@ export function useCalendarEvents(startDate: Date, endDate: Date) {
     const rangeEndIso = useMemo(() => endDate.toISOString(), [endDate])
 
     const { data: rawEvents, isLoading: eventsLoading } = useOrgLiveQuery(
-        (query) => {
+        query => {
             if (visibleIdsArr.length === 0) return null
             return query
                 .from({ evt: eventsCollection })
@@ -103,7 +110,7 @@ export function useCalendarEvents(startDate: Date, endDate: Date) {
         // recurrence_until is empty (the same condition admits open-ended
         // recurring events). Drop non-recurring rows that ended before the
         // range begins; recurring rows pass through to expandRecurringEvents.
-        const inRange = rawEvents.filter((e) => {
+        const inRange = rawEvents.filter(e => {
             if (e.recurrence) return true
             return new Date(e.end) > startDate
         })
@@ -128,7 +135,7 @@ export function useEventDetail(eventId: string | undefined): {
     const { baseId, occurrenceDate } = parseEventId(eventId ?? '')
 
     const { data: events } = useOrgLiveQuery(
-        (query) => {
+        query => {
             if (!baseId) return null
             return query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, baseId))
         },

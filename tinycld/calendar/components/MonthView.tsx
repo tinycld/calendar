@@ -36,17 +36,17 @@ export function MonthView() {
         return result
     }, [grid])
 
-    const eventMap = useMemo(() => new Map(events.map((e) => [e.id, e])), [events])
+    const eventMap = useMemo(() => new Map(events.map(e => [e.id, e])), [events])
 
     const rowLayouts = useMemo(
         () =>
-            rows.map((row) => {
+            rows.map(row => {
                 const weekStart = row[0].date
                 const weekEndFull = endOfDay(addDays(weekStart, 6))
 
-                const weekEvents = events.filter((e) => eventOverlapsRange(e, weekStart, weekEndFull))
+                const weekEvents = events.filter(e => eventOverlapsRange(e, weekStart, weekEndFull))
 
-                const layoutEvents: LayoutEvent[] = weekEvents.map((e) => ({
+                const layoutEvents: LayoutEvent[] = weekEvents.map(e => ({
                     id: e.id,
                     start: new Date(e.start),
                     end: new Date(e.end),
@@ -68,9 +68,12 @@ export function MonthView() {
     return (
         <View className="flex-1 overflow-hidden">
             <View className="flex-row border-b border-border">
-                {DAY_LABELS.map((label) => (
+                {DAY_LABELS.map(label => (
                     <View key={label} className="flex-1 items-center py-2">
-                        <Text className="text-muted-foreground" style={{ fontSize: 12, fontWeight: '600' }}>
+                        <Text
+                            className="text-muted-foreground"
+                            style={{ fontSize: 12, fontWeight: '600' }}
+                        >
                             {label}
                         </Text>
                     </View>
@@ -127,7 +130,7 @@ function MultiDayBars({ cellLayoutMap, eventMap, calendarMap, onEventPress }: Mu
     const rendered = new Set<string>()
     const bars: React.JSX.Element[] = []
 
-    cellLayoutMap.forEach((cellLayout) => {
+    cellLayoutMap.forEach(cellLayout => {
         for (const layout of cellLayout.layouts) {
             if (!layout.isAllDay || rendered.has(layout.id)) continue
             rendered.add(layout.id)
@@ -142,7 +145,7 @@ function MultiDayBars({ cellLayoutMap, eventMap, calendarMap, onEventPress }: Mu
             bars.push(
                 <Pressable
                     key={layout.id}
-                    onPress={(e) => onEventPress(layout.id, e)}
+                    onPress={e => onEventPress(layout.id, e)}
                     style={{
                         position: 'absolute',
                         top,
@@ -159,7 +162,10 @@ function MultiDayBars({ cellLayoutMap, eventMap, calendarMap, onEventPress }: Mu
                             backgroundColor: colors.bg,
                         }}
                     >
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: colors.text }} numberOfLines={1}>
+                        <Text
+                            style={{ fontSize: 10, fontWeight: '600', color: colors.text }}
+                            numberOfLines={1}
+                        >
                             {layout.isStart ? event.title : ''}
                         </Text>
                     </View>

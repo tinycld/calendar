@@ -18,14 +18,14 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
     const calendarMap = useCalendarMap()
 
     const { layouts, eventMap, maxRow } = useMemo(() => {
-        const layoutEvents: LayoutEvent[] = events.map((e) => ({
+        const layoutEvents: LayoutEvent[] = events.map(e => ({
             id: e.id,
             start: new Date(e.start),
             end: new Date(e.end),
             allDay: e.all_day,
         }))
         const allDayLayouts = layoutAllDayEvents(layoutEvents, weekStart, dayCount)
-        const map = new Map(events.map((e) => [e.id, e]))
+        const map = new Map(events.map(e => [e.id, e]))
         const max = allDayLayouts.reduce((m, l) => Math.max(m, l.row), -1)
         return { layouts: allDayLayouts, eventMap: map, maxRow: max }
     }, [events, weekStart, dayCount])
@@ -38,7 +38,7 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
         <View className="flex-row border-b border-border bg-sidebar-background">
             <View className="w-[50px]" />
             <View className="flex-1 relative" style={{ height: containerHeight }}>
-                {layouts.map((layout) => {
+                {layouts.map(layout => {
                     const event = eventMap.get(layout.id)
                     if (!event) return null
                     const cal = calendarMap.get(event.calendar)
@@ -46,7 +46,7 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
                     return (
                         <Pressable
                             key={event.id}
-                            onPress={(e) => onEventPress(event.id, e)}
+                            onPress={e => onEventPress(event.id, e)}
                             style={{
                                 position: 'absolute',
                                 top: layout.row * ROW_HEIGHT + 2,
@@ -62,7 +62,10 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
                                     backgroundColor: colors.bg,
                                 }}
                             >
-                                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.text }} numberOfLines={1}>
+                                <Text
+                                    style={{ fontSize: 12, fontWeight: '600', color: colors.text }}
+                                    numberOfLines={1}
+                                >
                                     {event.title}
                                 </Text>
                             </View>

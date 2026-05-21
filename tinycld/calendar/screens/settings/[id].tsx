@@ -30,10 +30,7 @@ export default function CalendarSettingsScreen() {
     )
 
     const { data: calendars } = useOrgLiveQuery(
-        query =>
-            query
-                .from({ cal: calendarsCollection })
-                .where(({ cal }) => eq(cal.id, id ?? '')),
+        query => query.from({ cal: calendarsCollection }).where(({ cal }) => eq(cal.id, id ?? '')),
         [id]
     )
     const calendar = calendars?.[0]
@@ -72,7 +69,6 @@ export default function CalendarSettingsScreen() {
     }))
 
     const currentMember = members.find(m => m.isCurrentUser)
-    const currentUserMembershipId = currentMember?.membershipId ?? null
     const currentUserRole: CalendarRole | null = currentMember?.role ?? null
 
     const [actionError, setActionError] = useState<string | null>(null)
@@ -138,7 +134,10 @@ export default function CalendarSettingsScreen() {
                         >
                             Calendar
                         </Text>
-                        <Text className="text-foreground" style={{ fontSize: 22, fontWeight: '700' }}>
+                        <Text
+                            className="text-foreground"
+                            style={{ fontSize: 22, fontWeight: '700' }}
+                        >
                             {calendar.name}
                         </Text>
                     </View>
@@ -147,7 +146,6 @@ export default function CalendarSettingsScreen() {
                 <MembersSection
                     calendarId={calendar.id}
                     members={members}
-                    currentUserMembershipId={currentUserMembershipId}
                     currentUserRole={currentUserRole}
                     actionError={actionError}
                     onRoleChange={(membershipId, role) => {

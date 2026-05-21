@@ -2,7 +2,7 @@ import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { UserPlus } from 'lucide-react-native'
 import { useState } from 'react'
-import { View, Text } from 'react-native'
+import { Text, View } from 'react-native'
 import { AddMemberDialog } from './AddMemberDialog'
 import { type CalendarMemberRowData, MemberRow } from './MemberRow'
 import type { CalendarRole } from './roles'
@@ -10,7 +10,6 @@ import type { CalendarRole } from './roles'
 interface MembersSectionProps {
     calendarId: string
     members: CalendarMemberRowData[]
-    currentUserMembershipId: string | null
     currentUserRole: CalendarRole | null
     actionError: string | null
     onRoleChange: (membershipId: string, role: CalendarRole) => void
@@ -20,7 +19,6 @@ interface MembersSectionProps {
 export function MembersSection({
     calendarId,
     members,
-    currentUserMembershipId,
     currentUserRole,
     actionError,
     onRoleChange,

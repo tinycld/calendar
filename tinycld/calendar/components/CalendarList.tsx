@@ -62,17 +62,25 @@ function CalendarCheckbox({
                     >
                         {isChecked && <Check size={12} color={colors.text} />}
                     </View>
-                    <Text className="flex-1 text-foreground" style={{ fontSize: 15 }} numberOfLines={1}>
+                    <Text
+                        className="flex-1 text-foreground"
+                        style={{ fontSize: 15 }}
+                        numberOfLines={1}
+                    >
                         {calendar.name}
                     </Text>
-                    {calendar.subscription_error ? <AlertTriangle size={14} color={dangerColor} /> : null}
+                    {calendar.subscription_error ? (
+                        <AlertTriangle size={14} color={dangerColor} />
+                    ) : null}
                 </Pressable>
                 <CalendarMenu
                     currentColor={calendar.color}
-                    onColorChange={(color) => onColorChange(calendar.id, color)}
+                    onColorChange={color => onColorChange(calendar.id, color)}
                     onShowOnly={() => onShowOnly(calendar.id)}
                     calendar={calendar}
-                    onRefresh={onRefreshSubscription ? () => onRefreshSubscription(calendar.id) : undefined}
+                    onRefresh={
+                        onRefreshSubscription ? () => onRefreshSubscription(calendar.id) : undefined
+                    }
                     onDelete={onDeleteCalendar ? () => onDeleteCalendar(calendar.id) : undefined}
                     onOpenSettings={onOpenSettings ? () => onOpenSettings(calendar.id) : undefined}
                 />
@@ -119,13 +127,13 @@ function CalendarSection({
         <View>
             <Pressable
                 className="flex-row items-center gap-1.5 px-3 py-1.5"
-                onPress={() => setExpanded((prev) => !prev)}
+                onPress={() => setExpanded(prev => !prev)}
             >
                 <ChevronIcon size={14} color={mutedColor} />
                 <Text style={{ fontSize: 13, fontWeight: '600', color: mutedColor }}>{title}</Text>
             </Pressable>
             {expanded &&
-                calendars.map((cal) => (
+                calendars.map(cal => (
                     <CalendarCheckbox
                         key={cal.id}
                         calendar={cal}
@@ -152,9 +160,9 @@ export function CalendarList({
     onDeleteCalendar,
     onOpenSettings,
 }: CalendarListProps) {
-    const mine = calendars.filter((c) => c.group === 'mine')
-    const other = calendars.filter((c) => c.group === 'other')
-    const subscribed = calendars.filter((c) => c.group === 'subscribed')
+    const mine = calendars.filter(c => c.group === 'mine')
+    const other = calendars.filter(c => c.group === 'other')
+    const subscribed = calendars.filter(c => c.group === 'subscribed')
 
     return (
         <View className="gap-1">

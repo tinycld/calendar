@@ -51,8 +51,12 @@ export function CalendarMenu({
         : `Delete "${calendar?.name}"? This will permanently remove the calendar and all its events.`
 
     return (
-        <SuretyGuard message={deleteMessage} confirmLabel={deleteLabel} onConfirmed={() => onDelete?.()}>
-            {(onConfirmOpen) => (
+        <SuretyGuard
+            message={deleteMessage}
+            confirmLabel={deleteLabel}
+            onConfirmed={() => onDelete?.()}
+        >
+            {onConfirmOpen => (
                 <Menu>
                     <Menu.Trigger>
                         <Pressable className="p-1 rounded" hitSlop={8}>
@@ -78,13 +82,17 @@ export function CalendarMenu({
                                     {calendar.subscription_last_sync ? (
                                         <View className="px-3 py-1.5">
                                             <Text style={{ fontSize: 11, color: mutedColor }}>
-                                                Synced {formatLastSync(calendar.subscription_last_sync)}
+                                                Synced{' '}
+                                                {formatLastSync(calendar.subscription_last_sync)}
                                             </Text>
                                         </View>
                                     ) : null}
                                     {calendar.subscription_error ? (
                                         <View className="px-3 py-1.5">
-                                            <Text style={{ fontSize: 11, color: dangerColor }} numberOfLines={2}>
+                                            <Text
+                                                style={{ fontSize: 11, color: dangerColor }}
+                                                numberOfLines={2}
+                                            >
                                                 {calendar.subscription_error}
                                             </Text>
                                         </View>
@@ -92,7 +100,11 @@ export function CalendarMenu({
                                     <Menu.Item onPress={onRefresh}>
                                         <Menu.ItemTitle>Refresh now</Menu.ItemTitle>
                                     </Menu.Item>
-                                    <Menu.Item onPress={() => Clipboard.setStringAsync(calendar.subscription_url)}>
+                                    <Menu.Item
+                                        onPress={() =>
+                                            Clipboard.setStringAsync(calendar.subscription_url)
+                                        }
+                                    >
                                         <Menu.ItemTitle>Copy URL</Menu.ItemTitle>
                                     </Menu.Item>
                                 </>
@@ -101,9 +113,9 @@ export function CalendarMenu({
                             <Separator />
 
                             <View className="px-3 py-2 gap-1.5">
-                                {CALENDAR_COLOR_GRID.map((row) => (
+                                {CALENDAR_COLOR_GRID.map(row => (
                                     <View key={row.join('-')} className="flex-row gap-1.5">
-                                        {row.map((colorKey) => {
+                                        {row.map(colorKey => {
                                             const { bg } = getCalendarColorResolved(colorKey)
                                             return (
                                                 <Pressable

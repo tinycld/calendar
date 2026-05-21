@@ -42,7 +42,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
         useVisibleCalendars()
     const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
     const isMobile = useBreakpoint() === 'mobile'
-    const setDrawerOpen = useWorkspaceStore((s) => s.setDrawerOpen)
+    const setDrawerOpen = useWorkspaceStore(s => s.setDrawerOpen)
     const [subscribeOpen, setSubscribeOpen] = useState(false)
 
     const [calendarsCollection] = useStore('calendar_calendars')
@@ -64,7 +64,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
 
     const refreshMutation = useMutation({
         mutationFn: mutation(function* (calendarId: string) {
-            yield calendarsCollection.update(calendarId, (draft) => {
+            yield calendarsCollection.update(calendarId, draft => {
                 draft.subscription_error = ''
                 draft.subscription_last_sync = ''
             })
@@ -104,7 +104,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
             {isMobile && (
                 <>
                     <View className="px-2 py-1">
-                        {VIEW_MODE_OPTIONS.map((opt) => (
+                        {VIEW_MODE_OPTIONS.map(opt => (
                             <SidebarItem
                                 key={opt.mode}
                                 label={opt.label}
@@ -138,7 +138,11 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
 
             <SidebarDivider />
 
-            <SidebarItem label="Subscribe to calendar" icon={Link2} onPress={() => setSubscribeOpen(true)} />
+            <SidebarItem
+                label="Subscribe to calendar"
+                icon={Link2}
+                onPress={() => setSubscribeOpen(true)}
+            />
 
             <SubscriptionDialog open={subscribeOpen} onClose={() => setSubscribeOpen(false)} />
         </SidebarNav>

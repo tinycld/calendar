@@ -177,11 +177,7 @@ export function AddMemberDialog({
                                 key={c.userOrgId}
                                 className="flex-row items-center gap-3 px-4 py-2.5"
                             >
-                                <MemberAvatar
-                                    name={c.name ?? ''}
-                                    email={c.email ?? ''}
-                                    size={32}
-                                />
+                                <MemberAvatar name={c.name ?? ''} email={c.email ?? ''} size={32} />
                                 <View className="flex-1">
                                     <Text
                                         className="text-foreground font-medium"

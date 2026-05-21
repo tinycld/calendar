@@ -56,19 +56,28 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
                     {monthLabel}
                 </Text>
                 <View className="flex-row gap-2">
-                    <Pressable onPress={() => setDisplayMonth((prev) => addMonths(prev, -1))} hitSlop={8}>
+                    <Pressable
+                        onPress={() => setDisplayMonth(prev => addMonths(prev, -1))}
+                        hitSlop={8}
+                    >
                         <ChevronLeft size={16} color={mutedColor} />
                     </Pressable>
-                    <Pressable onPress={() => setDisplayMonth((prev) => addMonths(prev, 1))} hitSlop={8}>
+                    <Pressable
+                        onPress={() => setDisplayMonth(prev => addMonths(prev, 1))}
+                        hitSlop={8}
+                    >
                         <ChevronRight size={16} color={mutedColor} />
                     </Pressable>
                 </View>
             </View>
 
             <View className="flex-row">
-                {DAY_LETTERS.map((day) => (
+                {DAY_LETTERS.map(day => (
                     <View key={day.key} className="items-center py-px" style={{ width: '14.28%' }}>
-                        <Text className="text-muted-foreground" style={{ fontSize: 12, fontWeight: '600' }}>
+                        <Text
+                            className="text-muted-foreground"
+                            style={{ fontSize: 12, fontWeight: '600' }}
+                        >
                             {day.label}
                         </Text>
                     </View>
@@ -76,7 +85,7 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
             </View>
 
             <View className="flex-row flex-wrap">
-                {grid.map((cell) => {
+                {grid.map(cell => {
                     const isSelected = isSameDay(cell.date, selectedDate)
                     const cellKey = cell.date.toISOString().split('T')[0]
 

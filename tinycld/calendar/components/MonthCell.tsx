@@ -59,7 +59,7 @@ export function MonthCell({
                 </Text>
             </View>
 
-            {layouts.map((layout) => {
+            {layouts.map(layout => {
                 if (layout.isAllDay) return null
 
                 const event = eventMap.get(layout.id)
@@ -70,7 +70,7 @@ export function MonthCell({
 
                 if (event.all_day) {
                     return (
-                        <Pressable key={event.id} onPress={(e) => onEventPress(event.id, e)}>
+                        <Pressable key={event.id} onPress={e => onEventPress(event.id, e)}>
                             <View
                                 className="rounded-sm px-1 py-px mb-px"
                                 style={{
@@ -95,7 +95,7 @@ export function MonthCell({
                 const timeStr = formatShortTime(new Date(event.start))
 
                 return (
-                    <Pressable key={event.id} onPress={(e) => onEventPress(event.id, e)}>
+                    <Pressable key={event.id} onPress={e => onEventPress(event.id, e)}>
                         <View className="flex-row items-center gap-[3px] py-px">
                             <View
                                 className="size-1.5 rounded-full"
@@ -106,7 +106,11 @@ export function MonthCell({
                             <Text className="text-muted-foreground" style={{ fontSize: 10 }}>
                                 {timeStr}
                             </Text>
-                            <Text className="flex-1 text-foreground" style={{ fontSize: 11 }} numberOfLines={1}>
+                            <Text
+                                className="flex-1 text-foreground"
+                                style={{ fontSize: 11 }}
+                                numberOfLines={1}
+                            >
                                 {event.title}
                             </Text>
                         </View>

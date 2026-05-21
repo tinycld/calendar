@@ -49,7 +49,9 @@ const EVENTS = [
         all_day: false,
         recurrence: '',
         calendar: 'Work',
-        guests: [{ name: 'Alice Chen', email: 'alice@acme.co', rsvp: 'accepted', role: 'organizer' }],
+        guests: [
+            { name: 'Alice Chen', email: 'alice@acme.co', rsvp: 'accepted', role: 'organizer' },
+        ],
         reminder: 30,
         busy_status: 'busy',
         visibility: 'default',
@@ -191,7 +193,9 @@ const EVENTS = [
         all_day: false,
         recurrence: '',
         calendar: 'Work',
-        guests: [{ name: 'Dave Johnson', email: 'dave@acme.co', rsvp: 'accepted', role: 'attendee' }],
+        guests: [
+            { name: 'Dave Johnson', email: 'dave@acme.co', rsvp: 'accepted', role: 'attendee' },
+        ],
         reminder: 15,
         busy_status: 'busy',
         visibility: 'private',
@@ -238,7 +242,9 @@ const EVENTS = [
         all_day: false,
         recurrence: '',
         calendar: 'Work',
-        guests: [{ name: 'Alice Chen', email: 'alice@acme.co', rsvp: 'accepted', role: 'organizer' }],
+        guests: [
+            { name: 'Alice Chen', email: 'alice@acme.co', rsvp: 'accepted', role: 'organizer' },
+        ],
         reminder: 10,
         busy_status: 'busy',
         visibility: 'default',
@@ -515,7 +521,9 @@ const EVENTS = [
         all_day: false,
         recurrence: '',
         calendar: 'Work',
-        guests: [{ name: 'Dave Johnson', email: 'dave@acme.co', rsvp: 'pending', role: 'attendee' }],
+        guests: [
+            { name: 'Dave Johnson', email: 'dave@acme.co', rsvp: 'pending', role: 'attendee' },
+        ],
         reminder: 15,
         busy_status: 'busy',
         visibility: 'default',
@@ -557,7 +565,9 @@ const EVENTS = [
         all_day: false,
         recurrence: '',
         calendar: 'Work',
-        guests: [{ name: 'Alice Chen', email: 'alice@acme.co', rsvp: 'accepted', role: 'organizer' }],
+        guests: [
+            { name: 'Alice Chen', email: 'alice@acme.co', rsvp: 'accepted', role: 'organizer' },
+        ],
         reminder: 15,
         busy_status: 'busy',
         visibility: 'default',
@@ -797,7 +807,9 @@ const EVENTS = [
         all_day: false,
         recurrence: '',
         calendar: 'Team',
-        guests: [{ name: 'Alice Chen', email: 'alice@acme.co', rsvp: 'accepted', role: 'organizer' }],
+        guests: [
+            { name: 'Alice Chen', email: 'alice@acme.co', rsvp: 'accepted', role: 'organizer' },
+        ],
         reminder: 30,
         busy_status: 'busy',
         visibility: 'public',
@@ -1012,7 +1024,12 @@ function roleForCalendar(calName: string) {
     return 'viewer'
 }
 
-async function seedCalendars(pb: PocketBase, orgId: string, userOrgId: string, otherMembers: { id: string }[]) {
+async function seedCalendars(
+    pb: PocketBase,
+    orgId: string,
+    userOrgId: string,
+    otherMembers: { id: string }[]
+) {
     const calendarMap: Record<string, string> = {}
     for (const cal of CALENDARS) {
         log(`Creating calendar: ${cal.name}`)

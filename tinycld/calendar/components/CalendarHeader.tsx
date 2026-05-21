@@ -20,18 +20,14 @@ export function CalendarHeader() {
     const fgColor = useThemeColor('foreground')
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'
-    const setDrawerOpen = useWorkspaceStore((s) => s.setDrawerOpen)
+    const setDrawerOpen = useWorkspaceStore(s => s.setDrawerOpen)
 
     const dateLabel = formatDateLabel(focusDate, viewMode)
 
     if (isMobile) {
         return (
             <View className="flex-row items-center px-3 py-2 gap-2">
-                <Pressable
-                    testID="drawer-toggle"
-                    onPress={() => setDrawerOpen(true)}
-                    hitSlop={8}
-                >
+                <Pressable testID="drawer-toggle" onPress={() => setDrawerOpen(true)} hitSlop={8}>
                     <Menu size={22} color={fgColor} />
                 </Pressable>
 
@@ -66,7 +62,9 @@ export function CalendarHeader() {
                 <ChevronRight size={20} color={fgColor} />
             </Pressable>
 
-            <Text style={{ fontSize: 20, fontWeight: '600', color: fgColor, flex: 1 }}>{dateLabel}</Text>
+            <Text style={{ fontSize: 20, fontWeight: '600', color: fgColor, flex: 1 }}>
+                {dateLabel}
+            </Text>
 
             <View className="flex-row border border-border rounded-md overflow-hidden">
                 {DESKTOP_VIEW_MODES.map((mode, i) => (

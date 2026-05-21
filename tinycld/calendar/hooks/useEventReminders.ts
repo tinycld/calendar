@@ -60,7 +60,7 @@ async function scheduleEventReminders(events: CalendarEvents[], alreadyScheduled
  */
 export function useEventReminders() {
     const [eventsCollection] = useStore('calendar_events')
-    const visibleIds = useCalendarUIStore((s) => s.visibleIds)
+    const visibleIds = useCalendarUIStore(s => s.visibleIds)
 
     useEffect(() => {
         if (visibleIds.length === 0) return

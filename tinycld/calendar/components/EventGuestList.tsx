@@ -40,10 +40,13 @@ export function EventGuestList({ guests }: EventGuestListProps) {
                 Guests ({guests.length})
             </Text>
 
-            {guests.map((guest) => (
+            {guests.map(guest => (
                 <View key={guest.email} className="flex-row items-center gap-2.5 py-1.5 px-1">
                     <View className="size-8 rounded-full items-center justify-center bg-accent">
-                        <Text className="text-accent-foreground" style={{ fontSize: 12, fontWeight: '600' }}>
+                        <Text
+                            className="text-accent-foreground"
+                            style={{ fontSize: 12, fontWeight: '600' }}
+                        >
                             {getInitials(guest.name)}
                         </Text>
                     </View>
@@ -63,7 +66,11 @@ export function EventGuestList({ guests }: EventGuestListProps) {
                             )}
                         </View>
                         <View className="flex-row items-center gap-1">
-                            <Text className="flex-1 text-muted-foreground" style={{ fontSize: 12 }} numberOfLines={1}>
+                            <Text
+                                className="flex-1 text-muted-foreground"
+                                style={{ fontSize: 12 }}
+                                numberOfLines={1}
+                            >
                                 {guest.email}
                             </Text>
                             <RsvpIcon rsvp={guest.rsvp} />
