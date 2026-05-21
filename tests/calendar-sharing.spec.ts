@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { type CalDAVCalendar, propfindCalendars } from '../../../../tests/e2e/caldav-helpers'
-import { login, ORG_SLUG } from '../../../../tests/e2e/helpers'
+import { type CalDAVCalendar, propfindCalendars } from '../../app/tests/e2e/caldav-helpers'
+import { login, ORG_SLUG } from '../../app/tests/e2e/helpers'
 
 // Pick the auto-created personal calendar (named after the user) which
 // always exists in test-org and is owned by the test user. The CalDAV

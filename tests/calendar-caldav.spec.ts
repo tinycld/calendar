@@ -8,8 +8,8 @@ import {
     propfindEvents,
     putEvent,
     rawCaldavRequest,
-} from '../../../../tests/e2e/caldav-helpers'
-import { login, navigateToPackage, ORG_SLUG } from '../../../../tests/e2e/helpers'
+} from '../../app/tests/e2e/caldav-helpers'
+import { login, navigateToPackage, ORG_SLUG } from '../../app/tests/e2e/helpers'
 
 // PROPFIND returns calendars from every org the test user has membership
 // in, so a multi-org test user has same-named entries (the user_org
