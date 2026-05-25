@@ -27,6 +27,10 @@ func startReminderScheduler(app *pocketbase.PocketBase) {
 }
 
 func checkReminders(app *pocketbase.PocketBase) {
+	if !appIsLive(app) {
+		return
+	}
+
 	now := time.Now().UTC()
 	windowEnd := now.Add(90 * time.Second)
 	lookahead := now.Add(24 * time.Hour)

@@ -39,6 +39,10 @@ func startSubscriptionSync(app *pocketbase.PocketBase) {
 }
 
 func syncAllSubscriptions(app *pocketbase.PocketBase) {
+	if !appIsLive(app) {
+		return
+	}
+
 	now := time.Now().UTC()
 	staleCutoff := now.AddDate(0, 0, -staleErrorDays).Format(pbTimeFormat)
 

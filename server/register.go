@@ -15,6 +15,17 @@ import (
 	"tinycld.org/core/notify"
 )
 
+// appIsLive reports whether the app still has an open database connection.
+// The invite notifier and the reminder/subscription schedulers run in
+// background goroutines that can outlive the app instance — e.g. the test
+// harness resets the dev DB while a job is in flight. Once the app is torn
+// down, ConcurrentDB() is nil and any record query (PocketBase v0.38
+// RecordQuery) panics on the nil DB instead of returning an error. Bail out
+// instead of touching the DB in that window.
+func appIsLive(app *pocketbase.PocketBase) bool {
+	return app != nil && app.ConcurrentDB() != nil
+}
+
 func Register(app *pocketbase.PocketBase) {
 	// Audit logging for calendar collections
 	audit.RegisterCollection(app, "calendar_calendars", &audit.CollectionConfig{
@@ -277,6 +288,10 @@ func Register(app *pocketbase.PocketBase) {
 }
 
 func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record) {
+	if !appIsLive(app) {
+		return
+	}
+
 	userOrgID := memberRecord.GetString("user_org")
 	calendarID := memberRecord.GetString("calendar")
 	role := memberRecord.GetString("role")
