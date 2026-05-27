@@ -11,6 +11,18 @@ import {
 } from '../../app/tests/e2e/caldav-helpers'
 import { login, navigateToPackage, ORG_SLUG } from '../../app/tests/e2e/helpers'
 
+// Local YYYY-MM-DD formatter — mirrors tinycld/calendar/hooks/useCalendarNavigation.ts.
+// Used to pin `?view=day&date=...` to the event's actual date so the
+// day-view scrolls to where the event lives (otherwise the assertion is
+// flaky when test time is within an hour of UTC midnight and the event
+// lands on tomorrow).
+function toDateString(date: Date): string {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+}
+
 // PROPFIND returns calendars from every org the test user has membership
 // in, so a multi-org test user has same-named entries (the user_org
 // lifecycle hook auto-creates a "Test User" calendar per org). The CalDAV
@@ -48,13 +60,15 @@ test.describe('Calendar — CalDAV Integration', () => {
         await putEvent(calId, uid, { summary, start, end })
 
         await login(page)
-        // Navigate straight to day view via the URL. Clicking the "Day"
-        // button race-conditions against header hydration in parallel
-        // runs (the click can land before the view-switcher's onPress is
-        // bound, leaving us on the default WeekView), and EventBlock
-        // truncates event titles with ellipsis in narrower columns —
-        // either of which makes getByText(summary) miss.
-        await page.goto(`/a/${ORG_SLUG}/calendar?view=day`)
+        // Navigate straight to day view via the URL — pinned to the
+        // event's actual date so the assertion doesn't fail when the
+        // test happens to run within an hour of UTC midnight (the
+        // start = now + 1h math can push the event onto tomorrow's
+        // day-view, which "?view=day" alone would never scroll to).
+        // Clicking the "Day" button race-conditions against header
+        // hydration, and EventBlock truncates titles in narrower
+        // columns — either makes getByText(summary) miss.
+        await page.goto(`/a/${ORG_SLUG}/calendar?view=day&date=${toDateString(start)}`)
         await page.waitForLoadState('domcontentloaded')
         await expect(page.getByText(summary)).toBeVisible({ timeout: 10_000 })
     })
@@ -115,8 +129,9 @@ test.describe('Calendar — CalDAV Integration', () => {
         await putEvent(calId, uid, { summary, start, end })
 
         await login(page)
-        // URL-based view switch — see CalDAV PUT test for rationale.
-        await page.goto(`/a/${ORG_SLUG}/calendar?view=day`)
+        // URL-based view switch pinned to the event's actual date — see
+        // CalDAV PUT test for rationale (avoids UTC-midnight flakiness).
+        await page.goto(`/a/${ORG_SLUG}/calendar?view=day&date=${toDateString(start)}`)
         await page.waitForLoadState('domcontentloaded')
         await expect(page.getByText(summary)).toBeVisible({ timeout: 10_000 })
 
