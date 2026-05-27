@@ -13,6 +13,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"tinycld.org/core/audit"
 	"tinycld.org/core/notify"
+	"tinycld.org/core/userorg"
 )
 
 // appIsLive reports whether the app still has an open database connection.
@@ -27,6 +28,11 @@ func appIsLive(app *pocketbase.PocketBase) bool {
 }
 
 func Register(app *pocketbase.PocketBase) {
+	// Reassignable authorship FKs surfaced to the leave-org transaction.
+	// Without this, a user with calendar_events they created can't leave the
+	// org (the required FK blocks the user_org delete).
+	userorg.RegisterReassignable(userorg.ReassignableRef{Collection: "calendar_events", Field: "created_by"})
+
 	// Audit logging for calendar collections
 	audit.RegisterCollection(app, "calendar_calendars", &audit.CollectionConfig{
 		ExtractLabel: audit.LabelFromField("name"),
