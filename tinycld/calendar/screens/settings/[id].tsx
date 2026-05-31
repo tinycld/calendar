@@ -1,4 +1,5 @@
 import { eq } from '@tanstack/db'
+import { DocumentTitle } from '@tinycld/core/components/DocumentTitle'
 import { useAuth } from '@tinycld/core/lib/auth'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
@@ -104,6 +105,7 @@ export default function CalendarSettingsScreen() {
     if (!calendar) {
         return (
             <View className="flex-1 items-center justify-center bg-background">
+                <DocumentTitle pkg="Calendar" title="Settings" />
                 <Text className="text-muted-foreground" style={{ fontSize: 16 }}>
                     Calendar not found
                 </Text>
@@ -122,6 +124,7 @@ export default function CalendarSettingsScreen() {
             className="bg-background"
             keyboardShouldPersistTaps="handled"
         >
+            <DocumentTitle pkg="Calendar" title={`${calendar.name} settings`} />
             <View className="flex-1 p-5 max-w-[760px] gap-6">
                 <View className="flex-row items-center gap-3">
                     <Pressable onPress={navigateBack} hitSlop={8}>

@@ -1,4 +1,5 @@
 import { eq } from '@tanstack/db'
+import { DocumentTitle } from '@tinycld/core/components/DocumentTitle'
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { handleMutationErrorsWithForm } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
@@ -187,6 +188,7 @@ export default function EventEditorScreen() {
     if (!isNew && isReadOnly) {
         return (
             <View className="flex-1 items-center justify-center bg-background">
+                <DocumentTitle pkg="Calendar" title={event?.title} />
                 <Text className="text-muted-foreground" style={{ fontSize: 16 }}>
                     Events from subscribed calendars cannot be edited
                 </Text>
@@ -206,6 +208,7 @@ export default function EventEditorScreen() {
     if (isNotFound) {
         return (
             <View className="flex-1 items-center justify-center bg-background">
+                <DocumentTitle pkg="Calendar" />
                 <Text className="text-muted-foreground" style={{ fontSize: 16 }}>
                     Event not found
                 </Text>
@@ -252,6 +255,7 @@ export default function EventEditorScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             className="flex-1 bg-background"
         >
+            <DocumentTitle pkg="Calendar" title={isNew ? 'New event' : event?.title} />
             <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
                 <View className="flex-1 p-5">
                     <View className="flex-row justify-between items-center mb-5">
