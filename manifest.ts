@@ -6,6 +6,7 @@ const manifest = {
     routes: { directory: 'screens' },
     nav: { label: 'Calendar', icon: 'calendar', order: 8, shortcut: 'c' },
     sidebar: { component: 'sidebar' },
+    slots: ['sidebar.after-calendars'],
     provider: { component: 'provider' },
     migrations: { directory: 'pb-migrations' },
     collections: { register: 'collections', types: 'types' },
