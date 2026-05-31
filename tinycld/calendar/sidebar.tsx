@@ -3,6 +3,7 @@ import {
     SidebarDivider,
     SidebarItem,
     SidebarNav,
+    SidebarSlot,
 } from '@tinycld/core/components/sidebar-primitives'
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
@@ -137,6 +138,8 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
             />
 
             <SidebarDivider />
+
+            <SidebarSlot target="calendar" slot="sidebar.after-calendars" />
 
             <SidebarItem
                 label="Subscribe to calendar"
