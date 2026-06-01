@@ -18,6 +18,7 @@ export function CalendarFAB({ isVisible }: CalendarFABProps) {
             accessibilityLabel="Create event"
             isVisible={isVisible}
             iconSize={24}
+            side="left"
         />
     )
 }
