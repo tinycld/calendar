@@ -8,8 +8,8 @@ import {
     propfindEvents,
     putEvent,
     rawCaldavRequest,
-} from '../../tinycld/tests/e2e/caldav-helpers'
-import { login, navigateToPackage, ORG_SLUG } from '../../tinycld/tests/e2e/helpers'
+} from '@tinycld/core/e2e-caldav-helpers'
+import { login, navigateToPackage, ORG_SLUG } from '@tinycld/core/e2e-helpers'
 
 // Local YYYY-MM-DD formatter — mirrors tinycld/calendar/hooks/useCalendarNavigation.ts.
 // Used to pin `?view=day&date=...` to the event's actual date so the
