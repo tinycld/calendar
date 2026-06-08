@@ -26,7 +26,7 @@ Part of [TinyCld](https://tinycld.org/) — the open-source, self-hosted Google 
 
 ## Relationship to the app shell
 
-`@tinycld/calendar` is a feature package for the [TinyCld app shell](https://github.com/tinycld/tinycld), which bundles `@tinycld/core` (auth, routing, storage, UI primitives). The app shell ships with **no** feature packages; install this one to add a Calendar app.
+`@tinycld/calendar` is a feature package for the [TinyCld app shell](https://github.com/tinycld/tinycld). The shell nests `@tinycld/core` (auth, routing, storage, UI primitives) at `tinycld/core/`. The app shell ships with **no** feature packages; install this one to add a Calendar app.
 
 This package contributes:
 
@@ -38,7 +38,7 @@ This package contributes:
 - **Migrations** — schema under `pb-migrations/`.
 - **Go server module** — CalDAV endpoint, iCalendar parser/serializer, subscription poller, and reminder scheduler wired into the app shell's PocketBase binary.
 
-The package depends on `@tinycld/core` at runtime (React, pbtsdb, `~/lib/*`). The app shell has no knowledge of this package at compile time — everything is discovered at generator time by scanning `tinycld/packages/`.
+The package depends on `@tinycld/core` at runtime (React, pbtsdb, `~/lib/*`). The app shell has no knowledge of this package at compile time — everything is discovered at generator time by scanning the workspace members.
 
 ## Installation
 
@@ -48,7 +48,7 @@ From inside your app shell checkout (`tinycld/tinycld`):
 pnpm run packages:install <this-repo-git-url>
 ```
 
-That clones the repo next to the app shell, symlinks it into `tinycld/packages/@tinycld/calendar`, and runs the generator to wire up routes, collections, migrations, and Go server extensions.
+That clones the repo next to the app shell as a workspace member sibling, symlinks it into `node_modules/@tinycld/calendar`, and runs the generator to wire up routes, collections, migrations, and Go server extensions.
 
 To remove:
 
