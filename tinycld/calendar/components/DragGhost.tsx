@@ -43,6 +43,7 @@ export function DragGhost({ columnCount, contentHeight }: DragGhostProps) {
 
             {/* The floating copy of the dragged event. */}
             <View
+                testID="drag-ghost"
                 className="absolute rounded overflow-hidden"
                 style={{
                     top: preview.top,
