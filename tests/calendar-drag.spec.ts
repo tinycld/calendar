@@ -50,14 +50,15 @@ test.describe('Calendar — Drag to resize', () => {
         await expect(block).toBeAttached()
 
         // The grid auto-scrolls to the current hour, which on CI can leave the
-        // 08:00 block scrolled off the top of the RN ScrollView (so it's
-        // attached but not in the viewport, and clipped → not "visible").
-        // scrollIntoViewIfNeeded doesn't drive an RN ScrollView, so wheel it
-        // fully to the top over the grid area: at scroll 0 the 08:00 block
-        // (top 480px) sits inside the viewport. Only then is it visible/
-        // measurable.
+        // 08:00 block scrolled off the RN ScrollView viewport (attached but
+        // clipped → not "visible"). scrollIntoViewIfNeeded doesn't drive an RN
+        // ScrollView, so wheel it by hand: fully to the top (clamps at 0), then
+        // back down a few hours so the 08:00 block sits mid-viewport rather than
+        // straddling the bottom fold (where it'd still read as not fully
+        // visible). Only then is it visible and measurable.
         await page.mouse.move(640, 400)
         await page.mouse.wheel(0, -5000)
+        await page.mouse.wheel(0, 300)
         await expect(block).toBeVisible()
 
         const box = await block.boundingBox()
