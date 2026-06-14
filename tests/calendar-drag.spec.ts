@@ -38,15 +38,21 @@ test.describe('Calendar — Drag to resize', () => {
         await navigateToPackage(page, 'calendar')
         await page.getByRole('button', { name: 'Day', exact: true }).click()
 
-        const block = page.getByText(title, { exact: true }).first()
+        // Target the block container (testID event-block-<id>), not the title
+        // text node: in RN-Web the numberOfLines={1} <Text> compiles to a div
+        // Playwright treats as zero-box/hidden, so boundingBox() on it returns
+        // null. The container Pressable carries the full block geometry.
+        const block = page
+            .getByTestId(/^event-block-/)
+            .filter({ hasText: title })
+            .first()
         await expect(block).toBeAttached()
 
         // Position 08:00 in clear view: wheel the grid to the top, then back
         // down a little so the block's bottom edge (the resize handle) sits
         // well inside the viewport rather than at the very fold. RN's
         // ScrollView scrolls via the wheel; Playwright's scrollIntoViewIfNeeded
-        // doesn't drive it, and getByText reports the clipped text node as
-        // "hidden", so we drive geometry off boundingBox() directly.
+        // doesn't drive it, so we wheel then read geometry off boundingBox().
         await page.mouse.move(640, 360)
         await page.mouse.wheel(0, -3000)
         await page.mouse.wheel(0, 220)
