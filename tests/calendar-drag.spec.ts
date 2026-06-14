@@ -42,15 +42,23 @@ test.describe('Calendar — Drag to resize', () => {
         // unique title, not the inner title text node: in RN-Web the
         // numberOfLines={1} <Text> compiles to a div Playwright treats as
         // zero-box, so boundingBox() on it returns null. The container View has
-        // an explicit pixel height, so it measures. toBeVisible() also scrolls
-        // it into the actionable viewport (the manual mouse-wheel didn't reliably
-        // settle the RN ScrollView for boundingBox).
+        // an explicit pixel height, so it measures.
         const block = page
             .getByTestId(/^event-block-/)
             .filter({ hasText: title })
             .first()
+        await expect(block).toBeAttached()
+
+        // The grid auto-scrolls to the current hour, which on CI can leave the
+        // 08:00 block scrolled off the top of the RN ScrollView (so it's
+        // attached but not in the viewport, and clipped → not "visible").
+        // scrollIntoViewIfNeeded doesn't drive an RN ScrollView, so wheel it
+        // fully to the top over the grid area: at scroll 0 the 08:00 block
+        // (top 480px) sits inside the viewport. Only then is it visible/
+        // measurable.
+        await page.mouse.move(640, 400)
+        await page.mouse.wheel(0, -5000)
         await expect(block).toBeVisible()
-        await block.scrollIntoViewIfNeeded()
 
         const box = await block.boundingBox()
         if (!box) throw new Error('event block has no bounding box')
