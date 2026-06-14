@@ -104,6 +104,7 @@ export function EventBlock({
     // wins its own bottom strip and the body owns the rest.
     return (
         <View
+            testID={`event-block-${eventId}`}
             className="absolute"
             style={{
                 top: topOffset,
@@ -118,7 +119,6 @@ export function EventBlock({
         >
             <Pressable
                 {...bodyHandlers.handlers}
-                testID={`event-block-${eventId}`}
                 onPress={handlePress}
                 className="absolute inset-0 rounded overflow-hidden"
                 style={[
