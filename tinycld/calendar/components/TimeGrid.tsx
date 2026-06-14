@@ -1,8 +1,9 @@
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import type React from 'react'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import {
     type GestureResponderEvent,
+    type LayoutChangeEvent,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -12,9 +13,11 @@ import {
 import { useCalendarMap } from '../hooks/useCalendarEvents'
 import { getTimeLabel, isToday } from '../hooks/useCalendarNavigation'
 import { type LayoutEvent, layoutTimedEvents } from '../layout'
+import { parseEventId } from '../lib/recurrence'
 import type { CalendarEvents } from '../types'
 import { CurrentTimeIndicator } from './CurrentTimeIndicator'
 import { getCalendarColorResolved } from './calendar-colors'
+import { DragGhost } from './DragGhost'
 import { EventBlock } from './EventBlock'
 
 export const HOUR_HEIGHT = 60
@@ -61,6 +64,19 @@ export function TimeGrid({
     const borderColor = useThemeColor('border')
     const calendarMap = useCalendarMap()
     const totalHours = endHour - startHour + 1
+
+    // Measured pixel width of each day column, keyed by column index. Drives
+    // week-view horizontal day-move; onLayout is the one source that works on
+    // web and native (the gesture's startRect is web-only). A single column
+    // (day view) reports width 0 so day-move stays a no-op there.
+    const columnWidthsRef = useRef<Map<number, number>>(new Map())
+    const onColumnLayout = useCallback(
+        (colIndex: number) => (e: LayoutChangeEvent) => {
+            columnWidthsRef.current.set(colIndex, e.nativeEvent.layout.width)
+        },
+        []
+    )
+    const dayMoveEnabled = columns.length > 1
 
     const scrollRef = useCallback(
         (node: ScrollView | null) => {
@@ -121,6 +137,7 @@ export function TimeGrid({
                         return (
                             <View
                                 key={column.date.toISOString()}
+                                onLayout={onColumnLayout(colIndex)}
                                 className="flex-1 relative"
                                 style={{
                                     borderRightWidth: colIndex < columns.length - 1 ? 1 : 0,
@@ -148,9 +165,15 @@ export function TimeGrid({
                                     if (!layout) return null
                                     const cal = calendarMap.get(event.calendar)
                                     const colors = getCalendarColorResolved(cal?.color ?? 'blue')
+                                    // Recurring occurrences carry a synthetic id and
+                                    // subscribed calendars are read-only — neither can
+                                    // be rescheduled by dragging in v1.
+                                    const isOccurrence = !!parseEventId(event.id).occurrenceDate
+                                    const dragDisabled = isOccurrence || !!cal?.subscription_url
                                     return (
                                         <EventBlock
                                             key={event.id}
+                                            eventId={event.id}
                                             title={event.title}
                                             timeLabel={formatEventTime(event)}
                                             bgColor={colors.bg}
@@ -159,6 +182,19 @@ export function TimeGrid({
                                             height={layout.height}
                                             left={layout.left}
                                             width={layout.width}
+                                            start={new Date(event.start)}
+                                            end={new Date(event.end)}
+                                            startHour={startHour}
+                                            endHour={endHour}
+                                            hourHeight={HOUR_HEIGHT}
+                                            getColumnWidth={() =>
+                                                dayMoveEnabled
+                                                    ? (columnWidthsRef.current.get(colIndex) ?? 0)
+                                                    : 0
+                                            }
+                                            columnIndex={colIndex}
+                                            columnCount={columns.length}
+                                            dragDisabled={dragDisabled}
                                             onPress={e => onEventPress(event.id, e)}
                                         />
                                     )
@@ -170,6 +206,11 @@ export function TimeGrid({
                             </View>
                         )
                     })}
+
+                    <DragGhost
+                        columnCount={columns.length}
+                        contentHeight={totalHours * HOUR_HEIGHT}
+                    />
                 </View>
             </View>
         </ScrollView>

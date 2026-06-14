@@ -11,6 +11,7 @@ const manifest = {
     migrations: { directory: 'pb-migrations' },
     collections: { register: 'collections', types: 'types' },
     seed: { script: 'seed' },
+    help: { directory: 'help' },
     server: { package: 'server', module: 'tinycld.org/packages/calendar' },
     repository: { url: 'https://github.com/tinycld/calendar' },
 }
