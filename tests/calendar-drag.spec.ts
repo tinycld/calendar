@@ -46,7 +46,10 @@ test.describe('Calendar — Drag affordances', () => {
         // Its presence (and the event-resize-<id> handle inside it) proves the
         // event renders as a drag-enabled block — the handle is omitted for
         // recurring/read-only events (the dragDisabled branch).
-        const block = page.getByTestId(/^event-block-/).filter({ hasText: title }).first()
+        const block = page
+            .getByTestId(/^event-block-/)
+            .filter({ hasText: title })
+            .first()
         await expect(block).toBeAttached({ timeout: 10_000 })
         const blockId = await block.getAttribute('data-testid')
         const eventId = blockId?.replace('event-block-', '')
