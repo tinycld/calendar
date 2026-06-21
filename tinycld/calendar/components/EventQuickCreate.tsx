@@ -6,13 +6,7 @@ import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useCurrentUserOrg } from '@tinycld/core/lib/use-current-user-org'
 import { useOrgInfo } from '@tinycld/core/lib/use-org-info'
-import {
-    Actionsheet,
-    ActionsheetBackdrop,
-    ActionsheetContent,
-    ActionsheetDragIndicator,
-    ActionsheetDragIndicatorWrapper,
-} from '@tinycld/core/ui/actionsheet'
+import { BottomDrawer } from '@tinycld/core/ui/bottom-drawer'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { TextInput, useForm, z, zodResolver } from '@tinycld/core/ui/form'
 import { useRouter } from 'expo-router'
@@ -144,47 +138,38 @@ function MobileQuickCreate({
     }
 
     return (
-        <Actionsheet isOpen={isVisible} onClose={onClose}>
-            <ActionsheetBackdrop />
-            <ActionsheetContent>
-                <ActionsheetDragIndicatorWrapper>
-                    <ActionsheetDragIndicator />
-                </ActionsheetDragIndicatorWrapper>
-                <View className="p-5 gap-3 w-full">
-                    <View className="flex-row justify-between items-center">
-                        <Pressable onPress={onClose}>
-                            <Text className="text-muted-foreground" style={{ fontSize: 14 }}>
-                                Cancel
-                            </Text>
-                        </Pressable>
-                        <Button onPress={onSave} size="sm">
-                            <ButtonText>Save</ButtonText>
-                        </Button>
-                    </View>
-
-                    <TextInput control={control} name="title" placeholder="Add title" autoFocus />
-
-                    <View className="gap-1">
-                        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
-                            {dayLabel}
-                        </Text>
-                        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
-                            {timeLabel}
-                        </Text>
-                    </View>
-
-                    <Pressable
-                        className="flex-row items-center gap-2.5 py-2"
-                        onPress={onMoreOptions}
-                    >
-                        <Users size={18} color={mutedColor} />
+        <BottomDrawer isOpen={isVisible} onClose={onClose}>
+            <View className="p-5 gap-3 w-full">
+                <View className="flex-row justify-between items-center">
+                    <Pressable onPress={onClose}>
                         <Text className="text-muted-foreground" style={{ fontSize: 14 }}>
-                            Add guests
+                            Cancel
                         </Text>
                     </Pressable>
+                    <Button onPress={onSave} size="sm">
+                        <ButtonText>Save</ButtonText>
+                    </Button>
                 </View>
-            </ActionsheetContent>
-        </Actionsheet>
+
+                <TextInput control={control} name="title" placeholder="Add title" autoFocus />
+
+                <View className="gap-1">
+                    <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+                        {dayLabel}
+                    </Text>
+                    <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+                        {timeLabel}
+                    </Text>
+                </View>
+
+                <Pressable className="flex-row items-center gap-2.5 py-2" onPress={onMoreOptions}>
+                    <Users size={18} color={mutedColor} />
+                    <Text className="text-muted-foreground" style={{ fontSize: 14 }}>
+                        Add guests
+                    </Text>
+                </Pressable>
+            </View>
+        </BottomDrawer>
     )
 }
 
