@@ -63,7 +63,7 @@ This package is not run standalone — it only makes sense inside an app shell c
 ```sh
 cd ../tinycld
 pnpm run dev              # expo + pocketbase with calendar linked
-pnpm run test:unit        # includes this package's layout tests
+pnpm run test             # includes this package's layout tests
 pnpm run checks           # biome + tsc across the app shell + linked packages
 ```
 
