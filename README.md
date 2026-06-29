@@ -32,7 +32,7 @@ This package contributes:
 
 - **Screens** — org-scoped routes at `/a/<org>/calendar`.
 - **Provider** — a wrapping context that loads calendar memberships and visible-calendar state.
-- **Nav entry** — sidebar icon with keyboard shortcut `t c` / `c`.
+- **Nav entry** — sidebar icon with keyboard shortcut `t c`.
 - **Sidebar slot** — `sidebar.after-calendars`, exposed for other packages to inject sections (e.g. "My Booking Pages") below the calendar list. See [Sidebar slots](https://tinycld.org/docs/anatomy/sidebar-slots).
 - **Collections** — `calendar_calendars`, `calendar_members`, `calendar_events` (pbtsdb, live-queried).
 - **Migrations** — schema under `pb-migrations/`.
