@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -23,7 +24,6 @@ const (
 	maxResponseBytes = 10 * 1024 * 1024 // 10 MB
 	staleErrorDays   = 7
 )
-
 
 func startSubscriptionSync(app *pocketbase.PocketBase) {
 	ticker := time.NewTicker(syncInterval)
@@ -270,18 +270,26 @@ func findSubscriptionOwner(app *pocketbase.PocketBase, calendarId string) (strin
 	return member.GetString("user_org"), nil
 }
 
-func fetchICS(rawURL string) (io.ReadCloser, error) {
-	// Parse and validate URL
-	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
-		return nil, fmt.Errorf("unsupported URL scheme")
-	}
+// dialTimeout bounds each TCP connect inside the hardened dialer; the
+// overall request is still capped by fetchTimeout on the client.
+const dialTimeout = 10 * time.Second
 
-	// SSRF protection: resolve hostname and check for private IPs
-	parsed := strings.TrimPrefix(strings.TrimPrefix(rawURL, "https://"), "http://")
-	host := strings.SplitN(parsed, "/", 2)[0]
-	host = strings.SplitN(host, ":", 2)[0]
-	if isPrivateCalHost(host) {
-		return nil, fmt.Errorf("private/internal hosts are not allowed")
+// fetchICS retrieves a subscription feed with SSRF protections:
+//   - only http/https URLs; the host is parsed with net/url, which handles
+//     IPv6 literals and userinfo that a hand-rolled split would mangle;
+//   - the host is rejected when ANY resolved address is private, loopback,
+//     link-local, ULA, CGNAT, or otherwise non-public;
+//   - the transport re-resolves at dial time, re-verifies every address, and
+//     dials the verified IP itself, so a DNS rebind between the pre-check and
+//     the connect cannot reach an internal address;
+//   - every redirect hop is re-validated through the same host check.
+func fetchICS(rawURL string) (io.ReadCloser, error) {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid URL: %w", err)
+	}
+	if err := validateICSURL(parsed); err != nil {
+		return nil, err
 	}
 
 	req, err := http.NewRequest("GET", rawURL, nil)
@@ -290,7 +298,16 @@ func fetchICS(rawURL string) (io.ReadCloser, error) {
 	}
 	req.Header.Set("User-Agent", "TinyCld/1.0 ICS Sync")
 
-	client := &http.Client{Timeout: fetchTimeout}
+	client := &http.Client{
+		Timeout:   fetchTimeout,
+		Transport: newPinnedTransport(),
+		CheckRedirect: func(redirect *http.Request, via []*http.Request) error {
+			if len(via) >= 10 {
+				return fmt.Errorf("too many redirects")
+			}
+			return validateICSURL(redirect.URL)
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP request failed: %w", err)
@@ -305,24 +322,98 @@ func fetchICS(rawURL string) (io.ReadCloser, error) {
 	return http.MaxBytesReader(nil, resp.Body, maxResponseBytes), nil
 }
 
-func isPrivateCalHost(host string) bool {
-	ip := net.ParseIP(host)
-	if ip == nil {
-		addrs, err := net.LookupHost(host)
-		if err != nil || len(addrs) == 0 {
-			return false
-		}
-		ip = net.ParseIP(addrs[0])
-		if ip == nil {
-			return false
+// validateICSURL rejects URLs whose scheme isn't http(s) or whose host
+// resolves to any non-public address. Resolution failures fail closed —
+// the old check let unresolvable hosts through.
+func validateICSURL(u *url.URL) error {
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("unsupported URL scheme")
+	}
+	host := u.Hostname()
+	if host == "" {
+		return fmt.Errorf("invalid host")
+	}
+	ips, err := net.LookupIP(host)
+	if err != nil || len(ips) == 0 {
+		return fmt.Errorf("cannot resolve host")
+	}
+	for _, ip := range ips {
+		if isDisallowedIP(ip) {
+			return fmt.Errorf("private/internal hosts are not allowed")
 		}
 	}
+	return nil
+}
 
-	return ip.IsLoopback() ||
+// newPinnedTransport returns a transport whose dialer re-resolves the
+// hostname, verifies every returned address is public, and connects to a
+// verified IP itself. Verifying and dialing the same resolution closes the
+// DNS-rebinding window that a standalone pre-check leaves open. TLS still
+// handshakes against the original hostname (the transport wraps the conn
+// returned here), so certificate verification is unaffected.
+func newPinnedTransport() *http.Transport {
+	return &http.Transport{
+		DisableKeepAlives:   true,
+		TLSHandshakeTimeout: dialTimeout,
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			host, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			ips, err := net.DefaultResolver.LookupIP(ctx, "ip", host)
+			if err != nil || len(ips) == 0 {
+				return nil, fmt.Errorf("cannot resolve host")
+			}
+			for _, ip := range ips {
+				if isDisallowedIP(ip) {
+					return nil, fmt.Errorf("private/internal hosts are not allowed")
+				}
+			}
+			dialer := &net.Dialer{Timeout: dialTimeout}
+			var lastErr error
+			for _, ip := range ips {
+				conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip.String(), port))
+				if err == nil {
+					return conn, nil
+				}
+				lastErr = err
+			}
+			return nil, lastErr
+		},
+	}
+}
+
+// isDisallowedIP reports whether the address must never be fetched from:
+// loopback, RFC 1918 private, IPv6 ULA (fc00::/7), link-local (IPv4
+// 169.254.0.0/16 — incl. cloud metadata — and IPv6 fe80::/10), CGNAT
+// (100.64.0.0/10), 0.0.0.0/8, multicast, broadcast, or unspecified.
+// IPv4-mapped IPv6 forms are unwrapped first so ::ffff:127.0.0.1 can't
+// slip through.
+func isDisallowedIP(ip net.IP) bool {
+	if v4 := ip.To4(); v4 != nil {
+		ip = v4
+	}
+	if ip.IsLoopback() ||
 		ip.IsPrivate() ||
 		ip.IsLinkLocalUnicast() ||
 		ip.IsLinkLocalMulticast() ||
-		ip.IsUnspecified()
+		ip.IsInterfaceLocalMulticast() ||
+		ip.IsMulticast() ||
+		ip.IsUnspecified() {
+		return true
+	}
+	if v4 := ip.To4(); v4 != nil {
+		if v4[0] == 100 && v4[1]&0xc0 == 64 { // CGNAT 100.64.0.0/10
+			return true
+		}
+		if v4[0] == 0 { // "this network" 0.0.0.0/8 routes to localhost on Linux
+			return true
+		}
+		if v4.Equal(net.IPv4bcast) {
+			return true
+		}
+	}
+	return false
 }
 
 // normalizeSubscriptionURL converts various calendar URL formats to a direct ICS feed URL.
