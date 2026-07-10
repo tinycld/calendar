@@ -256,6 +256,27 @@ func Register(app *pocketbase.PocketBase) {
 		return e.Next()
 	})
 
+	registerCalendarMemberAuthz(app)
+
+	// Auto-generate ical_uid for events created via the web UI
+	app.OnRecordCreate("calendar_events").BindFunc(func(e *core.RecordEvent) error {
+		if e.Record.GetString("ical_uid") == "" {
+			e.Record.Set("ical_uid", "urn:uuid:"+uuid.NewString())
+		}
+		return e.Next()
+	})
+
+	registerRecurrenceUntilHooks(app)
+}
+
+// registerCalendarMemberAuthz binds the request-scoped authorization guards for
+// calendar_members: the last-owner protection (delete + demotion) and the
+// field-scoped role/calendar guard that blocks privilege escalation on a
+// self-update. It's split out from Register so it can be exercised in isolation
+// by unit tests without also binding the audit/notify/scheduler hooks (whose
+// fire-and-forget goroutines race a test app's teardown). Takes core.App so a
+// tests.TestApp can bind it directly.
+func registerCalendarMemberAuthz(app core.App) {
 	// Refuse to remove the last owner of a calendar — otherwise no one can
 	// manage members or change subscriptions, and the calendar becomes
 	// orphaned. Catches both delete and demotion (role-update away from
@@ -271,26 +292,51 @@ func Register(app *pocketbase.PocketBase) {
 	})
 
 	app.OnRecordUpdateRequest("calendar_members").BindFunc(func(e *core.RecordRequestEvent) error {
-		// Only block if this is a demotion away from owner.
 		original := e.Record.Original()
+
+		// Block demotion away from owner when it would leave zero owners.
 		if original.GetString("role") == "owner" && e.Record.GetString("role") != "owner" {
-			calId := e.Record.GetString("calendar")
+			calId := original.GetString("calendar")
 			if err := guardLastOwner(app, calId, e.Record.Id); err != nil {
 				return err
 			}
 		}
-		return e.Next()
-	})
 
-	// Auto-generate ical_uid for events created via the web UI
-	app.OnRecordCreate("calendar_events").BindFunc(func(e *core.RecordEvent) error {
-		if e.Record.GetString("ical_uid") == "" {
-			e.Record.Set("ical_uid", "urn:uuid:"+uuid.NewString())
+		// The PB update rule lets members PATCH their own row so they can pick
+		// a personal color, but PB rules are not field-scoped — without this
+		// guard a viewer/editor could self-promote via {"role":"owner"} or
+		// repoint the membership at another calendar. Restrict role and
+		// calendar changes to calendar owners (superusers bypass, matching the
+		// create hook above).
+		roleChanged := e.Record.GetString("role") != original.GetString("role")
+		calendarChanged := e.Record.GetString("calendar") != original.GetString("calendar")
+		if roleChanged || calendarChanged {
+			auth := e.Auth
+			if auth == nil {
+				return apis.NewUnauthorizedError("Authentication required.", nil)
+			}
+			if auth.Collection().Name != core.CollectionNameSuperusers {
+				isOwner, err := userIsOwner(app, original.GetString("calendar"), auth.Id)
+				if err != nil {
+					return err
+				}
+				if !isOwner {
+					return apis.NewForbiddenError("Only calendar owners can change member roles or calendars.", nil)
+				}
+				if calendarChanged {
+					ownsTarget, err := userIsOwner(app, e.Record.GetString("calendar"), auth.Id)
+					if err != nil {
+						return err
+					}
+					if !ownsTarget {
+						return apis.NewForbiddenError("Only calendar owners can change member roles or calendars.", nil)
+					}
+				}
+			}
 		}
+
 		return e.Next()
 	})
-
-	registerRecurrenceUntilHooks(app)
 }
 
 func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record) {
