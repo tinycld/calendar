@@ -256,6 +256,27 @@ func Register(app *pocketbase.PocketBase) {
 		return e.Next()
 	})
 
+	registerCalendarMemberAuthz(app)
+
+	// Auto-generate ical_uid for events created via the web UI
+	app.OnRecordCreate("calendar_events").BindFunc(func(e *core.RecordEvent) error {
+		if e.Record.GetString("ical_uid") == "" {
+			e.Record.Set("ical_uid", "urn:uuid:"+uuid.NewString())
+		}
+		return e.Next()
+	})
+
+	registerRecurrenceUntilHooks(app)
+}
+
+// registerCalendarMemberAuthz binds the request-scoped authorization guards for
+// calendar_members: the last-owner protection (delete + demotion) and the
+// field-scoped role/calendar guard that blocks privilege escalation on a
+// self-update. It's split out from Register so it can be exercised in isolation
+// by unit tests without also binding the audit/notify/scheduler hooks (whose
+// fire-and-forget goroutines race a test app's teardown). Takes core.App so a
+// tests.TestApp can bind it directly.
+func registerCalendarMemberAuthz(app core.App) {
 	// Refuse to remove the last owner of a calendar — otherwise no one can
 	// manage members or change subscriptions, and the calendar becomes
 	// orphaned. Catches both delete and demotion (role-update away from
@@ -316,16 +337,6 @@ func Register(app *pocketbase.PocketBase) {
 
 		return e.Next()
 	})
-
-	// Auto-generate ical_uid for events created via the web UI
-	app.OnRecordCreate("calendar_events").BindFunc(func(e *core.RecordEvent) error {
-		if e.Record.GetString("ical_uid") == "" {
-			e.Record.Set("ical_uid", "urn:uuid:"+uuid.NewString())
-		}
-		return e.Next()
-	})
-
-	registerRecurrenceUntilHooks(app)
 }
 
 func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record) {
