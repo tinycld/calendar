@@ -271,14 +271,49 @@ func Register(app *pocketbase.PocketBase) {
 	})
 
 	app.OnRecordUpdateRequest("calendar_members").BindFunc(func(e *core.RecordRequestEvent) error {
-		// Only block if this is a demotion away from owner.
 		original := e.Record.Original()
+
+		// Block demotion away from owner when it would leave zero owners.
 		if original.GetString("role") == "owner" && e.Record.GetString("role") != "owner" {
-			calId := e.Record.GetString("calendar")
+			calId := original.GetString("calendar")
 			if err := guardLastOwner(app, calId, e.Record.Id); err != nil {
 				return err
 			}
 		}
+
+		// The PB update rule lets members PATCH their own row so they can pick
+		// a personal color, but PB rules are not field-scoped — without this
+		// guard a viewer/editor could self-promote via {"role":"owner"} or
+		// repoint the membership at another calendar. Restrict role and
+		// calendar changes to calendar owners (superusers bypass, matching the
+		// create hook above).
+		roleChanged := e.Record.GetString("role") != original.GetString("role")
+		calendarChanged := e.Record.GetString("calendar") != original.GetString("calendar")
+		if roleChanged || calendarChanged {
+			auth := e.Auth
+			if auth == nil {
+				return apis.NewUnauthorizedError("Authentication required.", nil)
+			}
+			if auth.Collection().Name != core.CollectionNameSuperusers {
+				isOwner, err := userIsOwner(app, original.GetString("calendar"), auth.Id)
+				if err != nil {
+					return err
+				}
+				if !isOwner {
+					return apis.NewForbiddenError("Only calendar owners can change member roles or calendars.", nil)
+				}
+				if calendarChanged {
+					ownsTarget, err := userIsOwner(app, e.Record.GetString("calendar"), auth.Id)
+					if err != nil {
+						return err
+					}
+					if !ownsTarget {
+						return apis.NewForbiddenError("Only calendar owners can change member roles or calendars.", nil)
+					}
+				}
+			}
+		}
+
 		return e.Next()
 	})
 
