@@ -137,6 +137,18 @@ function formatDateYYYYMMDD(date: Date): string {
     return `${y}-${m}-${d}`
 }
 
+// Serialize an all-day date so it round-trips to the SAME local calendar day
+// it was generated for, in any timezone. The recurrence generators anchor each
+// occurrence on the base event's LOCAL date, so we must persist that local date
+// — anchored at local midnight, matching how the app stores all-day events
+// (`new Date(y, m, d).toISOString()`). Calling `.toISOString()` on the raw
+// occurrence instead lets a non-midnight local time (e.g. an ICS-imported
+// all-day event lands at 20:00 local in UTC-4) roll the date across midnight,
+// shifting all-day occurrences ±1 day relative to the base event.
+function allDayIso(date: Date): string {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString()
+}
+
 function daysInMonth(year: number, month: number): number {
     return new Date(year, month + 1, 0).getDate()
 }
@@ -336,10 +348,10 @@ function generateMonthly(
         const occurrences = getMonthlyOccurrenceDates(rule, eventStart, targetYear, targetMonth)
 
         for (const occ of occurrences) {
-            if (occ < eventStart) {
-                monthOffset += interval
-                continue
-            }
+            // Skip occurrences before the event's own start without advancing
+            // monthOffset — the month is advanced exactly once after this loop.
+            // (Advancing here as well double-incremented and dropped a month.)
+            if (occ < eventStart) continue
             if (occ > rangeEnd) return totalEmitted
             if (rule.until && occ > rule.until) return totalEmitted
             if (rule.count && totalEmitted >= rule.count) return totalEmitted
@@ -498,8 +510,8 @@ export function expandRecurringEvents(options: {
             result.push({
                 ...event,
                 id: `${event.id}${OCCURRENCE_SEP}${dateStr}`,
-                start: occStart.toISOString(),
-                end: occEnd.toISOString(),
+                start: event.all_day ? allDayIso(occStart) : occStart.toISOString(),
+                end: event.all_day ? allDayIso(occEnd) : occEnd.toISOString(),
             })
         }
     }
