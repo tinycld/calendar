@@ -1,5 +1,17 @@
-import { expect, test } from '@playwright/test'
-import { login, ORG_SLUG } from '@tinycld/core/e2e-helpers'
+import { expect, type Page, test } from '@playwright/test'
+import { login, navigateToPackage } from '@tinycld/core/e2e-helpers'
+
+// Reach the new-event form the way a user does: SPA-navigate to the
+// calendar package, then click "+ Create". A page.goto('/calendar/new')
+// would be a hard browser navigation that tears down the SPA and cancels
+// in-flight lazy chunks (slow Metro recompile + flaky CI); it also leaves
+// the router back-stack empty. Clicking keeps the SPA warm and gives the
+// form a back entry for onSuccess to consume.
+async function openNewEventForm(page: Page) {
+    await navigateToPackage(page, 'calendar')
+    await page.getByText('+ Create', { exact: true }).click()
+    await expect(page.getByText('New Event')).toBeVisible()
+}
 
 test.describe('Calendar — Events', () => {
     test.beforeEach(async ({ page }) => {
@@ -9,8 +21,7 @@ test.describe('Calendar — Events', () => {
     test('create new event form can be filled', async ({ page }) => {
         const title = `Test Event ${Date.now()}`
 
-        await page.goto(`/a/${ORG_SLUG}/calendar/new`)
-        await expect(page.getByText('New Event')).toBeVisible()
+        await openNewEventForm(page)
 
         await page.getByPlaceholder('Event title').fill(title)
         await expect(page.getByPlaceholder('Event title')).toHaveValue(title)
@@ -18,8 +29,7 @@ test.describe('Calendar — Events', () => {
     })
 
     test('event form blocks save with empty title', async ({ page }) => {
-        await page.goto(`/a/${ORG_SLUG}/calendar/new`)
-        await expect(page.getByText('New Event')).toBeVisible()
+        await openNewEventForm(page)
 
         const titleInput = page.getByPlaceholder('Event title')
         await titleInput.clear()
