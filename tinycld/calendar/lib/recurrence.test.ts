@@ -203,6 +203,29 @@ console.log('monthly on 31st: skips months without 31 days')
     for (const o of occs) {
         assert.equal(o.getDate(), 31)
     }
+    // Exactly the seven 31-day months in order (regression: a month must not
+    // be dropped by a double-increment when the target day is absent).
+    assert.deepEqual(
+        occs.map(o => o.getMonth()),
+        [0, 2, 4, 6, 7, 9, 11] // Jan, Mar, May, Jul, Aug, Oct, Dec
+    )
+}
+
+console.log('monthly BYMONTHDAY with a day before eventStart: no month dropped')
+{
+    // Two days per month; eventStart falls on the LATER day, so the earlier
+    // day (the 5th) precedes eventStart and is skipped in the first month.
+    // Regression: skipping a past occurrence must NOT also advance the month,
+    // or the whole next month is dropped (double-increment bug).
+    const start = new Date(2026, 0, 20, 10, 0) // Jan 20
+    const rule = parseRRule('FREQ=MONTHLY;BYMONTHDAY=5,20')!
+    const rangeStart = new Date(2026, 0, 1)
+    const rangeEnd = new Date(2026, 2, 31, 23, 59) // Jan–Mar
+    const occs = generateOccurrences(start, rule, rangeStart, rangeEnd)
+    // Jan 20 (start), then Feb 5, Feb 20, Mar 5, Mar 20 = 5 occurrences.
+    // The February pair must be present — the bug dropped it entirely.
+    const keys = occs.map(o => `${o.getMonth()}-${o.getDate()}`)
+    assert.deepEqual(keys, ['0-20', '1-5', '1-20', '2-5', '2-20'])
 }
 
 console.log('monthly by weekday position: BYDAY=1MO (first Monday)')
@@ -358,6 +381,41 @@ console.log('expandRecurringEvents: all-day recurring events')
     assert.equal(result.length, 4)
     for (const r of result) {
         assert.equal(r.all_day, true)
+    }
+}
+
+console.log('expandRecurringEvents: all-day recurring occurrences do not shift TZ (regression)')
+{
+    // An ICS-imported all-day event is stored at UTC midnight. In a negative
+    // UTC offset its local wall time is the previous evening, and serializing an
+    // occurrence via toISOString() carried that evening time into the stored
+    // value — rolling the date across midnight and desyncing the series from
+    // the base event. The fix serializes all-day occurrences at LOCAL midnight
+    // (the app's canonical all-day form), so these invariants hold in every TZ.
+    const event = makeAllDayEvent(
+        'e1',
+        '2026-04-06T00:00:00.000Z', // Monday, UTC midnight (import form)
+        '2026-04-06T00:00:00.000Z',
+        'FREQ=WEEKLY;BYDAY=MO'
+    )
+    const result = expandRecurringEvents({
+        events: [event],
+        rangeStart: new Date(2026, 3, 1),
+        rangeEnd: new Date(2026, 3, 30, 23, 59),
+    })
+    assert.equal(result.length, 4)
+    for (const r of result) {
+        const localDate = new Date(r.start)
+        // Every all-day occurrence reads back at local midnight — never the
+        // imported event's evening wall time (which was the shift's fingerprint).
+        assert.equal(localDate.getHours(), 0, `occurrence ${r.start} should be local midnight`)
+        assert.equal(localDate.getMinutes(), 0)
+        // It reads back on Monday (weekday 1) and its local calendar date
+        // matches the date baked into the id, so base + occurrences agree.
+        assert.equal(localDate.getDay(), 1, `occurrence ${r.start} should be a Monday`)
+        const idDate = parseEventId(r.id).occurrenceDate
+        const localYmd = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`
+        assert.equal(localYmd, idDate)
     }
 }
 
