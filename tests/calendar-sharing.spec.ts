@@ -148,6 +148,14 @@ test.describe('Calendar — Sharing UI', () => {
         const cal = pickTestOrgCalendar(calendars)
 
         await login(page)
+        // Deep-link straight to the settings route for the specific calendar
+        // whose id came back from PROPFIND. The in-app path (kebab menu →
+        // "Settings & sharing") isn't expressible here: navigateToPackage +
+        // sidebar clicks can't target a calendar known only by its PB id
+        // (the sidebar matches by name, and the id→name mapping isn't
+        // available to the test). A record deep-link is the only stable way
+        // to land on this exact calendar's settings, so the goto is
+        // intentional rather than in-app screen navigation.
         await page.goto(`/a/${ORG_SLUG}/calendar/settings/${cal.id}`)
         await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
 
