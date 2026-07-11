@@ -116,7 +116,7 @@ export function CalendarMenu({
                                 {CALENDAR_COLOR_GRID.map(row => (
                                     <View key={row.join('-')} className="flex-row gap-1.5">
                                         {row.map(colorKey => {
-                                            const { bg } = getCalendarColorResolved(colorKey)
+                                            const { bg, text } = getCalendarColorResolved(colorKey)
                                             return (
                                                 <Pressable
                                                     key={colorKey}
@@ -130,7 +130,7 @@ export function CalendarMenu({
                                                         }}
                                                     >
                                                         {currentColor === colorKey && (
-                                                            <Check size={12} color="#ffffff" />
+                                                            <Check size={12} color={text} />
                                                         )}
                                                     </View>
                                                 </Pressable>
