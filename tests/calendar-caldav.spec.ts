@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, type Page, test } from '@playwright/test'
 import {
     type CalDAVCalendar,
     deleteEvent,
@@ -9,18 +9,42 @@ import {
     putEvent,
     rawCaldavRequest,
 } from '@tinycld/core/e2e-caldav-helpers'
-import { login, navigateToPackage, ORG_SLUG } from '@tinycld/core/e2e-helpers'
+import { login, navigateToPackage } from '@tinycld/core/e2e-helpers'
 
-// Local YYYY-MM-DD formatter — mirrors tinycld/calendar/hooks/useCalendarNavigation.ts.
-// Used to pin `?view=day&date=...` to the event's actual date so the
-// day-view scrolls to where the event lives (otherwise the assertion is
-// flaky when test time is within an hour of UTC midnight and the event
-// lands on tomorrow).
-function toDateString(date: Date): string {
-    const y = date.getFullYear()
-    const m = String(date.getMonth() + 1).padStart(2, '0')
-    const d = String(date.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
+// RN-Web mounts each time-grid block twice under the same node — one copy
+// measures 0×0 (hidden), the other carries the real layout box. Which one is
+// .first() isn't stable, so match by visibility rather than order: the
+// filtered locator resolves to the single laid-out copy (same idea as
+// calendar-drag.spec.ts's measurableBox, expressed as a locator filter).
+function visibleEventText(page: Page, summary: string) {
+    return page.getByText(summary).filter({ visible: true })
+}
+
+// Opens the calendar day view on the given event's local day, entirely via
+// in-SPA navigation (no page.goto). A goto tears down the SPA and cancels the
+// in-flight boot, forcing a full re-boot; under CI load the serialized
+// re-resolution of org/package → calendars → visibleIds → events pushes the
+// events render past the assertion budget while the view sits in its loading
+// skeleton — the root cause of this file's intermittent failures.
+// navigateToPackage + router.push (the Day button) keeps the boot that
+// login() already started.
+//
+// `start = now + Nh` normally lands on today, but within N hours of local
+// midnight it rolls onto tomorrow — the day view opens on today, so click
+// "Next" once to reach the event's day. Local-time throughout: the app's
+// focusDate and the event's start both use the browser's local day.
+async function openDayViewFor(page: Page, eventStart: Date) {
+    await navigateToPackage(page, 'calendar')
+    await page.getByRole('button', { name: 'Day', exact: true }).click()
+
+    const today = new Date()
+    const isSameLocalDay =
+        eventStart.getFullYear() === today.getFullYear() &&
+        eventStart.getMonth() === today.getMonth() &&
+        eventStart.getDate() === today.getDate()
+    if (!isSameLocalDay) {
+        await page.getByRole('button', { name: 'Next', exact: true }).click()
+    }
 }
 
 // PROPFIND returns calendars from every org the test user has membership
@@ -60,17 +84,8 @@ test.describe('Calendar — CalDAV Integration', () => {
         await putEvent(calId, uid, { summary, start, end })
 
         await login(page)
-        // Navigate straight to day view via the URL — pinned to the
-        // event's actual date so the assertion doesn't fail when the
-        // test happens to run within an hour of UTC midnight (the
-        // start = now + 1h math can push the event onto tomorrow's
-        // day-view, which "?view=day" alone would never scroll to).
-        // Clicking the "Day" button race-conditions against header
-        // hydration, and EventBlock truncates titles in narrower
-        // columns — either makes getByText(summary) miss.
-        await page.goto(`/a/${ORG_SLUG}/calendar?view=day&date=${toDateString(start)}`)
-        await page.waitForLoadState('domcontentloaded')
-        await expect(page.getByText(summary)).toBeVisible({ timeout: 10_000 })
+        await openDayViewFor(page, start)
+        await expect(visibleEventText(page, summary)).toBeVisible({ timeout: 10_000 })
     })
 
     test('Web UI event appears in CalDAV listing', async ({ page }) => {
@@ -129,16 +144,20 @@ test.describe('Calendar — CalDAV Integration', () => {
         await putEvent(calId, uid, { summary, start, end })
 
         await login(page)
-        // URL-based view switch pinned to the event's actual date — see
-        // CalDAV PUT test for rationale (avoids UTC-midnight flakiness).
-        await page.goto(`/a/${ORG_SLUG}/calendar?view=day&date=${toDateString(start)}`)
-        await page.waitForLoadState('domcontentloaded')
-        await expect(page.getByText(summary)).toBeVisible({ timeout: 10_000 })
+        await openDayViewFor(page, start)
+        await expect(visibleEventText(page, summary)).toBeVisible({ timeout: 10_000 })
 
         await deleteEvent(calId, uid)
 
+        // Re-fetch the events collection fresh so the day view reflects the
+        // CalDAV DELETE. reload() re-boots the current URL exactly once (a
+        // clean single boot — unlike a goto arriving mid-boot, which aborts
+        // the in-flight boot and forces a serialized re-boot). getFullList on
+        // that boot excludes the deleted row without depending on the realtime
+        // delete echo, which can be racy.
         await page.reload()
-        await expect(page.getByText(summary)).not.toBeVisible({ timeout: 10_000 })
+        // No copy of the event should remain in the DOM after the delete.
+        await expect(page.getByText(summary)).toHaveCount(0, { timeout: 10_000 })
     })
 
     test('CalDAV PUT updates an existing event', async () => {
@@ -187,11 +206,14 @@ test.describe('Calendar — CalDAV Integration', () => {
         await putEvent(calId, uid, { summary, start, end })
 
         await login(page)
-        // Force week view via URL — the bug we're regression-testing only
-        // shows up in week view, but defaultViewMode is also 'week', so
-        // this is also the no-flake path.
-        await page.goto(`/a/${ORG_SLUG}/calendar?view=week`)
-        await page.waitForLoadState('domcontentloaded')
-        await expect(page.getByText(summary)).toBeVisible({ timeout: 10_000 })
+        // In-SPA navigation to the calendar (no page.goto — a goto arriving
+        // mid-boot aborts login()'s boot and forces a serialized re-boot that
+        // races the assertion under CI load). The default view is 'week' and
+        // the default focusDate is today, so navigateToPackage lands directly
+        // on the week that contains this event; click "Week" to make the view
+        // explicit regardless of any persisted preference.
+        await navigateToPackage(page, 'calendar')
+        await page.getByRole('button', { name: 'Week', exact: true }).click()
+        await expect(visibleEventText(page, summary)).toBeVisible({ timeout: 10_000 })
     })
 })
