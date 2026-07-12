@@ -39,10 +39,20 @@ export function CalendarHeader() {
                     <ButtonText>Today</ButtonText>
                 </Button>
 
-                <Pressable onPress={goPrevious} hitSlop={8}>
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Previous"
+                    onPress={goPrevious}
+                    hitSlop={8}
+                >
                     <ChevronLeft size={20} color={fgColor} />
                 </Pressable>
-                <Pressable onPress={goNext} hitSlop={8}>
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Next"
+                    onPress={goNext}
+                    hitSlop={8}
+                >
                     <ChevronRight size={20} color={fgColor} />
                 </Pressable>
             </View>
@@ -55,10 +65,20 @@ export function CalendarHeader() {
                 <ButtonText>Today</ButtonText>
             </Button>
 
-            <Pressable onPress={goPrevious} hitSlop={8}>
+            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Previous"
+                onPress={goPrevious}
+                hitSlop={8}
+            >
                 <ChevronLeft size={20} color={fgColor} />
             </Pressable>
-            <Pressable onPress={goNext} hitSlop={8}>
+            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Next"
+                onPress={goNext}
+                hitSlop={8}
+            >
                 <ChevronRight size={20} color={fgColor} />
             </Pressable>
 
