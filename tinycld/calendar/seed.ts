@@ -38,14 +38,23 @@ const CALENDARS = [
 
 const EVENTS = [
     // =========================================================================
-    // DAY -7: Sparse day — single long event (baseline)
+    // VISIBLE DAYS (this week / this month). Events are spread so at most two
+    // overlap at any moment and most stand alone — the calendar reads cleanly in
+    // week and month view for marketing screenshots. The dense overlap layout is
+    // still exercised by the single STRESS-TEST DAY below (day -35, last month,
+    // outside the screenshot window) and by the layout unit tests.
+    //
+    // Constraint: today (day 0) has no timed event before 09:00 — calendar-drag
+    // e2e creates a one-off 08:00 event and relies on nothing overlapping it.
     // =========================================================================
+
+    // DAY -7
     {
         title: 'Quarterly Planning',
         description: 'Full-day planning session',
         location: 'Board Room',
         start: () => dateAt(-7, 9, 0),
-        end: () => dateAt(-7, 17, 0),
+        end: () => dateAt(-7, 11, 0),
         all_day: false,
         recurrence: '',
         calendar: 'Work',
@@ -56,11 +65,22 @@ const EVENTS = [
         busy_status: 'busy',
         visibility: 'default',
     },
+    {
+        title: 'Lunch Run',
+        description: '',
+        location: '',
+        start: () => dateAt(-7, 12, 30),
+        end: () => dateAt(-7, 13, 0),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Personal',
+        guests: [],
+        reminder: 0,
+        busy_status: 'free',
+        visibility: 'default',
+    },
 
-    // =========================================================================
-    // DAY -6: Cascading overlaps — A overlaps B, B overlaps C, but not A & C
-    // Tests whether the layout merges them into one cluster or splits them
-    // =========================================================================
+    // DAY -6
     {
         title: 'Kickoff Meeting',
         description: '',
@@ -77,10 +97,10 @@ const EVENTS = [
     },
     {
         title: 'Architecture Review',
-        description: 'Overlaps both kickoff tail and design start',
+        description: '',
         location: 'Room 101',
-        start: () => dateAt(-6, 9, 30),
-        end: () => dateAt(-6, 11, 0),
+        start: () => dateAt(-6, 10, 30),
+        end: () => dateAt(-6, 11, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Team',
@@ -91,10 +111,10 @@ const EVENTS = [
     },
     {
         title: 'Design Sync',
-        description: 'Starts after Kickoff ends, but overlaps Architecture',
+        description: '',
         location: 'Zoom',
-        start: () => dateAt(-6, 10, 30),
-        end: () => dateAt(-6, 12, 0),
+        start: () => dateAt(-6, 14, 0),
+        end: () => dateAt(-6, 15, 0),
         all_day: false,
         recurrence: '',
         calendar: 'Work',
@@ -103,32 +123,14 @@ const EVENTS = [
         busy_status: 'busy',
         visibility: 'default',
     },
-    {
-        title: 'Lunch Run',
-        description: 'Isolated — no overlap',
-        location: '',
-        start: () => dateAt(-6, 12, 30),
-        end: () => dateAt(-6, 13, 0),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Personal',
-        guests: [],
-        reminder: 0,
-        busy_status: 'free',
-        visibility: 'default',
-    },
 
-    // =========================================================================
-    // DAY -5: Tiny event inside a large block
-    // A 4-hour block with a 15-min event in the middle — tests how the layout
-    // handles wildly different durations sharing the same column space
-    // =========================================================================
+    // DAY -5
     {
         title: 'Deep Work Block',
         description: 'Long focus session',
         location: '',
         start: () => dateAt(-5, 9, 0),
-        end: () => dateAt(-5, 13, 0),
+        end: () => dateAt(-5, 12, 0),
         all_day: false,
         recurrence: '',
         calendar: 'Personal',
@@ -139,10 +141,10 @@ const EVENTS = [
     },
     {
         title: 'Quick Standup',
-        description: 'Tiny event overlapping the deep work block',
+        description: '',
         location: 'Slack huddle',
-        start: () => dateAt(-5, 10, 0),
-        end: () => dateAt(-5, 10, 15),
+        start: () => dateAt(-5, 13, 0),
+        end: () => dateAt(-5, 13, 15),
         all_day: false,
         recurrence: '',
         calendar: 'Work',
@@ -151,25 +153,8 @@ const EVENTS = [
         busy_status: 'busy',
         visibility: 'default',
     },
-    {
-        title: 'Fire Drill',
-        description: 'Another tiny event inside the block',
-        location: '',
-        start: () => dateAt(-5, 11, 45),
-        end: () => dateAt(-5, 12, 0),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Work',
-        guests: [],
-        reminder: 0,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
 
-    // =========================================================================
-    // DAY -4: Back-to-back events with zero gap
-    // Tests the <= vs < boundary in overlap detection
-    // =========================================================================
+    // DAY -4
     {
         title: 'Interview: Round 1',
         description: '',
@@ -188,8 +173,8 @@ const EVENTS = [
         title: 'Interview: Round 2',
         description: '',
         location: 'Room A',
-        start: () => dateAt(-4, 11, 0),
-        end: () => dateAt(-4, 12, 0),
+        start: () => dateAt(-4, 13, 0),
+        end: () => dateAt(-4, 14, 0),
         all_day: false,
         recurrence: '',
         calendar: 'Work',
@@ -201,25 +186,11 @@ const EVENTS = [
         visibility: 'private',
     },
     {
-        title: 'Interview: Round 3',
+        title: 'Debrief',
         description: '',
         location: 'Room A',
-        start: () => dateAt(-4, 12, 0),
-        end: () => dateAt(-4, 13, 0),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Work',
-        guests: [],
-        reminder: 15,
-        busy_status: 'busy',
-        visibility: 'private',
-    },
-    {
-        title: 'Debrief',
-        description: 'Starts exactly when Round 3 ends',
-        location: 'Room A',
-        start: () => dateAt(-4, 13, 0),
-        end: () => dateAt(-4, 13, 30),
+        start: () => dateAt(-4, 15, 0),
+        end: () => dateAt(-4, 15, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Work',
@@ -229,16 +200,13 @@ const EVENTS = [
         visibility: 'private',
     },
 
-    // =========================================================================
-    // DAY -3: Six-way overlap — maximum column pressure
-    // All events overlap at 14:00–14:30 but have staggered starts/ends
-    // =========================================================================
+    // DAY -3
     {
         title: 'Exec Sync',
         description: '',
         location: 'Board Room',
-        start: () => dateAt(-3, 13, 0),
-        end: () => dateAt(-3, 15, 0),
+        start: () => dateAt(-3, 9, 30),
+        end: () => dateAt(-3, 10, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Work',
@@ -250,39 +218,11 @@ const EVENTS = [
         visibility: 'default',
     },
     {
-        title: 'Bug Triage',
-        description: '',
-        location: '',
-        start: () => dateAt(-3, 13, 30),
-        end: () => dateAt(-3, 14, 30),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Team',
-        guests: [],
-        reminder: 5,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
-        title: 'Vendor Call',
-        description: '',
-        location: 'Zoom',
-        start: () => dateAt(-3, 14, 0),
-        end: () => dateAt(-3, 15, 30),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Work',
-        guests: [],
-        reminder: 10,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
         title: 'Coffee Chat',
         description: '',
         location: 'Lobby',
-        start: () => dateAt(-3, 14, 0),
-        end: () => dateAt(-3, 14, 30),
+        start: () => dateAt(-3, 11, 0),
+        end: () => dateAt(-3, 11, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Personal',
@@ -292,25 +232,11 @@ const EVENTS = [
         visibility: 'default',
     },
     {
-        title: '1:1 with PM',
-        description: '',
-        location: 'Office',
-        start: () => dateAt(-3, 14, 15),
-        end: () => dateAt(-3, 15, 0),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Work',
-        guests: [],
-        reminder: 10,
-        busy_status: 'busy',
-        visibility: 'private',
-    },
-    {
         title: 'Sprint Retro',
         description: '',
         location: 'Room B',
-        start: () => dateAt(-3, 14, 30),
-        end: () => dateAt(-3, 16, 0),
+        start: () => dateAt(-3, 14, 0),
+        end: () => dateAt(-3, 15, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Team',
@@ -323,16 +249,13 @@ const EVENTS = [
         visibility: 'default',
     },
 
-    // =========================================================================
-    // DAY -2: Events that barely overlap (1-minute overlap)
-    // Stresses overlap boundary — should they share columns or not?
-    // =========================================================================
+    // DAY -2
     {
         title: 'Morning Standup',
         description: '',
         location: 'Slack',
         start: () => dateAt(-2, 9, 0),
-        end: () => dateAt(-2, 9, 31),
+        end: () => dateAt(-2, 9, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Work',
@@ -343,10 +266,10 @@ const EVENTS = [
     },
     {
         title: 'Code Review',
-        description: 'Overlaps standup by just 1 minute',
+        description: '',
         location: '',
-        start: () => dateAt(-2, 9, 30),
-        end: () => dateAt(-2, 10, 30),
+        start: () => dateAt(-2, 10, 30),
+        end: () => dateAt(-2, 11, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Work',
@@ -357,10 +280,10 @@ const EVENTS = [
     },
     {
         title: 'Design Workshop',
-        description: 'Overlaps code review by 1 minute',
+        description: '',
         location: 'Room C',
-        start: () => dateAt(-2, 10, 29),
-        end: () => dateAt(-2, 11, 30),
+        start: () => dateAt(-2, 14, 0),
+        end: () => dateAt(-2, 15, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Team',
@@ -370,16 +293,13 @@ const EVENTS = [
         visibility: 'default',
     },
 
-    // =========================================================================
-    // DAY -1: Mixed durations — tall skinny vs short wide
-    // Two parallel tracks with different event sizes
-    // =========================================================================
+    // DAY -1
     {
         title: 'Strategy Session',
-        description: 'Tall event — 3 hours',
+        description: '',
         location: 'Board Room',
         start: () => dateAt(-1, 9, 0),
-        end: () => dateAt(-1, 12, 0),
+        end: () => dateAt(-1, 11, 0),
         all_day: false,
         recurrence: '',
         calendar: 'Work',
@@ -388,48 +308,6 @@ const EVENTS = [
             { name: 'Dave Johnson', email: 'dave@acme.co', rsvp: 'pending', role: 'attendee' },
         ],
         reminder: 30,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
-        title: 'Slack Check',
-        description: '15 min — overlaps strategy start',
-        location: '',
-        start: () => dateAt(-1, 9, 0),
-        end: () => dateAt(-1, 9, 15),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Personal',
-        guests: [],
-        reminder: 0,
-        busy_status: 'free',
-        visibility: 'default',
-    },
-    {
-        title: 'Email Triage',
-        description: '30 min — fits after Slack Check in same column',
-        location: '',
-        start: () => dateAt(-1, 9, 15),
-        end: () => dateAt(-1, 9, 45),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Personal',
-        guests: [],
-        reminder: 0,
-        busy_status: 'free',
-        visibility: 'default',
-    },
-    {
-        title: 'Platform Outage Call',
-        description: 'Overlaps tail of strategy session',
-        location: 'Zoom',
-        start: () => dateAt(-1, 11, 0),
-        end: () => dateAt(-1, 12, 30),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Work',
-        guests: [],
-        reminder: 0,
         busy_status: 'busy',
         visibility: 'default',
     },
@@ -447,11 +325,22 @@ const EVENTS = [
         busy_status: 'busy',
         visibility: 'default',
     },
+    {
+        title: 'Platform Sync',
+        description: '',
+        location: 'Zoom',
+        start: () => dateAt(-1, 15, 0),
+        end: () => dateAt(-1, 16, 0),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Work',
+        guests: [],
+        reminder: 0,
+        busy_status: 'busy',
+        visibility: 'default',
+    },
 
-    // =========================================================================
-    // DAY 0 (TODAY): Heavily packed — the "worst case Wednesday"
-    // Morning: 4 overlapping events, afternoon: 3 overlapping + a long block
-    // =========================================================================
+    // DAY 0 (TODAY) — no timed event before 09:00 (calendar-drag needs 08:00 free)
     {
         title: 'Team Standup',
         description: 'Daily sync',
@@ -471,53 +360,11 @@ const EVENTS = [
         visibility: 'default',
     },
     {
-        title: 'Onboarding: New Hire',
-        description: 'Same time as standup — forces 2 columns',
-        location: 'Room B',
-        start: () => dateAt(0, 9, 0),
-        end: () => dateAt(0, 10, 0),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Team',
-        guests: [],
-        reminder: 10,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
-        title: 'Sprint Planning',
-        description: 'Overlaps standup end and onboarding',
-        location: '',
-        start: () => dateAt(0, 9, 15),
-        end: () => dateAt(0, 10, 45),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Team',
-        guests: [],
-        reminder: 10,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
-        title: 'Investor Update',
-        description: 'Overlaps sprint planning — 4th column needed briefly',
-        location: 'Zoom',
-        start: () => dateAt(0, 9, 30),
-        end: () => dateAt(0, 10, 0),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Work',
-        guests: [],
-        reminder: 15,
-        busy_status: 'busy',
-        visibility: 'private',
-    },
-    {
         title: 'Design Review',
         description: '',
         location: 'Figma',
-        start: () => dateAt(0, 11, 0),
-        end: () => dateAt(0, 12, 0),
+        start: () => dateAt(0, 10, 30),
+        end: () => dateAt(0, 11, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Work',
@@ -543,22 +390,8 @@ const EVENTS = [
         visibility: 'default',
     },
     {
-        title: 'Focus Time',
-        description: 'Long afternoon block — gets split by overlapping meetings',
-        location: '',
-        start: () => dateAt(0, 13, 0),
-        end: () => dateAt(0, 17, 0),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Personal',
-        guests: [],
-        reminder: 0,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
         title: 'Product Review',
-        description: 'Overlaps focus time',
+        description: '',
         location: 'Room C',
         start: () => dateAt(0, 14, 0),
         end: () => dateAt(0, 15, 0),
@@ -573,24 +406,21 @@ const EVENTS = [
         visibility: 'default',
     },
     {
-        title: 'Incident Postmortem',
-        description: 'Also overlaps focus time — 3 columns needed',
-        location: 'Room D',
-        start: () => dateAt(0, 14, 30),
-        end: () => dateAt(0, 15, 30),
+        title: 'Focus Time',
+        description: '',
+        location: '',
+        start: () => dateAt(0, 15, 30),
+        end: () => dateAt(0, 17, 0),
         all_day: false,
         recurrence: '',
-        calendar: 'Team',
-        guests: [{ name: 'Carol Wu', email: 'carol@acme.co', rsvp: 'accepted', role: 'attendee' }],
-        reminder: 10,
+        calendar: 'Personal',
+        guests: [],
+        reminder: 0,
         busy_status: 'busy',
         visibility: 'default',
     },
 
-    // =========================================================================
-    // DAY +1: Early-morning and late-evening bookends
-    // Tests rendering at grid extremes (7am, 10pm)
-    // =========================================================================
+    // DAY +1 — early and late bookends
     {
         title: 'Gym',
         description: '',
@@ -637,16 +467,13 @@ const EVENTS = [
         visibility: 'default',
     },
 
-    // =========================================================================
-    // DAY +2: Identical start times — 3 events starting at exactly 14:00
-    // Tests deterministic ordering when start times are equal
-    // =========================================================================
+    // DAY +2
     {
         title: 'Product Demo',
-        description: '2 hours',
+        description: '',
         location: 'Main Room',
-        start: () => dateAt(2, 14, 0),
-        end: () => dateAt(2, 16, 0),
+        start: () => dateAt(2, 10, 0),
+        end: () => dateAt(2, 11, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Team',
@@ -659,23 +486,9 @@ const EVENTS = [
         visibility: 'public',
     },
     {
-        title: 'Parallel Workshop A',
-        description: '1 hour — same start as demo',
-        location: 'Room 201',
-        start: () => dateAt(2, 14, 0),
-        end: () => dateAt(2, 15, 0),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Work',
-        guests: [],
-        reminder: 10,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
-        title: 'Parallel Workshop B',
-        description: '1 hour — same start as demo',
-        location: 'Room 202',
+        title: 'Vendor Call',
+        description: '',
+        location: 'Zoom',
         start: () => dateAt(2, 14, 0),
         end: () => dateAt(2, 15, 0),
         all_day: false,
@@ -687,9 +500,7 @@ const EVENTS = [
         visibility: 'default',
     },
 
-    // =========================================================================
-    // DAY +3: Single events, no overlap — palette cleanser
-    // =========================================================================
+    // DAY +3
     {
         title: 'Dentist',
         description: '',
@@ -719,16 +530,13 @@ const EVENTS = [
         visibility: 'default',
     },
 
-    // =========================================================================
-    // DAY +4: "Staircase" pattern — each event starts 30 min after the last
-    // but overlaps the previous by 30 min, creating a diagonal
-    // =========================================================================
+    // DAY +4
     {
         title: 'Sync: Frontend',
         description: '',
         location: '',
         start: () => dateAt(4, 9, 0),
-        end: () => dateAt(4, 10, 0),
+        end: () => dateAt(4, 9, 45),
         all_day: false,
         recurrence: '',
         calendar: 'Team',
@@ -741,50 +549,8 @@ const EVENTS = [
         title: 'Sync: Backend',
         description: '',
         location: '',
-        start: () => dateAt(4, 9, 30),
-        end: () => dateAt(4, 10, 30),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Team',
-        guests: [],
-        reminder: 5,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
-        title: 'Sync: Infra',
-        description: '',
-        location: '',
-        start: () => dateAt(4, 10, 0),
-        end: () => dateAt(4, 11, 0),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Team',
-        guests: [],
-        reminder: 5,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
-        title: 'Sync: Data',
-        description: '',
-        location: '',
-        start: () => dateAt(4, 10, 30),
-        end: () => dateAt(4, 11, 30),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Team',
-        guests: [],
-        reminder: 5,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
-        title: 'Sync: Mobile',
-        description: '',
-        location: '',
         start: () => dateAt(4, 11, 0),
-        end: () => dateAt(4, 12, 0),
+        end: () => dateAt(4, 11, 45),
         all_day: false,
         recurrence: '',
         calendar: 'Team',
@@ -793,17 +559,12 @@ const EVENTS = [
         busy_status: 'busy',
         visibility: 'default',
     },
-
-    // =========================================================================
-    // DAY +5: Nested containment — short events fully contained in longer ones
-    // Tests width expansion (effectiveSpan) in the layout algorithm
-    // =========================================================================
     {
         title: 'All-Hands',
-        description: '3-hour umbrella event',
+        description: '',
         location: 'Auditorium',
-        start: () => dateAt(5, 10, 0),
-        end: () => dateAt(5, 13, 0),
+        start: () => dateAt(4, 14, 0),
+        end: () => dateAt(4, 15, 30),
         all_day: false,
         recurrence: '',
         calendar: 'Team',
@@ -814,40 +575,14 @@ const EVENTS = [
         busy_status: 'busy',
         visibility: 'public',
     },
-    {
-        title: 'Lightning Talk 1',
-        description: 'Contained within All-Hands',
-        location: 'Auditorium',
-        start: () => dateAt(5, 10, 30),
-        end: () => dateAt(5, 10, 45),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Team',
-        guests: [],
-        reminder: 5,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
-    {
-        title: 'Lightning Talk 2',
-        description: 'Also contained, overlaps LT1 end',
-        location: 'Auditorium',
-        start: () => dateAt(5, 10, 40),
-        end: () => dateAt(5, 11, 0),
-        all_day: false,
-        recurrence: '',
-        calendar: 'Team',
-        guests: [],
-        reminder: 5,
-        busy_status: 'busy',
-        visibility: 'default',
-    },
+
+    // DAY +5
     {
         title: 'Breakout Session',
-        description: 'Contained, later in the block',
+        description: '',
         location: 'Room E',
-        start: () => dateAt(5, 11, 30),
-        end: () => dateAt(5, 12, 30),
+        start: () => dateAt(5, 10, 0),
+        end: () => dateAt(5, 11, 0),
         all_day: false,
         recurrence: '',
         calendar: 'Team',
@@ -857,14 +592,7 @@ const EVENTS = [
         visibility: 'default',
     },
 
-    // =========================================================================
-    // DAY +6: Empty day — no timed events, only an all-day event
-    // =========================================================================
-
-    // =========================================================================
-    // DAY +7: Late night event near midnight
-    // Tests edge rendering at bottom of the time grid
-    // =========================================================================
+    // DAY +7 — late night edge
     {
         title: 'Deploy Window',
         description: 'Late-night maintenance window',
@@ -881,11 +609,160 @@ const EVENTS = [
     },
 
     // =========================================================================
-    // ALL-DAY EVENTS: Overlapping multi-day spans for row-packing stress
-    // These create interesting patterns in week view and month view
+    // STRESS-TEST DAY (day -35, last month — OUTSIDE the screenshot window).
+    // Preserves the dense overlap fixture for manual/visual layout verification:
+    // a six-way overlap peaking at 14:00, a long block split by two tiny events,
+    // and back-to-back zero-gap meetings — the cases the layout algorithm has to
+    // get right. Kept off the current month so it never appears in marketing
+    // screenshots. (The layout unit tests cover overlaps independently.)
     // =========================================================================
+    {
+        title: 'Deep Work Block',
+        description: 'Long focus session split by tiny events',
+        location: '',
+        start: () => dateAt(-35, 9, 0),
+        end: () => dateAt(-35, 13, 0),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Personal',
+        guests: [],
+        reminder: 0,
+        busy_status: 'busy',
+        visibility: 'default',
+    },
+    {
+        title: 'Fire Drill',
+        description: 'Tiny event inside the block',
+        location: '',
+        start: () => dateAt(-35, 10, 0),
+        end: () => dateAt(-35, 10, 15),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Work',
+        guests: [],
+        reminder: 0,
+        busy_status: 'busy',
+        visibility: 'default',
+    },
+    {
+        title: 'Interview: Round 1',
+        description: 'Back-to-back, zero gap',
+        location: 'Room A',
+        start: () => dateAt(-35, 10, 30),
+        end: () => dateAt(-35, 11, 30),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Work',
+        guests: [],
+        reminder: 15,
+        busy_status: 'busy',
+        visibility: 'private',
+    },
+    {
+        title: 'Interview: Round 2',
+        description: 'Starts exactly when Round 1 ends',
+        location: 'Room A',
+        start: () => dateAt(-35, 11, 30),
+        end: () => dateAt(-35, 12, 30),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Work',
+        guests: [],
+        reminder: 15,
+        busy_status: 'busy',
+        visibility: 'private',
+    },
+    {
+        title: 'Exec Sync',
+        description: 'Six-way overlap peaking at 14:00',
+        location: 'Board Room',
+        start: () => dateAt(-35, 13, 0),
+        end: () => dateAt(-35, 15, 0),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Work',
+        guests: [
+            { name: 'Alice Chen', email: 'alice@acme.co', rsvp: 'accepted', role: 'organizer' },
+        ],
+        reminder: 10,
+        busy_status: 'busy',
+        visibility: 'default',
+    },
+    {
+        title: 'Bug Triage',
+        description: '',
+        location: '',
+        start: () => dateAt(-35, 13, 30),
+        end: () => dateAt(-35, 14, 30),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Team',
+        guests: [],
+        reminder: 5,
+        busy_status: 'busy',
+        visibility: 'default',
+    },
+    {
+        title: 'Vendor Call',
+        description: '',
+        location: 'Zoom',
+        start: () => dateAt(-35, 14, 0),
+        end: () => dateAt(-35, 15, 30),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Work',
+        guests: [],
+        reminder: 10,
+        busy_status: 'busy',
+        visibility: 'default',
+    },
+    {
+        title: 'Coffee Chat',
+        description: '',
+        location: 'Lobby',
+        start: () => dateAt(-35, 14, 0),
+        end: () => dateAt(-35, 14, 30),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Personal',
+        guests: [],
+        reminder: 0,
+        busy_status: 'free',
+        visibility: 'default',
+    },
+    {
+        title: '1:1 with PM',
+        description: '',
+        location: 'Office',
+        start: () => dateAt(-35, 14, 15),
+        end: () => dateAt(-35, 15, 0),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Work',
+        guests: [],
+        reminder: 10,
+        busy_status: 'busy',
+        visibility: 'private',
+    },
+    {
+        title: 'Sprint Retro',
+        description: '',
+        location: 'Room B',
+        start: () => dateAt(-35, 14, 30),
+        end: () => dateAt(-35, 16, 0),
+        all_day: false,
+        recurrence: '',
+        calendar: 'Team',
+        guests: [],
+        reminder: 10,
+        busy_status: 'busy',
+        visibility: 'default',
+    },
 
-    // Full-week span: forces all other all-day events into row 1+
+    // =========================================================================
+    // ALL-DAY EVENTS — multi-day spans. These read cleanly in week and month
+    // view (they pack into the all-day header rows), so they stay as-is.
+    // =========================================================================
     {
         title: 'Sprint 42',
         description: 'Full sprint marker',
@@ -900,8 +777,6 @@ const EVENTS = [
         busy_status: 'free',
         visibility: 'default',
     },
-
-    // Overlaps Sprint 42 partially
     {
         title: 'Alice OOO',
         description: 'Vacation',
@@ -916,8 +791,6 @@ const EVENTS = [
         busy_status: 'free',
         visibility: 'default',
     },
-
-    // Short single-day all-day, overlaps both Sprint 42 and Alice OOO
     {
         title: 'Release Day',
         description: '',
@@ -932,8 +805,6 @@ const EVENTS = [
         busy_status: 'busy',
         visibility: 'public',
     },
-
-    // Spans from last week into this week — tests cross-week clipping
     {
         title: 'Contractor Visit',
         description: 'Spans across the week boundary',
@@ -948,8 +819,6 @@ const EVENTS = [
         busy_status: 'busy',
         visibility: 'default',
     },
-
-    // Today only
     {
         title: 'Matt OOO',
         description: 'Out of office',
@@ -964,8 +833,6 @@ const EVENTS = [
         busy_status: 'free',
         visibility: 'default',
     },
-
-    // Overlaps Contractor Visit and extends further
     {
         title: 'Feature Freeze',
         description: '',
@@ -980,8 +847,6 @@ const EVENTS = [
         busy_status: 'busy',
         visibility: 'public',
     },
-
-    // Future week
     {
         title: 'Company Holiday',
         description: 'Office closed',
@@ -996,8 +861,6 @@ const EVENTS = [
         busy_status: 'free',
         visibility: 'public',
     },
-
-    // Multi-day that overlaps holiday
     {
         title: 'Team Offsite',
         description: '',
