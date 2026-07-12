@@ -14,6 +14,7 @@ const manifest = {
     help: { directory: 'help' },
     server: { package: 'server', module: 'tinycld.org/packages/calendar' },
     repository: { url: 'https://github.com/tinycld/calendar' },
+    peerVersions: { '@tinycld/core': '>=0.0.4 <0.1.0' },
 }
 
 export default manifest
