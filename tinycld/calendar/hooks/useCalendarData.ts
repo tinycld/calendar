@@ -1,8 +1,7 @@
 import { eq } from '@tanstack/db'
+import { useAuth } from '@tinycld/core/lib/auth'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
-import { useCurrentUserOrg } from '@tinycld/core/lib/use-current-user-org'
-import { useOrgInfo } from '@tinycld/core/lib/use-org-info'
 import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
 import { useCallback, useMemo } from 'react'
 import type { CalendarColorKey, CalendarWithGroup } from '../types'
@@ -14,22 +13,19 @@ export interface MembershipInfo {
 }
 
 export function useCalendarData() {
-    const { orgSlug } = useOrgInfo()
-    const userOrg = useCurrentUserOrg(orgSlug)
+    const { user } = useAuth()
     const [calendarsCollection] = useStore('calendar_calendars')
     const [membersCollection] = useStore('calendar_members')
 
-    const { data: allCalendars, isLoading: calendarsLoading } = useOrgLiveQuery(
-        (query, { orgId }) =>
-            query.from({ cal: calendarsCollection }).where(({ cal }) => eq(cal.org, orgId))
+    const { data: allCalendars, isLoading: calendarsLoading } = useOrgLiveQuery(query =>
+        query.from({ cal: calendarsCollection })
     )
 
-    const userOrgId = userOrg?.id ?? ''
+    const userId = user.id
 
     const { data: memberships, isLoading: membershipsLoading } = useOrgLiveQuery(
-        query =>
-            query.from({ mem: membersCollection }).where(({ mem }) => eq(mem.user_org, userOrgId)),
-        [userOrgId]
+        query => query.from({ mem: membersCollection }).where(({ mem }) => eq(mem.user, userId)),
+        [userId]
     )
 
     const membershipByCalendar = useMemo(

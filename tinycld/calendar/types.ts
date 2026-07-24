@@ -1,4 +1,4 @@
-import type { Orgs, UserOrg } from '@tinycld/core/types/pbSchema'
+import type { Users } from '@tinycld/core/types/pbSchema'
 
 export type CalendarColorKey =
     | 'blue'
@@ -30,7 +30,6 @@ export interface EventGuest {
 
 export interface CalendarCalendars {
     id: string
-    org: string
     name: string
     description: string
     color: CalendarColorKey
@@ -44,7 +43,7 @@ export interface CalendarCalendars {
 export interface CalendarMembers {
     id: string
     calendar: string
-    user_org: string
+    user: string
     role: 'owner' | 'editor' | 'viewer'
     color: CalendarColorKey | ''
     created: string
@@ -84,22 +83,20 @@ export type CalendarWithGroup = CalendarCalendars & { group: 'mine' | 'other' | 
 export type CalendarSchema = {
     calendar_calendars: {
         type: CalendarCalendars
-        relations: {
-            org: Orgs
-        }
+        relations: Record<string, never>
     }
     calendar_members: {
         type: CalendarMembers
         relations: {
             calendar: CalendarCalendars
-            user_org: UserOrg
+            user: Users
         }
     }
     calendar_events: {
         type: CalendarEvents
         relations: {
             calendar: CalendarCalendars
-            created_by: UserOrg
+            created_by: Users
         }
     }
 }

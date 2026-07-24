@@ -7,7 +7,6 @@ import { type CalendarRole, ROLE_OPTIONS, roleLabel } from './roles'
 
 export interface CalendarMemberRowData {
     membershipId: string
-    userOrgId: string
     userId: string
     name: string
     email: string

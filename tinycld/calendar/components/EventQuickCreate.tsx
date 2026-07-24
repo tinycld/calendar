@@ -1,11 +1,10 @@
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
+import { useAuth } from '@tinycld/core/lib/auth'
 import { captureException } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
-import { useCurrentUserOrg } from '@tinycld/core/lib/use-current-user-org'
-import { useOrgInfo } from '@tinycld/core/lib/use-org-info'
 import { BottomDrawer } from '@tinycld/core/ui/bottom-drawer'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { TextInput, useForm, z, zodResolver } from '@tinycld/core/ui/form'
@@ -57,8 +56,7 @@ export function EventQuickCreate({
 }
 
 function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () => void) {
-    const { orgSlug } = useOrgInfo()
-    const userOrg = useCurrentUserOrg(orgSlug)
+    const { user } = useAuth()
     const { mineCalendars, calendars } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
 
@@ -70,7 +68,6 @@ function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () 
 
     const createEvent = useMutation({
         mutationFn: mutation(function* (data: z.infer<typeof quickCreateSchema>) {
-            if (!userOrg) throw new Error('No organization context')
             const defaultCalendar = mineCalendars[0] ?? calendars[0]
             if (!defaultCalendar) throw new Error('No calendar available')
 
@@ -82,7 +79,7 @@ function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () 
             yield eventsCollection.insert({
                 id: newRecordId(),
                 calendar: defaultCalendar.id,
-                created_by: userOrg.id,
+                created_by: user.id,
                 title: data.title,
                 start: startDate.toISOString(),
                 end: endDate.toISOString(),

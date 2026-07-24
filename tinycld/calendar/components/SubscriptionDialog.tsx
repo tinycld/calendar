@@ -1,7 +1,6 @@
 import { handleMutationErrorsWithForm } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
-import { useOrgInfo } from '@tinycld/core/lib/use-org-info'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { FormErrorSummary, TextInput, useForm, z, zodResolver } from '@tinycld/core/ui/form'
 import { Modal, ModalBackdrop, ModalContent } from '@tinycld/core/ui/modal'
@@ -29,7 +28,6 @@ interface SubscriptionDialogProps {
 }
 
 export function SubscriptionDialog({ open, onClose }: SubscriptionDialogProps) {
-    const { orgId } = useOrgInfo()
     const [calendarsCollection] = useStore('calendar_calendars')
 
     const {
@@ -50,12 +48,10 @@ export function SubscriptionDialog({ open, onClose }: SubscriptionDialogProps) {
 
     const createSubscription = useMutation({
         mutationFn: mutation(function* (data: z.infer<typeof subscriptionSchema>) {
-            if (!orgId) throw new Error('No organization context')
             const randomColor =
                 CALENDAR_COLOR_KEYS[Math.floor(Math.random() * CALENDAR_COLOR_KEYS.length)]
             yield calendarsCollection.insert({
                 id: newRecordId(),
-                org: orgId,
                 name: data.name,
                 description: '',
                 color: randomColor,

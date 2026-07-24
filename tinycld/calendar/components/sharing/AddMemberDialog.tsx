@@ -15,14 +15,14 @@ import { type CalendarRole, ROLE_OPTIONS } from './roles'
 interface AddMemberDialogProps {
     isVisible: boolean
     calendarId: string
-    existingUserOrgIds: Set<string>
+    existingUserIds: Set<string>
     onClose: () => void
 }
 
 export function AddMemberDialog({
     isVisible,
     calendarId,
-    existingUserOrgIds,
+    existingUserIds,
     onClose,
 }: AddMemberDialogProps) {
     const mutedColor = useThemeColor('muted-foreground')
@@ -31,30 +31,21 @@ export function AddMemberDialog({
     const [role, setRole] = useState<CalendarRole>('viewer')
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-    const [userOrgCollection, usersCollection, membersCollection] = useStore(
-        'user_org',
-        'users',
-        'calendar_members'
-    )
+    const [usersCollection, membersCollection] = useStore('users', 'calendar_members')
 
-    const { data: candidatesRaw } = useOrgLiveQuery((q, { orgId }) =>
-        q
-            .from({ uo: userOrgCollection })
-            .join({ u: usersCollection }, ({ uo, u }) => eq(uo.user, u.id))
-            .where(({ uo }) => eq(uo.org, orgId))
-            .select(({ uo, u }) => ({
-                userOrgId: uo.id,
-                userId: uo.user,
-                name: u.name,
-                email: u.email,
-            }))
+    const { data: candidatesRaw } = useOrgLiveQuery(q =>
+        q.from({ u: usersCollection }).select(({ u }) => ({
+            userId: u.id,
+            name: u.name,
+            email: u.email,
+        }))
     )
 
     const filteredCandidates = useMemo(() => {
         const all = candidatesRaw ?? []
         const q = query.trim().toLowerCase()
         return all
-            .filter(c => !existingUserOrgIds.has(c.userOrgId))
+            .filter(c => !existingUserIds.has(c.userId))
             .filter(c => {
                 if (!q) return true
                 return (
@@ -63,14 +54,14 @@ export function AddMemberDialog({
                 )
             })
             .slice(0, 20)
-    }, [candidatesRaw, existingUserOrgIds, query])
+    }, [candidatesRaw, existingUserIds, query])
 
     const addMember = useMutation({
-        mutationFn: mutation(function* (input: { userOrgId: string; role: CalendarRole }) {
+        mutationFn: mutation(function* (input: { userId: string; role: CalendarRole }) {
             yield membersCollection.insert({
                 id: newRecordId(),
                 calendar: calendarId,
-                user_org: input.userOrgId,
+                user: input.userId,
                 role: input.role,
                 // color is select-with-no-default — pbtsdb's generated type
                 // marks it required, and PB's create-rule may stricter-check
@@ -90,9 +81,9 @@ export function AddMemberDialog({
         },
     })
 
-    const handleAdd = (userOrgId: string) => {
+    const handleAdd = (userId: string) => {
         setErrorMessage(null)
-        addMember.mutate({ userOrgId, role })
+        addMember.mutate({ userId, role })
     }
 
     const handleClose = () => {
@@ -174,7 +165,7 @@ export function AddMemberDialog({
                     ) : (
                         filteredCandidates.map(c => (
                             <View
-                                key={c.userOrgId}
+                                key={c.userId}
                                 className="flex-row items-center gap-3 px-4 py-2.5"
                             >
                                 <MemberAvatar name={c.name ?? ''} email={c.email ?? ''} size={32} />
@@ -196,7 +187,7 @@ export function AddMemberDialog({
                                 </View>
                                 <Button
                                     size="sm"
-                                    onPress={() => handleAdd(c.userOrgId)}
+                                    onPress={() => handleAdd(c.userId)}
                                     isDisabled={addMember.isPending}
                                 >
                                     <ButtonText>
