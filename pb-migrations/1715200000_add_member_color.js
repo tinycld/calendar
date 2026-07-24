@@ -38,7 +38,7 @@ migrate(
 
         // Allow members to update their own record (for color changes)
         members.updateRule =
-            '(calendar.calendar_members_via_calendar.user_org.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?= "owner") || (user_org.user = @request.auth.id)'
+            '(calendar.calendar_members_via_calendar.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?= "owner") || (user = @request.auth.id)'
 
         app.save(members)
 
@@ -55,7 +55,7 @@ migrate(
 
         // Restore original update rule
         members.updateRule =
-            'calendar.calendar_members_via_calendar.user_org.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?= "owner"'
+            'calendar.calendar_members_via_calendar.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?= "owner"'
 
         app.save(members)
 

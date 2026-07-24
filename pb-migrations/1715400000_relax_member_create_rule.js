@@ -1,10 +1,10 @@
 /// <reference path="../../../server/pb_data/types.d.ts" />
 
 // The original createRule on calendar_members (calOwnerRule) traverses a
-// back-relation through user_org to check whether the requesting user is
-// already an owner of the calendar:
+// back-relation to check whether the requesting user is already an owner of
+// the calendar:
 //
-//     calendar.calendar_members_via_calendar.user_org.user ?= @request.auth.id
+//     calendar.calendar_members_via_calendar.user ?= @request.auth.id
 //     && calendar.calendar_members_via_calendar.role ?= "owner"
 //
 // PB v0.36 evaluates this inconsistently: non-superuser POSTs always 400
@@ -22,7 +22,7 @@ migrate(
     app => {
         const members = app.findCollectionByNameOrId('calendar_members')
         members.createRule =
-            'calendar.calendar_members_via_calendar.user_org.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?= "owner"'
+            'calendar.calendar_members_via_calendar.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?= "owner"'
         app.save(members)
     }
 )

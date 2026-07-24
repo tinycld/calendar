@@ -11,15 +11,6 @@ migrate(
             system: false,
             fields: [
                 {
-                    id: 'cal_calendars_org',
-                    name: 'org',
-                    type: 'relation',
-                    required: true,
-                    collectionId: 'pbc_orgs_00001',
-                    cascadeDelete: true,
-                    maxSelect: 1,
-                },
-                {
                     id: 'cal_calendars_name',
                     name: 'name',
                     type: 'text',
@@ -57,7 +48,7 @@ migrate(
                     onUpdate: true,
                 },
             ],
-            indexes: ['CREATE INDEX `idx_cal_calendars_org` ON `calendar_calendars` (`org`)'],
+            indexes: [],
         })
         app.save(calendars)
 
@@ -79,10 +70,10 @@ migrate(
                 },
                 {
                     id: 'cal_members_user_org',
-                    name: 'user_org',
+                    name: 'user',
                     type: 'relation',
                     required: true,
-                    collectionId: 'pbc_user_org_01',
+                    collectionId: '_pb_users_auth_',
                     cascadeDelete: true,
                     maxSelect: 1,
                 },
@@ -110,9 +101,9 @@ migrate(
                 },
             ],
             indexes: [
-                'CREATE UNIQUE INDEX `idx_cal_members_unique` ON `calendar_members` (`calendar`, `user_org`)',
+                'CREATE UNIQUE INDEX `idx_cal_members_unique` ON `calendar_members` (`calendar`, `user`)',
                 'CREATE INDEX `idx_cal_members_calendar` ON `calendar_members` (`calendar`)',
-                'CREATE INDEX `idx_cal_members_user_org` ON `calendar_members` (`user_org`)',
+                'CREATE INDEX `idx_cal_members_user` ON `calendar_members` (`user`)',
             ],
         })
         app.save(members)
@@ -138,7 +129,7 @@ migrate(
                     name: 'created_by',
                     type: 'relation',
                     required: true,
-                    collectionId: 'pbc_user_org_01',
+                    collectionId: '_pb_users_auth_',
                     cascadeDelete: false,
                     maxSelect: 1,
                 },
@@ -240,15 +231,15 @@ migrate(
         app.save(events)
 
         // Phase 2: Apply access rules now that all collections exist and back-relations resolve
-        const calMemberRule = 'calendar_members_via_calendar.user_org.user ?= @request.auth.id'
+        const calMemberRule = 'calendar_members_via_calendar.user ?= @request.auth.id'
         const calOwnerRule =
-            'calendar_members_via_calendar.user_org.user ?= @request.auth.id && calendar_members_via_calendar.role ?= "owner"'
-        const orgMemberRule = 'org.user_org_via_org.user ?= @request.auth.id'
+            'calendar_members_via_calendar.user ?= @request.auth.id && calendar_members_via_calendar.role ?= "owner"'
+        const authedRule = '@request.auth.id != ""'
         const calMemberViaCalendarRule =
-            'calendar.calendar_members_via_calendar.user_org.user ?= @request.auth.id'
+            'calendar.calendar_members_via_calendar.user ?= @request.auth.id'
         const calEditorViaCalendarRule =
-            'calendar.calendar_members_via_calendar.user_org.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?!= "viewer"'
-        const userOrgRule = 'user_org.user = @request.auth.id'
+            'calendar.calendar_members_via_calendar.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?!= "viewer"'
+        const userRule = 'user = @request.auth.id'
 
         function setRules(collection, { list, view, create, update, del }) {
             collection.listRule = list
@@ -258,12 +249,12 @@ migrate(
             collection.deleteRule = del
         }
 
-        // calendar_calendars: viewable by members, creatable by any org member, editable/deletable by owners
+        // calendar_calendars: viewable by members, creatable by any authenticated user, editable/deletable by owners
         const calendarsCol = app.findCollectionByNameOrId('calendar_calendars')
         setRules(calendarsCol, {
             list: calMemberRule,
             view: calMemberRule,
-            create: orgMemberRule,
+            create: authedRule,
             update: calOwnerRule,
             del: calOwnerRule,
         })
@@ -272,11 +263,11 @@ migrate(
         // calendar_members: viewable by the member themselves, manageable by calendar owners
         const membersCol = app.findCollectionByNameOrId('calendar_members')
         setRules(membersCol, {
-            list: userOrgRule,
-            view: userOrgRule,
-            create: 'user_org.user = @request.auth.id && calendar.calendar_members_via_calendar.user_org.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?= "owner"',
-            update: 'calendar.calendar_members_via_calendar.user_org.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?= "owner"',
-            del: userOrgRule,
+            list: userRule,
+            view: userRule,
+            create: 'user = @request.auth.id && calendar.calendar_members_via_calendar.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?= "owner"',
+            update: 'calendar.calendar_members_via_calendar.user ?= @request.auth.id && calendar.calendar_members_via_calendar.role ?= "owner"',
+            del: userRule,
         })
         app.save(membersCol)
 
