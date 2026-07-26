@@ -1,4 +1,3 @@
-import { eq } from '@tanstack/db'
 import { MemberAvatar } from '@tinycld/core/components/settings/members/MemberAvatar'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
@@ -158,8 +157,8 @@ export function AddMemberDialog({
                         <View className="px-4 py-6">
                             <Text className="text-muted-foreground text-sm">
                                 {query
-                                    ? 'No matching org members'
-                                    : 'Everyone in this org is already a member of this calendar'}
+                                    ? 'No matching people'
+                                    : 'Everyone is already a member of this calendar'}
                             </Text>
                         </View>
                     ) : (

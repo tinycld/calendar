@@ -9,33 +9,35 @@ import (
 	"github.com/pocketbase/pocketbase/tests"
 )
 
-// guest_rls_test.go proves calendar_calendars' tightened createRule against
-// PocketBase's REAL rule engine: a role='guest' member of an org must NOT be
-// able to create calendars, while a real member still can.
+// guest_rls_test.go proves calendar_calendars' createRule against PocketBase's
+// REAL rule engine: a role='guest' user must NOT be able to create calendars,
+// while an ordinary member still can.
 //
-// Background: a guest share-link visitor gets a real users record + a user_org
-// row with role='guest' in the owner's org. calendar_calendars' createRule was
-// a pure-membership predicate (`org.user_org_via_org.user ?= @request.auth.id`,
-// set in 1715000000) — the OnRecordCreateRequest hook for calendar_calendars
-// only auto-creates the owner membership AFTER e.Next(); it does NOT block the
-// create — so a guest membership row let the visitor create calendars.
+// Why the rule exists: a share-link visitor gets a real users record with
+// role='guest'. calendar_calendars' createRule started as a bare authenticated
+// check, and the OnRecordCreateRequest hook only auto-creates the owner
+// membership AFTER e.Next() — it does not block the create — so an
+// authenticated guest could mint calendars.
 //
-// (calendar_members create is deliberately NOT tightened here: its PB rule is
-// `@request.auth.id != ""` with the real owner-check enforced by the
-// userIsOwner Go hook in register.go — a guest is never a calendar owner, so
-// the hook already blocks them; re-introducing a back-relation PB rule would
-// hit the documented PB-evaluation bug that motivated 1715400000.)
+// Single-org: role lives on the users auth record, so the gate is a direct
+// check against @request.auth.role. There is no org and no user_org junction.
+//
+// (calendar_members create is deliberately NOT gated by a PB rule: its rule is
+// `@request.auth.id != ""` with the real owner-check enforced by the userIsOwner
+// Go hook in register.go — a guest is never a calendar owner, so the hook
+// already blocks them. Re-introducing a back-relation PB rule would hit the
+// PB-evaluation bug that motivated migration 1715400000.)
 //
 // Each scenario builds a FRESH TestApp (ApiScenario.Test re-triggers OnServe;
-// reusing one app panics on duplicate route registration under PB v0.38.1).
+// reusing one app panics on duplicate route registration).
 
-// calCalendarsGuestCreateRule mirrors the 1715500000 migration verbatim.
-const calCalendarsGuestCreateRule = `org.user_org_via_org.user ?= @request.auth.id && ` +
-	`org.user_org_via_org.role ?!= "guest"`
+// calCalendarsGuestCreateRule mirrors migration 1830000003 verbatim. Verified by
+// neutering: replace it with an authenticated-only check and
+// TestCalGuestRLS_GuestCannotCreateCalendar goes red.
+const calCalendarsGuestCreateRule = `@request.auth.role != "guest"`
 
 type calGuestEnv struct {
 	app         *tests.TestApp
-	org         *core.Record
 	memberToken string
 	guestToken  string
 }
@@ -48,42 +50,22 @@ func setupCalGuestApp(t *testing.T) *calGuestEnv {
 	}
 	t.Cleanup(func() { app.Cleanup() })
 
+	// role on the users auth collection is what the rule reads. The stock test
+	// users collection has no such field, so add it here the way core's
+	// migration does.
 	users, err := app.FindCollectionByNameOrId("users")
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	orgs := core.NewBaseCollection("orgs")
-	orgs.Id = "pbc_orgs_00001"
-	orgs.Fields.Add(&core.TextField{Name: "name", Required: true})
-	orgs.Fields.Add(&core.TextField{Name: "slug", Required: true})
-	if err := app.Save(orgs); err != nil {
-		t.Fatal(err)
-	}
-
-	userOrg := core.NewBaseCollection("user_org")
-	userOrg.Id = "pbc_user_org_01"
-	userOrg.Fields.Add(&core.RelationField{
-		Name: "org", Required: true, CollectionId: orgs.Id,
-		CascadeDelete: true, MaxSelect: 1,
-	})
-	userOrg.Fields.Add(&core.RelationField{
-		Name: "user", Required: true, CollectionId: users.Id,
-		CascadeDelete: true, MaxSelect: 1,
-	})
-	userOrg.Fields.Add(&core.SelectField{
-		Name: "role", Required: true, MaxSelect: 1,
+	users.Fields.Add(&core.SelectField{
+		Name: "role", MaxSelect: 1,
 		Values: []string{"owner", "admin", "member", "guest"},
 	})
-	if err := app.Save(userOrg); err != nil {
-		t.Fatal(err)
+	if err := app.Save(users); err != nil {
+		t.Fatalf("add users.role: %v", err)
 	}
 
 	calendars := core.NewBaseCollection("calendar_calendars")
-	calendars.Fields.Add(&core.RelationField{
-		Name: "org", Required: true, CollectionId: orgs.Id,
-		CascadeDelete: true, MaxSelect: 1,
-	})
 	calendars.Fields.Add(&core.TextField{Name: "name", Required: true})
 	calendars.Fields.Add(&core.SelectField{
 		Name: "color", Required: true, MaxSelect: 1,
@@ -93,17 +75,8 @@ func setupCalGuestApp(t *testing.T) *calGuestEnv {
 		t.Fatal(err)
 	}
 
-	org := core.NewRecord(orgs)
-	org.Set("name", "Acme")
-	org.Set("slug", "acme")
-	if err := app.Save(org); err != nil {
-		t.Fatal(err)
-	}
-
-	member := calGuestUser(t, app, "member@test.local")
-	guest := calGuestUser(t, app, "guest@test.local")
-	calGuestMembership(t, app, member, org, "member")
-	calGuestMembership(t, app, guest, org, "guest")
+	member := calGuestUser(t, app, "member@test.local", "member")
+	guest := calGuestUser(t, app, "guest@test.local", "guest")
 
 	memberToken, err := member.NewAuthToken()
 	if err != nil {
@@ -114,33 +87,22 @@ func setupCalGuestApp(t *testing.T) *calGuestEnv {
 		t.Fatal(err)
 	}
 
-	return &calGuestEnv{app: app, org: org, memberToken: memberToken, guestToken: guestToken}
+	return &calGuestEnv{app: app, memberToken: memberToken, guestToken: guestToken}
 }
 
-func calGuestUser(t *testing.T, app core.App, email string) *core.Record {
+func calGuestUser(t *testing.T, app core.App, email, role string) *core.Record {
 	t.Helper()
 	col, _ := app.FindCollectionByNameOrId("users")
 	r := core.NewRecord(col)
 	r.SetEmail(email)
 	r.Set("name", "Test")
+	r.Set("role", role)
 	r.SetVerified(true)
 	r.SetPassword("Password123!")
 	if err := app.Save(r); err != nil {
 		t.Fatal(err)
 	}
 	return r
-}
-
-func calGuestMembership(t *testing.T, app core.App, user, org *core.Record, role string) {
-	t.Helper()
-	col, _ := app.FindCollectionByNameOrId("user_org")
-	r := core.NewRecord(col)
-	r.Set("user", user.Id)
-	r.Set("org", org.Id)
-	r.Set("role", role)
-	if err := app.Save(r); err != nil {
-		t.Fatal(err)
-	}
 }
 
 func setCalCreateRule(t *testing.T, app core.App) {
@@ -163,7 +125,7 @@ func TestCalGuestRLS_GuestCannotCreateCalendar(t *testing.T) {
 	scenario := &tests.ApiScenario{
 		Method:                http.MethodPost,
 		URL:                   "/api/collections/calendar_calendars/records",
-		Body:                  strings.NewReader(`{"org":"` + env.org.Id + `","name":"Guest Cal","color":"blue"}`),
+		Body:                  strings.NewReader(`{"name":"Guest Cal","color":"blue"}`),
 		Headers:               map[string]string{"Authorization": env.guestToken, "Content-Type": "application/json"},
 		ExpectedStatus:        http.StatusBadRequest,
 		ExpectedContent:       []string{`"message"`},
@@ -180,7 +142,7 @@ func TestCalGuestRLS_MemberCanCreateCalendar(t *testing.T) {
 	scenario := &tests.ApiScenario{
 		Method:                http.MethodPost,
 		URL:                   "/api/collections/calendar_calendars/records",
-		Body:                  strings.NewReader(`{"org":"` + env.org.Id + `","name":"Team Cal","color":"green"}`),
+		Body:                  strings.NewReader(`{"name":"Team Cal","color":"green"}`),
 		Headers:               map[string]string{"Authorization": env.memberToken, "Content-Type": "application/json"},
 		ExpectedStatus:        http.StatusOK,
 		ExpectedContent:       []string{`"name":"Team Cal"`},

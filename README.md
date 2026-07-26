@@ -1,12 +1,12 @@
 # @tinycld/calendar
 
-Shared calendars for your organization — with day, week, month, and schedule views, recurring events, guest management, RSVPs, reminders, external subscriptions, and a native CalDAV endpoint.
+Shared calendars — with day, week, month, and schedule views, recurring events, guest management, RSVPs, reminders, external subscriptions, and a native CalDAV endpoint.
 
 Part of [TinyCld](https://tinycld.org/) — the open-source, self-hosted Google Workspace alternative.
 
 ## Features
 
-- **Multiple calendars per org.** Each user can own any number of calendars and be invited to others as owner, editor, or viewer.
+- **Multiple calendars.** Each user can own any number of calendars and be invited to others as owner, editor, or viewer.
 - **Day, Week, Month, Schedule views.** Keyboard-navigable, color-coded, with a live "now" indicator and all-day event bar.
 - **Recurring events.** Daily, weekly, monthly, yearly — stored as iCalendar RRULEs so they round-trip through CalDAV.
 - **Guests & RSVP.** Invite attendees by email with `accepted` / `declined` / `tentative` / `pending` status. Organizer vs. attendee roles.
@@ -30,13 +30,14 @@ Part of [TinyCld](https://tinycld.org/) — the open-source, self-hosted Google 
 
 This package contributes:
 
-- **Screens** — org-scoped routes at `/a/<org>/calendar`.
+- **Screens** — routes at `/calendar`.
 - **Provider** — a wrapping context that loads calendar memberships and visible-calendar state.
-- **Nav entry** — sidebar icon with keyboard shortcut `t c`.
+- **Nav entry** — sidebar icon with keyboard shortcut `c`.
 - **Sidebar slot** — `sidebar.after-calendars`, exposed for other packages to inject sections (e.g. "My Booking Pages") below the calendar list. See [Sidebar slots](https://tinycld.org/docs/anatomy/sidebar-slots).
 - **Collections** — `calendar_calendars`, `calendar_members`, `calendar_events` (pbtsdb, live-queried).
 - **Migrations** — schema under `pb-migrations/`.
-- **Go server module** — CalDAV endpoint, iCalendar parser/serializer, subscription poller, and reminder scheduler wired into the app shell's PocketBase binary.
+- **Go server module** — the CalDAV field map core's protocol server is driven by (`tinycld.org/core/caldav`), plus the subscription poller, reminder scheduler, and membership guards, wired into the app shell's PocketBase binary.
+- **TS hook points** — `caldavHook({ beforeWrite, beforeDelete, canRead, filterList })` for customizing CalDAV without forking the Go. See `help/caldav-hooks.md`.
 
 The package depends on `@tinycld/core` at runtime (React, pbtsdb, `~/lib/*`). The app shell has no knowledge of this package at compile time — everything is discovered at generator time by scanning the workspace members.
 

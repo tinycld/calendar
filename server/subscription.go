@@ -15,6 +15,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/teambition/rrule-go"
+	"tinycld.org/core/caldav"
 	"tinycld.org/core/notify"
 )
 
@@ -162,7 +163,8 @@ func syncSubscription(app *pocketbase.PocketBase, calRecord *core.Record) error 
 		}
 		seenUIDs[uid] = true
 
-		// Wrap event in a calendar for applyCalendarToRecord
+		// Wrap the VEVENT in a VCALENDAR: the codec takes a calendar, since
+		// that is what a CalDAV PUT carries.
 		cal := ical.NewCalendar()
 		cal.Children = append(cal.Children, event.Component)
 
@@ -175,7 +177,7 @@ func syncSubscription(app *pocketbase.PocketBase, calRecord *core.Record) error 
 					}
 				}
 			}
-			if err := applyCalendarToRecord(cal, existing); err != nil {
+			if err := caldav.ApplyVEvent(cal, existing, calDAVSource.Event); err != nil {
 				continue
 			}
 			_ = app.SaveNoValidate(existing)
@@ -185,7 +187,7 @@ func syncSubscription(app *pocketbase.PocketBase, calRecord *core.Record) error 
 			record.Set("created_by", owner)
 			record.Set("ical_uid", uid)
 			record.Set("guests", []any{})
-			if err := applyCalendarToRecord(cal, record); err != nil {
+			if err := caldav.ApplyVEvent(cal, record, calDAVSource.Event); err != nil {
 				continue
 			}
 			_ = app.SaveNoValidate(record)
@@ -258,6 +260,12 @@ func parseRRuleUntil(rule string) time.Time {
 	return until
 }
 
+// pbTimeFormat is PocketBase's stored datetime layout, used for every
+// subscription_last_sync write and comparison so filter binds and time.Parse
+// agree. (core/caldav carries its own copy for the iCalendar codec; this one is
+// the scheduler's.)
+const pbTimeFormat = "2006-01-02 15:04:05.000Z"
+
 func findSubscriptionOwner(app *pocketbase.PocketBase, calendarId string) (string, error) {
 	member, err := app.FindFirstRecordByFilter(
 		"calendar_members",
@@ -267,7 +275,7 @@ func findSubscriptionOwner(app *pocketbase.PocketBase, calendarId string) (strin
 	if err != nil {
 		return "", fmt.Errorf("no owner membership for calendar %s: %w", calendarId, err)
 	}
-	return member.GetString("user_org"), nil
+	return member.GetString("user"), nil
 }
 
 // dialTimeout bounds each TCP connect inside the hardened dialer; the
@@ -444,33 +452,18 @@ func normalizeSubscriptionURL(rawURL string) string {
 // notifySubscriptionError sends a notification to the calendar owner when a subscription sync fails.
 func notifySubscriptionError(app *pocketbase.PocketBase, calRecord *core.Record, errMsg string) {
 	calendarName := calRecord.GetString("name")
-	calendarID := calRecord.Id
-	orgID := calRecord.GetString("org")
 
-	ownerUserOrgID, err := findSubscriptionOwner(app, calendarID)
-	if err != nil {
+	ownerUserID, err := findSubscriptionOwner(app, calRecord.Id)
+	if err != nil || ownerUserID == "" {
 		return
 	}
-
-	userOrgRecord, err := app.FindRecordById("user_org", ownerUserOrgID)
-	if err != nil {
-		return
-	}
-	userID := userOrgRecord.GetString("user")
-
-	orgRecord, err := app.FindRecordById("orgs", orgID)
-	if err != nil {
-		return
-	}
-	orgSlug := orgRecord.GetString("slug")
 
 	notify.NotifyUser(app, notify.NotifyParams{
-		UserID:  userID,
-		OrgID:   orgID,
+		UserID:  ownerUserID,
 		Type:    "calendar_subscription_error",
 		Package: "calendar",
 		Title:   fmt.Sprintf("Calendar sync failed: %s", calendarName),
 		Body:    errMsg,
-		URL:     fmt.Sprintf("/a/%s/calendar", orgSlug),
+		URL:     "/calendar",
 	})
 }

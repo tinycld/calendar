@@ -47,34 +47,21 @@ async function openDayViewFor(page: Page, eventStart: Date) {
     }
 }
 
-// PROPFIND returns calendars from every org the test user has membership
-// in, so a multi-org test user has same-named entries (the user_org
-// lifecycle hook auto-creates a "Test User" calendar per org). The CalDAV
-// server suffixes displaynames with the org name when the user belongs to
-// more than one org, so the test-org personal calendar comes back as
-// "Test User (Test Organization)". The web view is org-scoped to test-org,
-// so an event PUT into the acme calendar would never appear in the
-// WeekView/DayView the test then asserts on — match the suffixed name to
-// pin to test-org.
-const TEST_ORG_NAME = 'Test Organization'
-const TEST_ORG_SUFFIX = ` (${TEST_ORG_NAME})`
-function pickTestOrgCalendar(calendars: CalDAVCalendar[]): CalDAVCalendar {
-    const personal = calendars.find(c => c.name === `Test User${TEST_ORG_SUFFIX}`)
+// PROPFIND returns every calendar the test user may list. The auto-created
+// personal calendar is named after the user, and single-org means displaynames
+// carry no org suffix — the bare name is the only form.
+function pickPersonalCalendar(calendars: CalDAVCalendar[]): CalDAVCalendar {
+    const personal = calendars.find(c => c.name === 'Test User')
     if (personal) return personal
-    // Fallback for the single-org case (no disambiguation suffix).
-    const bare = calendars.find(c => c.name === 'Test User')
-    if (bare) return bare
     throw new Error(
-        `No test-org "Test User" calendar in PROPFIND result; got: ${calendars
-            .map(c => c.name)
-            .join(', ')}`
+        `No "Test User" calendar in PROPFIND result; got: ${calendars.map(c => c.name).join(', ')}`
     )
 }
 
 test.describe('Calendar — CalDAV Integration', () => {
     test('CalDAV PUT appears in web UI', async ({ page }) => {
         const calendars = await propfindCalendars()
-        const calId = pickTestOrgCalendar(calendars).id
+        const calId = pickPersonalCalendar(calendars).id
         const uid = `caldav-roundtrip-${Date.now()}`
         const summary = `CalDAV PUT ${Date.now()}`
 
@@ -104,8 +91,8 @@ test.describe('Calendar — CalDAV Integration', () => {
         await expect(page.getByPlaceholder('Event title')).toBeVisible()
         await page.getByPlaceholder('Event title').fill(title)
 
-        // Save stays disabled until userOrg + defaultCalendar resolve from
-        // the live queries. Gluestack's <Button isDisabled> sets a CSS
+        // Save stays disabled until the default calendar resolves from the
+        // live query. Gluestack's <Button isDisabled> sets a CSS
         // data-disabled attribute, not the HTML disabled property, so
         // Playwright's toBeEnabled can't see it — assert the attribute
         // explicitly. toHaveAttribute(name, 'false') fails closed if the
@@ -135,7 +122,7 @@ test.describe('Calendar — CalDAV Integration', () => {
 
     test('CalDAV DELETE removes from web UI', async ({ page }) => {
         const calendars = await propfindCalendars()
-        const calId = pickTestOrgCalendar(calendars).id
+        const calId = pickPersonalCalendar(calendars).id
         const uid = `caldav-delete-${Date.now()}`
         const summary = `CalDAV DELETE ${Date.now()}`
 
@@ -190,7 +177,7 @@ test.describe('Calendar — CalDAV Integration', () => {
     // no form-race) and assert the event is rendered in the week view.
     test('event on this-week Saturday appears in week view', async ({ page }) => {
         const calendars = await propfindCalendars()
-        const calId = pickTestOrgCalendar(calendars).id
+        const calId = pickPersonalCalendar(calendars).id
         const uid = `caldav-saturday-${Date.now()}`
         const summary = `Saturday event ${Date.now()}`
 

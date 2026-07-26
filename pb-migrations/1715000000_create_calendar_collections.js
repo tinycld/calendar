@@ -69,7 +69,7 @@ migrate(
                     maxSelect: 1,
                 },
                 {
-                    id: 'cal_members_user_org',
+                    id: 'cal_members_user',
                     name: 'user',
                     type: 'relation',
                     required: true,

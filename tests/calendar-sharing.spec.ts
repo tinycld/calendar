@@ -1,105 +1,33 @@
 import { expect, test } from '@playwright/test'
 import { type CalDAVCalendar, propfindCalendars } from '@tinycld/core/e2e-caldav-helpers'
-import { login, ORG_SLUG } from '@tinycld/core/e2e-helpers'
+import { createInvitedUser, type InvitedUser, login } from '@tinycld/core/e2e-helpers'
 
-// Pick the auto-created personal calendar (named after the user) which
-// always exists in test-org and is owned by the test user. The CalDAV
-// server suffixes displaynames with the org name when a user belongs to
-// multiple orgs, so the test user (who has both test-org and acme) sees
-// "Test User (Test Organization)" — match that to pin to test-org.
-const TEST_ORG_NAME = 'Test Organization'
-function pickTestOrgCalendar(calendars: CalDAVCalendar[]): CalDAVCalendar {
-    const personal =
-        calendars.find(c => c.name === `Test User (${TEST_ORG_NAME})`) ??
-        calendars.find(c => c.name === 'Test User')
+// Pick the auto-created personal calendar, which is named after the user and
+// always exists (a users-create hook mints one per account).
+//
+// Single-org: the deployment IS the org, so displaynames are no longer suffixed
+// with an org name — the bare name is the only form.
+function pickPersonalCalendar(calendars: CalDAVCalendar[]): CalDAVCalendar {
+    const personal = calendars.find(c => c.name === 'Test User')
     if (personal) return personal
     throw new Error(
         `No "Test User" calendar in PROPFIND result; got: ${calendars.map(c => c.name).join(', ')}`
     )
 }
 
-// PB sits behind the dev.ts proxy on the test Expo port. /api/* routes
-// through to PB transparently — see scripts/dev.ts::isPbPath.
+// PB sits behind the dev.ts proxy on the test Expo port. /api/* and /caldav/*
+// route through to PB transparently — see scripts/dev.ts::isPbPath.
 const PB_URL = 'http://127.0.0.1:7200'
-
-interface SecondUser {
-    id: string
-    email: string
-    password: string
-    userOrgId: string
-}
-
-/**
- * Create a second user in test-org by hand via PB's superuser API. Returns
- * the new user's id, credentials, and user_org id (for asserting calendar
- * memberships and authenticating CalDAV requests as this user).
- *
- * Each call generates a unique email so parallel test files don't collide.
- */
-async function createSecondUser(): Promise<SecondUser> {
-    const adminEmail = process.env.ADMIN_USER_LOGIN ?? 'admin@tinycld.org'
-    const adminPassword = process.env.ADMIN_USER_PW ?? 'AdminPass1234!'
-
-    const adminAuth = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identity: adminEmail, password: adminPassword }),
-    })
-    if (!adminAuth.ok) {
-        throw new Error(`Superuser auth failed: ${adminAuth.status} ${await adminAuth.text()}`)
-    }
-    const { token: adminToken } = (await adminAuth.json()) as { token: string }
-
-    // Look up test-org by slug.
-    const orgsRes = await fetch(
-        `${PB_URL}/api/collections/orgs/records?filter=${encodeURIComponent(`slug='${ORG_SLUG}'`)}`,
-        { headers: { Authorization: adminToken } }
-    )
-    const orgs = (await orgsRes.json()) as { items: { id: string }[] }
-    if (!orgs.items[0]) throw new Error(`Org ${ORG_SLUG} not found`)
-    const orgId = orgs.items[0].id
-
-    // Unique email per invocation.
-    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-    const email = `sharing-test-${suffix}@tinycld.org`
-    const password = 'SharingTest1234!'
-
-    const userRes = await fetch(`${PB_URL}/api/collections/users/records`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
-        body: JSON.stringify({
-            email,
-            password,
-            passwordConfirm: password,
-            name: `Sharing Test ${suffix}`,
-            username: `sharing_${suffix.replace(/-/g, '_')}`,
-            verified: true,
-        }),
-    })
-    if (!userRes.ok) {
-        throw new Error(`Create user failed: ${userRes.status} ${await userRes.text()}`)
-    }
-    const user = (await userRes.json()) as { id: string }
-
-    const userOrgRes = await fetch(`${PB_URL}/api/collections/user_org/records`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: adminToken },
-        body: JSON.stringify({ user: user.id, org: orgId, role: 'member' }),
-    })
-    if (!userOrgRes.ok) {
-        throw new Error(`Create user_org failed: ${userOrgRes.status} ${await userOrgRes.text()}`)
-    }
-    const userOrg = (await userOrgRes.json()) as { id: string }
-
-    return { id: user.id, email, password, userOrgId: userOrg.id }
-}
 
 /**
  * Issue an authenticated PROPFIND on /caldav/u/cal/ as the given user.
  * Returns the parsed calendar list, used to verify that a sharee can see
- * a calendar shared with them (or that an ex-sharee can no longer see one).
+ * a calendar shared with them (or that a non-sharee cannot).
+ *
+ * Read-only, so a direct protocol request is the point rather than a bypass:
+ * driving CalDAV IS what this asserts.
  */
-async function propfindCalendarsAs(user: SecondUser): Promise<{ id: string; name: string }[]> {
+async function propfindCalendarsAs(user: InvitedUser): Promise<{ id: string; name: string }[]> {
     const auth = `Basic ${Buffer.from(`${user.email}:${user.password}`).toString('base64')}`
     const res = await fetch(`${PB_URL}/caldav/u/cal/`, {
         method: 'PROPFIND',
@@ -145,7 +73,7 @@ test.describe.configure({ mode: 'serial' })
 test.describe('Calendar — Sharing UI', () => {
     test('Owner sees themselves in the Shared with list', async ({ page }) => {
         const calendars = await propfindCalendars()
-        const cal = pickTestOrgCalendar(calendars)
+        const cal = pickPersonalCalendar(calendars)
 
         await login(page)
         // Deep-link straight to the settings route for the specific calendar
@@ -156,71 +84,78 @@ test.describe('Calendar — Sharing UI', () => {
         // available to the test). A record deep-link is the only stable way
         // to land on this exact calendar's settings, so the goto is
         // intentional rather than in-app screen navigation.
-        await page.goto(`/a/${ORG_SLUG}/calendar/settings/${cal.id}`)
+        await page.goto(`/calendar/settings/${cal.id}`)
         await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
 
-        // The seed user "Test User" appears as a member with the "Owner"
-        // role. Both the avatar text and the role pill come from the same
-        // joined live query, so seeing both confirms the row rendered end
-        // to end (membership row + user_org join + users join).
+        // The seed user "Test User" appears as a member with the "Owner" role.
+        // Both the avatar text and the role pill come from the same joined live
+        // query, so seeing both confirms the row rendered end to end (membership
+        // row + users join).
         await expect(page.getByText('Test User').first()).toBeVisible()
         await expect(page.getByText('Owner').first()).toBeVisible()
     })
 
     test('Owner can add a member; sharee can list the calendar via CalDAV', async ({ page }) => {
         const calendars = await propfindCalendars()
-        const cal = pickTestOrgCalendar(calendars)
+        const cal = pickPersonalCalendar(calendars)
 
-        // Create a brand-new user in test-org for this test. PROPFIND as
-        // this user before sharing should NOT include the owner's calendar.
-        const sharee = await createSecondUser()
-        const beforeShare = await propfindCalendarsAs(sharee)
-        expect(beforeShare.find(c => c.id === cal.id)).toBeUndefined()
+        // Mint a real second account by driving the invite flow — no raw PB
+        // writes. Its own browser context is discarded; only the credentials
+        // matter here, for authenticating CalDAV as the sharee.
+        const { user: sharee, close } = await createInvitedUser(page, 'calshare')
 
-        // Drive the sharing UI as the owner.
-        await login(page)
-        await page.goto(`/a/${ORG_SLUG}/calendar/settings/${cal.id}`)
-        await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
+        try {
+            // Before sharing, the sharee must NOT see the owner's calendar.
+            const beforeShare = await propfindCalendarsAs(sharee)
+            expect(beforeShare.find(c => c.id === cal.id)).toBeUndefined()
 
-        await page.getByRole('button', { name: 'Add people' }).click()
-        const searchField = page.getByPlaceholder('Search by name or email')
-        await expect(searchField).toBeVisible({ timeout: 5_000 })
+            // Drive the sharing UI as the owner.
+            await login(page)
+            await page.goto(`/calendar/settings/${cal.id}`)
+            await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
 
-        // Type enough of the new user's name to filter the candidate list.
-        await searchField.fill('Sharing Test')
+            await page.getByRole('button', { name: 'Add people' }).click()
+            const searchField = page.getByPlaceholder('Search by name or email')
+            await expect(searchField).toBeVisible({ timeout: 5_000 })
 
-        // The candidate row shows the user's display name. AddMemberDialog
-        // renders email only when name is empty (matches Google's nicer
-        // "Holly Stitt / holly@stitt.org" two-line format).
-        const candidateRow = page.getByText(/^Sharing Test \d/).first()
-        await expect(candidateRow).toBeVisible({ timeout: 5_000 })
-        await page.getByRole('button', { name: 'Add' }).last().click()
+            // createInvitedUser names the account "Invited Tester"; filter to it.
+            await searchField.fill('Invited Tester')
 
-        // Dialog closes on success — wait for the search field to disappear.
-        await expect(page.getByPlaceholder('Search by name or email')).not.toBeVisible({
-            timeout: 5_000,
-        })
+            // The candidate row shows the user's display name. AddMemberDialog
+            // renders email only when name is empty (matches Google's nicer
+            // "Holly Stitt / holly@stitt.org" two-line format).
+            await expect(page.getByText('Invited Tester').first()).toBeVisible({ timeout: 5_000 })
+            await page.getByRole('button', { name: 'Add' }).last().click()
 
-        // Now the cross-tier check: the new user must see the calendar
-        // appear in their PROPFIND. This proves the membership row landed
-        // and the server's calendar_members filter picks it up.
-        await expect(async () => {
-            const after = await propfindCalendarsAs(sharee)
-            const match = after.find(c => c.id === cal.id)
-            if (!match) {
-                throw new Error(
-                    `${sharee.email} doesn't see calendar ${cal.id} yet; got: ${after.map(c => c.name).join(', ')}`
-                )
-            }
-        }).toPass({ timeout: 5_000 })
+            // Dialog closes on success — wait for the search field to disappear.
+            await expect(page.getByPlaceholder('Search by name or email')).not.toBeVisible({
+                timeout: 5_000,
+            })
+
+            // The cross-tier check: the sharee must now see the calendar in
+            // their PROPFIND. This proves the membership row landed AND that
+            // the CalDAV listing honors calendar_calendars' list rule — the one
+            // definition core evaluates via CanAccessRecord.
+            await expect(async () => {
+                const after = await propfindCalendarsAs(sharee)
+                const match = after.find(c => c.id === cal.id)
+                if (!match) {
+                    throw new Error(
+                        `${sharee.email} doesn't see calendar ${cal.id} yet; got: ${after.map(c => c.name).join(', ')}`
+                    )
+                }
+            }).toPass({ timeout: 5_000 })
+        } finally {
+            await close()
+        }
     })
 
     test('Last-owner removal is rejected with a clear error', async ({ page }) => {
         const calendars = await propfindCalendars()
-        const cal = pickTestOrgCalendar(calendars)
+        const cal = pickPersonalCalendar(calendars)
 
         await login(page)
-        await page.goto(`/a/${ORG_SLUG}/calendar/settings/${cal.id}`)
+        await page.goto(`/calendar/settings/${cal.id}`)
         await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
 
         // The current user (Test User) is the only owner of their personal

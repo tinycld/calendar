@@ -6,8 +6,6 @@ function log(...args: unknown[]) {
 
 interface SeedContext {
     user: { id: string; email: string; name: string }
-    org: { id: string }
-    userOrg: { id: string }
 }
 
 function today() {
@@ -887,17 +885,11 @@ function roleForCalendar(calName: string) {
     return 'viewer'
 }
 
-async function seedCalendars(
-    pb: PocketBase,
-    orgId: string,
-    userOrgId: string,
-    otherMembers: { id: string }[]
-) {
+async function seedCalendars(pb: PocketBase, userId: string, otherUsers: { id: string }[]) {
     const calendarMap: Record<string, string> = {}
     for (const cal of CALENDARS) {
         log(`Creating calendar: ${cal.name}`)
         const record = await pb.collection('calendar_calendars').create({
-            org: orgId,
             name: cal.name,
             description: cal.description,
             color: cal.color,
@@ -906,15 +898,15 @@ async function seedCalendars(
 
         await pb.collection('calendar_members').create({
             calendar: record.id,
-            user_org: userOrgId,
+            user: userId,
             role: roleForCalendar(cal.name),
         })
 
         if (cal.name === 'Team' || cal.name === 'Holidays') {
-            for (const member of otherMembers) {
+            for (const member of otherUsers) {
                 await pb.collection('calendar_members').create({
                     calendar: record.id,
-                    user_org: member.id,
+                    user: member.id,
                     role: cal.name === 'Team' ? 'editor' : 'viewer',
                 })
             }
@@ -923,11 +915,11 @@ async function seedCalendars(
     return calendarMap
 }
 
-async function seedEvents(pb: PocketBase, calendarMap: Record<string, string>, userOrgId: string) {
+async function seedEvents(pb: PocketBase, calendarMap: Record<string, string>, userId: string) {
     for (const event of EVENTS) {
         await pb.collection('calendar_events').create({
             calendar: calendarMap[event.calendar],
-            created_by: userOrgId,
+            created_by: userId,
             title: event.title,
             description: event.description,
             location: event.location,
@@ -943,25 +935,26 @@ async function seedEvents(pb: PocketBase, calendarMap: Record<string, string>, u
     }
 }
 
-export default async function seed(pb: PocketBase, { org, userOrg }: SeedContext) {
-    // Check for existing seed events (not calendars, since the lifecycle hook
-    // auto-creates a personal calendar when user_org is created)
+export default async function seed(pb: PocketBase, { user }: SeedContext) {
+    // Count events, not calendars: the lifecycle hook auto-creates a personal
+    // calendar for every new user, so calendars exist before any seeding.
     const existingEvents = await pb.collection('calendar_events').getList(1, 1, {
-        filter: `created_by = "${userOrg.id}"`,
+        filter: `created_by = "${user.id}"`,
     })
     if (existingEvents.totalItems > 0) {
         log(`Skipping (${existingEvents.totalItems} events already exist)`)
         return
     }
 
-    const otherMembers = await pb.collection('user_org').getFullList({
-        filter: `org = "${org.id}" && id != "${userOrg.id}"`,
+    // Every other user in the database is someone the seed can share with.
+    const otherUsers = await pb.collection('users').getFullList({
+        filter: `id != "${user.id}"`,
     })
 
-    const calendarMap = await seedCalendars(pb, org.id, userOrg.id, otherMembers)
+    const calendarMap = await seedCalendars(pb, user.id, otherUsers)
 
     log(`Creating ${EVENTS.length} events...`)
-    await seedEvents(pb, calendarMap, userOrg.id)
+    await seedEvents(pb, calendarMap, user.id)
 
     log(`Created ${CALENDARS.length} calendars and ${EVENTS.length} events`)
 }
