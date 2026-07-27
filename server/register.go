@@ -20,9 +20,9 @@ import (
 // calDAVSource maps the calendar collections onto core's CalDAV server.
 //
 // This literal mirrors the manifest's `caldav` block, which is what a multi-org
-// tenant gets: the tenant links no feature Go, so the router materializes the
-// manifest block into the tenant's runtime config and core serves CalDAV from
-// it. Keep the two in sync.
+// tenant serves: the router materializes the manifest block into the tenant's
+// runtime config and core mounts CalDAV from it, so the mount below is
+// host-only (see Register vs RegisterTenant). Keep the two in sync.
 //
 // There are no permission callbacks here on purpose. Authorization comes from
 // the calendar_calendars / calendar_events access rules the migrations ship,
@@ -90,7 +90,39 @@ func appIsLive(app *pocketbase.PocketBase) bool {
 	return app != nil && app.ConcurrentDB() != nil
 }
 
+// Register composes the calendar server for the SINGLE-ORG app: the shared
+// set plus the host-only tail. The generator's package_extensions.go calls it.
 func Register(app *pocketbase.PocketBase) {
+	registerShared(app)
+
+	// ---- Host-only ----
+	// CalDAV mount. A multi-org tenant mounts /caldav itself, from the
+	// materialized manifest `caldav` block (coreserver.RegisterTenant), so
+	// mounting here too would double-bind the routes. The materialized lists
+	// are authoritative for what a tenant serves; this call is the single-org
+	// equivalent. Registered outside OnServe because it binds its own OnServe
+	// handler, and the caldavHook TS binding must exist before jsvm runs the
+	// hook files (jsvm executes them synchronously, so a later registration
+	// dies at boot with "caldavHook is not defined").
+	caldav.Register(app, []caldav.Source{calDAVSource}, coreserver.CalDAVHostBindings())
+}
+
+// RegisterTenant composes the calendar server for a multi-org TENANT process:
+// the shared set only. The router's pinned package menu calls it, gated by the
+// org's resolved package set (multi-org/docs/SCOPE-tenant-feature-go.md).
+//
+// Do NOT hand-pick registrations here — add to registerShared so both
+// compositions get them, or to Register's host-only tail with a reason. A
+// hand-rolled subset is exactly the drift that produced
+// multi-org/docs/FINDING-tenant-composition-gap.md.
+func RegisterTenant(app *pocketbase.PocketBase) {
+	registerShared(app)
+}
+
+// registerShared is the single source of truth for what BOTH compositions run:
+// record hooks, request-scoped authorization, endpoints, audit/quota/notify
+// registrations, and the per-org background schedulers.
+func registerShared(app *pocketbase.PocketBase) {
 	// Reassignable authorship FKs surfaced to core's account-offboarding
 	// transaction. Without this, deleting a user who created calendar_events
 	// fails: the required FK blocks the users delete.
@@ -195,52 +227,13 @@ func Register(app *pocketbase.PocketBase) {
 		return e.Next()
 	})
 
-	// CalDAV over /caldav for the calendar collections, from core/caldav. The
-	// protocol server, the iCalendar codec and the route mounting all live in
-	// core; this package contributes the field map above. Passing the host
-	// bindings enables the `caldavHook` TS seam — see help/caldav-hooks.md.
-	//
-	// Registered outside OnServe because it binds its own OnServe handler, and
-	// the TS hook binding must exist before jsvm runs the hook files (jsvm
-	// executes them synchronously, so a later registration dies at boot with
-	// "caldavHook is not defined").
-	caldav.Register(app, []caldav.Source{calDAVSource}, coreserver.CalDAVHostBindings())
-
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		go startSubscriptionSync(app)
 		go startReminderScheduler(app)
 		return e.Next()
 	})
 
-	// Auto-create owner membership when a calendar is created via the API.
-	// The calendar_members create rule requires an existing owner, so the first
-	// membership must be created server-side.
-	app.OnRecordCreateRequest("calendar_calendars").BindFunc(func(e *core.RecordRequestEvent) error {
-		if err := e.Next(); err != nil {
-			return err
-		}
-
-		auth := e.Auth
-		if auth == nil {
-			return nil
-		}
-
-		memberCollection, err := app.FindCollectionByNameOrId("calendar_members")
-		if err != nil {
-			return nil
-		}
-
-		member := core.NewRecord(memberCollection)
-		member.Set("calendar", e.Record.Id)
-		member.Set("user", auth.Id)
-		member.Set("role", "owner")
-		if err := app.Save(member); err != nil {
-			app.Logger().Warn("calendar: failed to auto-create owner membership",
-				"calendar", e.Record.Id, "error", err)
-		}
-
-		return nil
-	})
+	registerOwnerMembershipBootstrap(app)
 
 	// Notify invited user when a new calendar membership is created
 	app.OnRecordAfterCreateSuccess("calendar_members").BindFunc(func(e *core.RecordEvent) error {
@@ -289,6 +282,48 @@ func Register(app *pocketbase.PocketBase) {
 	})
 
 	registerRecurrenceUntilHooks(app)
+}
+
+// registerOwnerMembershipBootstrap auto-creates the creator's owner membership
+// when a calendar is created via the API. The calendar_members create rule
+// (migration 1830000004) admits a membership only when the caller ALREADY owns
+// the calendar — which the very first membership on a new calendar cannot
+// satisfy — so something privileged has to write that first row. This hook is
+// it, in the single-org app and in a tenant alike (calendar's Go links into
+// tenants via RegisterTenant; the interim pb-hook that duplicated this while
+// tenants ran no feature Go has been deleted). Without it a calendar comes out
+// with zero members: owned by nobody, manageable by nobody.
+//
+// Split out from registerShared so tenant-shaped tests can bind it in
+// isolation (same rationale as registerCalendarMemberAuthz). Takes core.App so
+// a tests.TestApp can bind it directly.
+func registerOwnerMembershipBootstrap(app core.App) {
+	app.OnRecordCreateRequest("calendar_calendars").BindFunc(func(e *core.RecordRequestEvent) error {
+		if err := e.Next(); err != nil {
+			return err
+		}
+
+		auth := e.Auth
+		if auth == nil {
+			return nil
+		}
+
+		memberCollection, err := app.FindCollectionByNameOrId("calendar_members")
+		if err != nil {
+			return nil
+		}
+
+		member := core.NewRecord(memberCollection)
+		member.Set("calendar", e.Record.Id)
+		member.Set("user", auth.Id)
+		member.Set("role", "owner")
+		if err := app.Save(member); err != nil {
+			app.Logger().Warn("calendar: failed to auto-create owner membership",
+				"calendar", e.Record.Id, "error", err)
+		}
+
+		return nil
+	})
 }
 
 // registerCalendarMemberAuthz binds the request-scoped authorization guards for

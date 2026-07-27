@@ -10,19 +10,17 @@ import (
 	"tinycld.org/core/rlstest"
 )
 
-// The tenant configuration, end to end: shipped migrations + the package's
-// real pb-hooks, and NO feature Go.
-//
-// This is what a hosted tenant actually runs, and until now nothing tested it.
-// The existing suites bind the Go hooks (so they prove the single-tenant app
-// is safe and say nothing about a tenant), while tenant_rules_authz_test.go
-// binds nothing (so it proves the rules deny, but cannot show the feature
-// still works).
+// The tenant bootstrap path, end to end: shipped migrations + the package's
+// real pb-hooks + the ONE piece of feature Go the bootstrap depends on
+// (registerOwnerMembershipBootstrap), which a tenant now runs because
+// calendar's Go links into serve-org via the pinned menu
+// (multi-org/docs/SCOPE-tenant-feature-go.md; the interim pb-hook that used to
+// duplicate it was deleted when that landed).
 //
 // The specific question here: calendar_members' restored owner-check
 // createRule cannot admit the FIRST membership on a new calendar — there is no
-// owner yet to check against. Something privileged must write it, and in a
-// tenant that something can only be a pb-hook.
+// owner yet to check against. Something privileged must write it; that is the
+// Go hook bound below, in the single-org app and a tenant alike.
 func setupCalTenantWithHooks(t *testing.T) (*tests.TestApp, *core.Record, string) {
 	t.Helper()
 	app, err := tests.NewTestApp()
@@ -49,12 +47,15 @@ func setupCalTenantWithHooks(t *testing.T) (*tests.TestApp, *core.Record, string
 		rlstest.MigrationsDir(t, "../pb-migrations"),
 	)
 
+	// The tenant links calendar's Go; this is the hook the bootstrap rides on.
+	registerOwnerMembershipBootstrap(app)
+
 	user := calGuestUser(t, app, "tenant-creator@test.local", "member")
 	return app, user, calAuthzToken(t, user)
 }
 
 // A tenant user creates a calendar and ends up OWNING it — the property the
-// restored rule breaks on its own and the pb-hook restores.
+// restored rule breaks on its own and the Go bootstrap hook restores.
 //
 // Without the hook this calendar comes out with zero members: owned by nobody,
 // manageable by nobody (proven by bootstrap_probe_test.go).

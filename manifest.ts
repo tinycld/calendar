@@ -19,9 +19,10 @@ const manifest = {
     hooks: { directory: 'pb-hooks' },
     // CalDAV over /caldav, served by core (tinycld.org/core/caldav). This
     // mirrors the calDAVSource literal in server/register.go, which is what the
-    // single-tenant app registers. Declaring it here is what lets a multi-org
-    // tenant — which links no feature Go — still serve CalDAV, since the router
-    // materializes this block into the tenant's runtime config.
+    // single-tenant app registers. A multi-org tenant serves CalDAV from this
+    // block (the router materializes it into the tenant's runtime config) —
+    // that is why the Go-side mount is host-only even though calendar's other
+    // Go links into tenants via RegisterTenant.
     //
     // No permissions appear here: authorization comes from the collections' own
     // PocketBase rules, which core evaluates with app.CanAccessRecord.
@@ -51,8 +52,8 @@ const manifest = {
             created: 'created',
             // Required selects with no schema default. A minimal VEVENT carries
             // neither TRANSP nor CLASS, so without these a client PUT is
-            // rejected — and a tenant, which links no feature Go, has no other
-            // way to supply them.
+            // rejected — and a tenant's CalDAV runs from this materialized
+            // block, so the defaults must ride here as data.
             defaults: {
                 busy_status: 'busy',
                 visibility: 'default',
