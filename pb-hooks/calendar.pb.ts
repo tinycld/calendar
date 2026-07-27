@@ -51,3 +51,45 @@ onRecordCreate((e) => {
 //         return e.items.filter((uid) => !uid.startsWith('urn:uuid:private-'))
 //     },
 // })
+
+// Bootstrap the creator's owner membership.
+//
+// calendar_members.createRule (migration 1830000004) admits a membership only
+// when the caller ALREADY owns the calendar — which the very first membership
+// on a new calendar cannot satisfy. Something privileged has to write that
+// first row, and it must be something a hosted tenant runs.
+//
+// The package's Go server does this too (server/register.go), but a tenant
+// links no feature Go: there, PocketBase plus these hooks are the entire
+// server. Without this hook a tenant user creates a calendar and it comes out
+// with zero members — owned by nobody, manageable by nobody.
+//
+// $app.save() is the model layer, not the request layer: collection rules are
+// evaluated by apis/, so this write is not subject to the owner check it is
+// bootstrapping. That is the point.
+//
+// Idempotent against the Go: when both run (the single-tenant app), the second
+// write loses to the unique (calendar, user) index and is ignored.
+//
+// INTERIM. This duplicates logic the package's Go already has
+// (server/register.go), and it exists only because `serve-org` links no
+// feature package today. If that changes — see
+// multi-org/docs/SCOPE-tenant-feature-go.md — the Go hook covers tenants too
+// and this whole block should be deleted rather than left to drift.
+onRecordCreateRequest((e) => {
+    e.next()
+
+    if (!e.auth) {
+        return
+    }
+    const members = $app.findCollectionByNameOrId('calendar_members')
+    const member = new Record(members)
+    member.set('calendar', e.record.id)
+    member.set('user', e.auth.id)
+    member.set('role', 'owner')
+    try {
+        $app.save(member)
+    } catch {
+        // Already present (the Go hook won the race) — nothing to do.
+    }
+}, 'calendar_calendars')
