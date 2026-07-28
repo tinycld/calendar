@@ -86,7 +86,7 @@ var calDAVSource = caldav.Source{
 // down, ConcurrentDB() is nil and any record query (PocketBase v0.38
 // RecordQuery) panics on the nil DB instead of returning an error. Bail out
 // instead of touching the DB in that window.
-func appIsLive(app *pocketbase.PocketBase) bool {
+func appIsLive(app core.App) bool {
 	return app != nil && app.ConcurrentDB() != nil
 }
 

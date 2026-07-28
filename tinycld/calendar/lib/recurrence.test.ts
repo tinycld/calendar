@@ -28,6 +28,7 @@ function makeEvent(id: string, start: string, end: string, recurrence = ''): Cal
         busy_status: 'busy',
         visibility: 'default',
         ical_uid: '',
+        from_subscription: false,
         created: '',
         updated: '',
     }

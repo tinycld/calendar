@@ -92,6 +92,7 @@ function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () 
                 busy_status: 'busy',
                 visibility: 'default',
                 ical_uid: '',
+                from_subscription: false,
             })
         }),
         onSuccess: () => {

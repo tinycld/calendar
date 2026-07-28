@@ -74,6 +74,9 @@ export interface CalendarEvents {
     busy_status: 'busy' | 'free'
     visibility: 'default' | 'public' | 'private'
     ical_uid: string
+    /** True for events the subscription sync imported from an ICS feed; the
+     * sync prunes only these when their UID leaves the feed. */
+    from_subscription: boolean
     created: string
     updated: string
 }

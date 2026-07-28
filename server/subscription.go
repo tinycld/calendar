@@ -39,7 +39,7 @@ func startSubscriptionSync(app *pocketbase.PocketBase) {
 	}
 }
 
-func syncAllSubscriptions(app *pocketbase.PocketBase) {
+func syncAllSubscriptions(app core.App) {
 	if !appIsLive(app) {
 		return
 	}
@@ -80,7 +80,7 @@ func syncAllSubscriptions(app *pocketbase.PocketBase) {
 	}
 }
 
-func syncSubscription(app *pocketbase.PocketBase, calRecord *core.Record) error {
+func syncSubscription(app core.App, calRecord *core.Record) error {
 	url := calRecord.GetString("subscription_url")
 	if url == "" {
 		return fmt.Errorf("no subscription URL")
@@ -123,6 +123,15 @@ func syncSubscription(app *pocketbase.PocketBase, calRecord *core.Record) error 
 		"inWindow", len(filteredEvents),
 	)
 
+	return applyFeed(app, calRecord, filteredEvents)
+}
+
+// applyFeed upserts the feed's events into the calendar and prunes
+// sync-managed events that left the feed. Split from syncSubscription so
+// tests can drive it with parsed feeds — fetchICS rejects loopback by design.
+func applyFeed(app core.App, calRecord *core.Record, filteredEvents []ical.Event) error {
+	now := time.Now().UTC()
+
 	owner, err := findSubscriptionOwner(app, calRecord.Id)
 	if err != nil {
 		return fmt.Errorf("find owner: %w", err)
@@ -156,6 +165,21 @@ func syncSubscription(app *pocketbase.PocketBase, calRecord *core.Record) error 
 		lastSyncTime, _ = time.Parse(pbTimeFormat, lastSync)
 	}
 
+	// A failed write must not read as a successful sync — that swallow is how
+	// a second calendar on a shared feed stayed empty while reporting success.
+	// Failures are logged individually and surfaced in aggregate, so the
+	// caller records subscription_error and notifies the owner.
+	var failures int
+	var firstErr error
+	noteFailure := func(uid string, err error) {
+		failures++
+		if firstErr == nil {
+			firstErr = err
+		}
+		app.Logger().Error("subscription: event write failed",
+			"calendar", calRecord.Id, "uid", uid, "error", err)
+	}
+
 	for _, event := range filteredEvents {
 		uid, uidErr := event.Props.Text(ical.PropUID)
 		if uidErr != nil || uid == "" {
@@ -169,36 +193,69 @@ func syncSubscription(app *pocketbase.PocketBase, calRecord *core.Record) error 
 		cal.Children = append(cal.Children, event.Component)
 
 		if existing, ok := existingByUID[uid]; ok {
-			// Skip update if the event hasn't changed since last sync
+			// Skip the codec when the event hasn't changed since last sync.
+			unchanged := false
 			if !lastSyncTime.IsZero() {
 				if dtstamp := event.Props.Get(ical.PropDateTimeStamp); dtstamp != nil {
 					if stampTime, err := dtstamp.DateTime(time.UTC); err == nil && stampTime.Before(lastSyncTime) {
-						continue
+						unchanged = true
 					}
 				}
 			}
-			if err := caldav.ApplyVEvent(cal, existing, calDAVSource.Event); err != nil {
+			if unchanged && existing.GetBool("from_subscription") {
 				continue
 			}
-			_ = app.SaveNoValidate(existing)
+			if !unchanged {
+				if err := caldav.ApplyVEvent(cal, existing, calDAVSource.Event); err != nil {
+					noteFailure(uid, err)
+					continue
+				}
+			}
+			// Marking every matched event as sync-managed converges rows that
+			// predate the from_subscription field, so pruning covers them too.
+			existing.Set("from_subscription", true)
+			if err := app.SaveNoValidate(existing); err != nil {
+				noteFailure(uid, err)
+			}
 		} else {
 			record := core.NewRecord(eventsCollection)
 			record.Set("calendar", calRecord.Id)
 			record.Set("created_by", owner)
 			record.Set("ical_uid", uid)
 			record.Set("guests", []any{})
+			record.Set("from_subscription", true)
+			// Schema-required fields iCalendar may omit (busy_status,
+			// visibility), before the codec so anything the VEVENT does carry
+			// overrides them — the same order the CalDAV create path uses.
+			// Without them SaveNoValidate persists "" values that a later
+			// VALIDATED save (a user editing the event) rejects.
+			for field, value := range calDAVSource.Event.Defaults {
+				record.Set(field, value)
+			}
 			if err := caldav.ApplyVEvent(cal, record, calDAVSource.Event); err != nil {
+				noteFailure(uid, err)
 				continue
 			}
-			_ = app.SaveNoValidate(record)
+			if err := app.SaveNoValidate(record); err != nil {
+				noteFailure(uid, err)
+			}
 		}
 	}
 
-	// Delete events whose ical_uid is no longer in the feed
+	// Prune events that left the feed — but ONLY events the sync itself
+	// manages. UI-created events all carry generated ical_uids, so pruning by
+	// uid alone deleted a calendar's entire local contents the moment it
+	// gained a subscription_url.
 	for uid, evt := range existingByUID {
-		if !seenUIDs[uid] {
-			_ = app.Delete(evt)
+		if !seenUIDs[uid] && evt.GetBool("from_subscription") {
+			if err := app.Delete(evt); err != nil {
+				noteFailure(uid, err)
+			}
 		}
+	}
+
+	if failures > 0 {
+		return fmt.Errorf("%d event write(s) failed; first: %w", failures, firstErr)
 	}
 
 	// Mark success
@@ -266,7 +323,7 @@ func parseRRuleUntil(rule string) time.Time {
 // the scheduler's.)
 const pbTimeFormat = "2006-01-02 15:04:05.000Z"
 
-func findSubscriptionOwner(app *pocketbase.PocketBase, calendarId string) (string, error) {
+func findSubscriptionOwner(app core.App, calendarId string) (string, error) {
 	member, err := app.FindFirstRecordByFilter(
 		"calendar_members",
 		"calendar = {:calId} && role = 'owner'",
@@ -450,7 +507,7 @@ func normalizeSubscriptionURL(rawURL string) string {
 }
 
 // notifySubscriptionError sends a notification to the calendar owner when a subscription sync fails.
-func notifySubscriptionError(app *pocketbase.PocketBase, calRecord *core.Record, errMsg string) {
+func notifySubscriptionError(app core.App, calRecord *core.Record, errMsg string) {
 	calendarName := calRecord.GetString("name")
 
 	ownerUserID, err := findSubscriptionOwner(app, calRecord.Id)

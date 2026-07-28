@@ -151,6 +151,7 @@ export default function EventEditorScreen() {
                 busy_status: data.busy_status,
                 visibility: data.visibility,
                 ical_uid: '',
+                from_subscription: false,
             })
         }),
         onSuccess: navigateBack,
