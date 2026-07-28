@@ -7,6 +7,7 @@ import (
 
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
+	"tinycld.org/core/rlstest"
 )
 
 // guest_rls_test.go proves calendar_calendars' createRule against PocketBase's
@@ -22,19 +23,13 @@ import (
 // Single-org: role lives on the users auth record, so the gate is a direct
 // check against @request.auth.role. There is no org and no user_org junction.
 //
-// (calendar_members create is deliberately NOT gated by a PB rule: its rule is
-// `@request.auth.id != ""` with the real owner-check enforced by the userIsOwner
-// Go hook in register.go — a guest is never a calendar owner, so the hook
-// already blocks them. Re-introducing a back-relation PB rule would hit the
-// PB-evaluation bug that motivated migration 1715400000.)
+// The rules under test are NOT restated here. They are applied by running
+// calendar's real pb-migrations (rlstest), so a later migration that restates
+// the createRule and drops the guest clause turns these tests red instead of
+// leaving them validating a stale copy — the drift class that bit drive.
 //
 // Each scenario builds a FRESH TestApp (ApiScenario.Test re-triggers OnServe;
 // reusing one app panics on duplicate route registration).
-
-// calCalendarsGuestCreateRule mirrors migration 1830000003 verbatim. Verified by
-// neutering: replace it with an authenticated-only check and
-// TestCalGuestRLS_GuestCannotCreateCalendar goes red.
-const calCalendarsGuestCreateRule = `@request.auth.role != "guest"`
 
 type calGuestEnv struct {
 	app         *tests.TestApp
@@ -50,9 +45,8 @@ func setupCalGuestApp(t *testing.T) *calGuestEnv {
 	}
 	t.Cleanup(func() { app.Cleanup() })
 
-	// role on the users auth collection is what the rule reads. The stock test
-	// users collection has no such field, so add it here the way core's
-	// migration does.
+	// `role` and `disabled` belong to core's users schema, which this module
+	// does not carry; the shipped rules read both.
 	users, err := app.FindCollectionByNameOrId("users")
 	if err != nil {
 		t.Fatal(err)
@@ -61,19 +55,12 @@ func setupCalGuestApp(t *testing.T) *calGuestEnv {
 		Name: "role", MaxSelect: 1,
 		Values: []string{"owner", "admin", "member", "guest"},
 	})
+	users.Fields.Add(&core.BoolField{Name: "disabled"})
 	if err := app.Save(users); err != nil {
-		t.Fatalf("add users.role: %v", err)
+		t.Fatalf("add users fields: %v", err)
 	}
 
-	calendars := core.NewBaseCollection("calendar_calendars")
-	calendars.Fields.Add(&core.TextField{Name: "name", Required: true})
-	calendars.Fields.Add(&core.SelectField{
-		Name: "color", Required: true, MaxSelect: 1,
-		Values: []string{"blue", "green", "red", "teal", "purple", "orange"},
-	})
-	if err := app.Save(calendars); err != nil {
-		t.Fatal(err)
-	}
+	rlstest.Apply(t, app, rlstest.MigrationsDir(t, "../pb-migrations"))
 
 	member := calGuestUser(t, app, "member@test.local", "member")
 	guest := calGuestUser(t, app, "guest@test.local", "guest")
@@ -105,22 +92,17 @@ func calGuestUser(t *testing.T, app core.App, email, role string) *core.Record {
 	return r
 }
 
-func setCalCreateRule(t *testing.T, app core.App) {
-	t.Helper()
-	col, err := app.FindCollectionByNameOrId("calendar_calendars")
-	if err != nil {
-		t.Fatal(err)
-	}
-	rule := calCalendarsGuestCreateRule
-	col.CreateRule = &rule
-	if err := app.Save(col); err != nil {
-		t.Fatalf("set calendar_calendars createRule: %v", err)
-	}
+// The clause the deny-test below depends on must be present in the SHIPPED
+// rule — this names the predicate when a future migration restates the rule
+// without it.
+func TestCalGuestRLS_ShippedCreateRuleCarriesGuestClause(t *testing.T) {
+	env := setupCalGuestApp(t)
+	rlstest.RequireRuleContains(t, env.app, "calendar_calendars", "create",
+		`@request.auth.role != "guest"`)
 }
 
 func TestCalGuestRLS_GuestCannotCreateCalendar(t *testing.T) {
 	env := setupCalGuestApp(t)
-	setCalCreateRule(t, env.app)
 
 	scenario := &tests.ApiScenario{
 		Method:                http.MethodPost,
@@ -137,7 +119,6 @@ func TestCalGuestRLS_GuestCannotCreateCalendar(t *testing.T) {
 
 func TestCalGuestRLS_MemberCanCreateCalendar(t *testing.T) {
 	env := setupCalGuestApp(t)
-	setCalCreateRule(t, env.app)
 
 	scenario := &tests.ApiScenario{
 		Method:                http.MethodPost,
