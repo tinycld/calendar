@@ -90,9 +90,11 @@ test.describe('Calendar — Sharing UI', () => {
         // The seed user "Test User" appears as a member with the "Owner" role.
         // Both the avatar text and the role pill come from the same joined live
         // query, so seeing both confirms the row rendered end to end (membership
-        // row + users join).
-        await expect(page.getByText('Test User').first()).toBeVisible()
-        await expect(page.getByText('Owner').first()).toBeVisible()
+        // row + users join). Scope to the member row testID — a bare
+        // page.getByText('Owner') is satisfiable by other packages' UI.
+        const memberRow = page.getByTestId(/^calendar-member-row-/).filter({ hasText: 'Test User' })
+        await expect(memberRow.first()).toBeVisible()
+        await expect(memberRow.filter({ hasText: 'Owner' }).first()).toBeVisible()
     })
 
     test('Owner can add a member; sharee can list the calendar via CalDAV', async ({ page }) => {
@@ -163,7 +165,13 @@ test.describe('Calendar — Sharing UI', () => {
         // when they're the last owner — render-time guard mirrored from the
         // server's guardLastOwner protection. Verify the button isn't
         // there and the role pill is a plain text badge, not a dropdown.
-        const ownerRow = page.getByText('Test User').first().locator('../..')
+        // Scope by the row testID rather than walking ../.. from a text node —
+        // the structure walk breaks on any layout change and can land on an
+        // unrelated ancestor.
+        const ownerRow = page
+            .getByTestId(/^calendar-member-row-/)
+            .filter({ hasText: 'Test User' })
+            .first()
         await expect(ownerRow.getByRole('button', { name: /Remove/i })).toHaveCount(0)
     })
 })

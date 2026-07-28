@@ -27,7 +27,10 @@ export function MemberRow({ member, canEdit, canRemove, onRoleChange, onRemove }
     const dangerColor = useThemeColor('danger')
 
     return (
-        <View className="flex-row items-center gap-3 py-2.5 px-3">
+        <View
+            testID={`calendar-member-row-${member.userId}`}
+            className="flex-row items-center gap-3 py-2.5 px-3"
+        >
             <MemberAvatar name={member.name} email={member.email} size={36} />
 
             <View className="flex-1">
