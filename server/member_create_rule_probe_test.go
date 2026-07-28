@@ -37,9 +37,16 @@ import (
 // which is a different size of job — and this test is where that is
 // discovered rather than assumed.
 
-// calMembersOwnerCreateRule is the original rule from 1715000000, verbatim.
-const calMembersOwnerCreateRule = `user = @request.auth.id && ` +
-	`calendar.calendar_members_via_calendar.user ?= @request.auth.id && ` +
+// calMembersOwnerCreateRule is the owner-check rule this probe measures — the
+// back-relation walk 1715000000 shipped and v0.36 evaluated inconsistently.
+//
+// The `user = @request.auth.id` conjunct 1715000000 also carried is NOT here:
+// it restricts creation to the caller's OWN membership, which forbids sharing
+// outright (see 1830000006). The question this probe exists to answer is
+// whether the back-relation walk works, so it measures that clause alone.
+// The shipped rule itself is asserted by member_share_rls_test.go, which reads
+// the migrations rather than a constant.
+const calMembersOwnerCreateRule = `calendar.calendar_members_via_calendar.user ?= @request.auth.id && ` +
 	`calendar.calendar_members_via_calendar.role ?= "owner"`
 
 // setupMemberCreateRuleApp builds calendars + members with the ORIGINAL
@@ -107,12 +114,15 @@ func setupMemberCreateRuleApp(t *testing.T) (*tests.TestApp, *core.Record, *core
 
 // THE PROBE. An owner adding a member under the original back-relation rule.
 // Under v0.36 this 400'd, which is why the rule was relaxed.
+//
+// The member added is ANOTHER user, not the owner. This test used to add the
+// owner to a second calendar they already owned, which satisfies
+// `user = @request.auth.id` — so it passed under a rule that made real
+// sharing impossible, and certified the bug 1830000006 fixes. Sharing means
+// adding someone else; that is the shape the probe must exercise.
 func TestMemberCreateRule_OwnerCanCreateUnderBackRelationRule(t *testing.T) {
-	app, _, _, ownerToken, _ := setupMemberCreateRuleApp(t)
+	app, _, outsider, ownerToken, _ := setupMemberCreateRuleApp(t)
 
-	// The owner already owns `other`, and adds a second row for themselves on
-	// it — the shape the rule must admit: `user = @request.auth.id` satisfied,
-	// and the back-relation walk finding their existing owner membership.
 	other := calAuthzCalendar(t, app, "Second Cal")
 	ownerUser, err := app.FindAuthRecordByEmail("users", "cal-owner@test.local")
 	if err != nil {
@@ -121,16 +131,16 @@ func TestMemberCreateRule_OwnerCanCreateUnderBackRelationRule(t *testing.T) {
 	calAuthzMember(t, app, other, ownerUser, "owner")
 
 	(&tests.ApiScenario{
-		Name:   "calendar owner adds a member under the original rule",
+		Name:   "calendar owner adds another user under the original rule",
 		Method: http.MethodPost,
 		URL:    "/api/collections/calendar_members/records",
 		Body: strings.NewReader(`{"calendar":"` + other.Id +
-			`","user":"` + ownerUser.Id + `","role":"editor"}`),
+			`","user":"` + outsider.Id + `","role":"editor"}`),
 		Headers: map[string]string{
 			"Authorization": ownerToken, "Content-Type": "application/json",
 		},
 		ExpectedStatus:        200,
-		ExpectedContent:       []string{`"role":"editor"`},
+		ExpectedContent:       []string{`"role":"editor"`, `"user":"` + outsider.Id + `"`},
 		TestAppFactory:        func(t testing.TB) *tests.TestApp { return app },
 		DisableTestAppCleanup: true,
 	}).Test(t)
