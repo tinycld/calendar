@@ -14,7 +14,7 @@ import (
 	"tinycld.org/core/caldav"
 	"tinycld.org/core/coreserver"
 	"tinycld.org/core/notify"
-	"tinycld.org/core/userorg"
+	"tinycld.org/core/offboard"
 )
 
 // calDAVSource maps the calendar collections onto core's CalDAV server.
@@ -126,7 +126,7 @@ func registerShared(app *pocketbase.PocketBase) {
 	// Reassignable authorship FKs surfaced to core's account-offboarding
 	// transaction. Without this, deleting a user who created calendar_events
 	// fails: the required FK blocks the users delete.
-	userorg.RegisterReassignable(userorg.ReassignableRef{Collection: "calendar_events", Field: "created_by"})
+	offboard.RegisterReassignable(offboard.ReassignableRef{Collection: "calendar_events", Field: "created_by"})
 
 	// Audit logging for calendar collections. Single-org: audit rows carry no
 	// org, so only the display label is customized.
@@ -140,7 +140,7 @@ func registerShared(app *pocketbase.PocketBase) {
 
 	// Auto-create a personal calendar for every new user. Single-org: the
 	// deployment IS the org, so this binds to users rather than the former
-	// user_org junction. The teardown side is core's (userorg.OffboardUser).
+	// user_org junction. The teardown side is core's (offboard.OffboardUser).
 	app.OnRecordAfterCreateSuccess("users").BindFunc(func(e *core.RecordEvent) error {
 		handleUserCreated(app, e.Record)
 		return e.Next()

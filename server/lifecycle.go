@@ -8,7 +8,7 @@ import (
 //
 // Single-org: the deployment IS the org, so this fires on users-create rather
 // than on the old user_org junction. There is no matching delete handler —
-// account teardown is core's job (userorg.OffboardUser), which reassigns or
+// account teardown is core's job (offboard.OffboardUser), which reassigns or
 // deletes a departing user's content through the reassignable-FK registry that
 // Register populates. A second cleanup path here would race it.
 func handleUserCreated(app core.App, user *core.Record) {
