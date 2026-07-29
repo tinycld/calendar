@@ -147,6 +147,17 @@ test.describe('Calendar — Sharing UI', () => {
                     )
                 }
             }).toPass({ timeout: 5_000 })
+
+            // The OWNER's view of the share (R1/D4). A reload discards the
+            // optimistic insert, so this row can only come from the server's
+            // list rule — the self-only rule 1830000007 replaced passed every
+            // assertion above while "Shared with" showed nobody but the
+            // caller. Do not weaken this to a pre-reload check.
+            await page.reload()
+            await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
+            await expect(
+                page.getByTestId(/^calendar-member-row-/).filter({ hasText: 'Invited Tester' })
+            ).toBeVisible({ timeout: 5_000 })
         } finally {
             await close()
         }

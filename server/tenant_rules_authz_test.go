@@ -338,6 +338,19 @@ func TestCalTenantRules_ShippedRulesCarryTheirGuards(t *testing.T) {
 		`calendar.calendar_members_via_calendar.role ?= "owner"`)
 	rlstest.RequireRuleContains(t, env.app, "calendar_members", "update",
 		`calendar.calendar_members_via_calendar.role ?= "owner"`)
+
+	// And the clause that must stay GONE (R4): 1830000004 dropped the
+	// self-update disjunct because PB rules are not field-scoped — with it, a
+	// member's own row is writable and {"role":"owner"} rides the same opening
+	// in any process where the Go guard isn't bound. Rules cannot express
+	// "only the colour field", so self-service update must not return.
+	rule, ok := rlstest.Rule(t, env.app, "calendar_members", "update")
+	if !ok {
+		t.Fatal("calendar_members.updateRule is nil (superuser-only) — expected the owner rule")
+	}
+	if strings.Contains(rule, `user = @request.auth.id`) {
+		t.Fatalf("calendar_members.updateRule regained the self-update clause (self-promotion opening): %s", rule)
+	}
 }
 
 func suspendUser(t *testing.T, app core.App, user *core.Record) {

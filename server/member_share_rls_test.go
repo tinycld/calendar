@@ -174,3 +174,93 @@ func TestCalShareRLS_ShippedCreateRuleRequiresCalendarOwnership(t *testing.T) {
 	rlstest.RequireRuleContains(t, env.app, "calendar_members", "create",
 		`calendar.calendar_members_via_calendar.role ?= "owner"`)
 }
+
+// ---- Listing (D4, R1) ----
+//
+// Sharing is only half the feature: the owner must also SEE who the calendar
+// is shared with, and be able to remove them. Until 1830000007 the
+// list/view rules were self-only (`user = @request.auth.id`), so the
+// "Shared with" section could never show anyone but the caller — an added
+// teammate appeared only optimistically and vanished on reload, and there
+// was no row to remove them from. The sharing e2e missed it because its
+// cross-tier assertion reads the SHAREE's CalDAV view, never the owner's
+// member list. D4: membership rows are visible to every member of that
+// calendar (the same back-relation shape createRule settled on).
+
+func listMemberships(t *testing.T, env *calShareEnv, token string, content ...string) {
+	t.Helper()
+	(&tests.ApiScenario{
+		Name:   "LIST calendar_members",
+		Method: http.MethodGet,
+		URL:    "/api/collections/calendar_members/records",
+		Headers: map[string]string{
+			"Authorization": token,
+		},
+		ExpectedStatus:        http.StatusOK,
+		ExpectedContent:       content,
+		TestAppFactory:        func(t testing.TB) *tests.TestApp { return env.app },
+		DisableTestAppCleanup: true,
+	}).Test(t)
+}
+
+// THE OTHER HALF OF THE FEATURE. After sharing, the owner's member list must
+// contain the row they just created, or the UI cannot display or revoke it.
+func TestCalShareRLS_OwnerListsTheMemberTheyAdded(t *testing.T) {
+	env := setupCalShareApp(t)
+	calAuthzMember(t, env.app, env.cal, env.invitee, "viewer")
+	listMemberships(t, env, env.ownerToken,
+		`"totalItems":2`,
+		`"user":"`+env.invitee.Id+`"`,
+		`"user":"`+env.owner.Id+`"`)
+}
+
+// A non-owner member sees who else the calendar is shared with — the standard
+// product shape; the row reveals only (calendar, user, role, color).
+func TestCalShareRLS_MemberListsCoMembers(t *testing.T) {
+	env := setupCalShareApp(t)
+	calAuthzMember(t, env.app, env.cal, env.invitee, "viewer")
+	inviteeToken, err := env.invitee.NewAuthToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	listMemberships(t, env, inviteeToken,
+		`"totalItems":2`,
+		`"user":"`+env.owner.Id+`"`)
+}
+
+// Control: holding no membership anywhere still lists nothing — widening to
+// co-members must not leak rows across calendars.
+func TestCalShareRLS_OutsiderListsNothing(t *testing.T) {
+	env := setupCalShareApp(t)
+	calAuthzMember(t, env.app, env.cal, env.invitee, "viewer")
+	listMemberships(t, env, env.outsidToken, `"totalItems":0`)
+}
+
+// viewRule moves with listRule: the owner can fetch the invitee's row
+// directly (the shape a targeted role-change or removal confirmation reads).
+func TestCalShareRLS_OwnerViewsTheMemberRow(t *testing.T) {
+	env := setupCalShareApp(t)
+	inviteeRow := calAuthzMember(t, env.app, env.cal, env.invitee, "viewer")
+	(&tests.ApiScenario{
+		Name:   "VIEW calendar_members row",
+		Method: http.MethodGet,
+		URL:    "/api/collections/calendar_members/records/" + inviteeRow.Id,
+		Headers: map[string]string{
+			"Authorization": env.ownerToken,
+		},
+		ExpectedStatus:        http.StatusOK,
+		ExpectedContent:       []string{`"user":"` + env.invitee.Id + `"`},
+		TestAppFactory:        func(t testing.TB) *tests.TestApp { return env.app },
+		DisableTestAppCleanup: true,
+	}).Test(t)
+}
+
+// Drift guard for 1830000007: the shipped list/view rules must carry the
+// membership back-relation, not the self-only clause.
+func TestCalShareRLS_ShippedListRuleAdmitsCoMembers(t *testing.T) {
+	env := setupCalShareApp(t)
+	for _, verb := range []string{"list", "view"} {
+		rlstest.RequireRuleContains(t, env.app, "calendar_members", verb,
+			`calendar.calendar_members_via_calendar.user ?= @request.auth.id`)
+	}
+}
