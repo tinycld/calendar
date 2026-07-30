@@ -12,6 +12,13 @@ import (
 // deletes a departing user's content through the reassignable-FK registry that
 // Register populates. A second cleanup path here would race it.
 func handleUserCreated(app core.App, user *core.Record) {
+	// A share-link guest is a real users row, but must not be provisioned a
+	// personal calendar: the auto-minted owner membership would contradict the
+	// guest-exclusion createRule (1830000003) shipped in this same branch.
+	if user.GetString("role") == "guest" {
+		return
+	}
+
 	// Idempotency: a user who already owns a calendar keeps it. Re-running must
 	// not mint a second personal calendar.
 	existing, err := app.FindRecordsByFilter(
