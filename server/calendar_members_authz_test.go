@@ -10,12 +10,16 @@ import (
 )
 
 // calendar_members_authz_test.go proves the OnRecordUpdateRequest guard in
-// register.go against the REAL request/hook pipeline: the calendar_members
-// updateRule (set in 1715200000) lets a member PATCH their OWN row so they can
-// pick a personal color, but PB rules are not field-scoped — so without the Go
-// guard a viewer could self-promote via {"role":"owner"} or repoint the
-// membership at another calendar. The guard restricts role/calendar changes to
-// calendar owners while still allowing benign self-service (color).
+// register.go against the REAL request/hook pipeline. The guard is
+// DEFENCE-IN-DEPTH: since 1830000004 the SHIPPED updateRule is owner-only
+// (no self-update clause), so on a stock DB a non-owner's PATCH dies at the
+// rule and never reaches the guard. To exercise the guard at all, this suite
+// deliberately applies the SUPERSEDED permissive rule below — the shape that
+// shipped before 1830000004, and the one the guard was written to
+// field-scope. That is a fixture choice, not a mirror claim: shipped-rule
+// coverage lives in tenant_rules_authz_test.go (which also pins the ABSENCE
+// of the self-update clause) and member_share_rls_test.go, both reading the
+// real migrations via rlstest (P3-1/R4).
 //
 // These scenarios drive updates through the records API (POST-authorized PATCH),
 // which is the only path that fires OnRecordUpdateRequest — a bare app.Save
@@ -26,13 +30,16 @@ import (
 // goroutines that race the test app's teardown on a closed DB, and they're
 // irrelevant to the authorization behavior under test. Each scenario builds a
 // FRESH TestApp: ApiScenario.Test re-triggers OnServe, and reusing one app
-// panics on duplicate route registration under PB v0.38.1.
+// panics on duplicate route registration.
 
-// calMembersUpdateRule mirrors the 1715200000 migration verbatim: owners of the
-// calendar may update any member row, and any member may update their OWN row
-// (the self-service clause the Go guard must field-scope).
-const calMembersUpdateRule = `(calendar.calendar_members_via_calendar.user_org.user ?= @request.auth.id && ` +
-	`calendar.calendar_members_via_calendar.role ?= "owner") || (user_org.user = @request.auth.id)`
+// permissiveSelfUpdateRule is the PRE-1830000004 rule: owners may update any
+// member row, and any member may update their OWN row. Shipped code no longer
+// carries the self clause; it is applied here so the guard has something to
+// field-scope. If the rule ever regresses to this shape in a migration,
+// tenant_rules_authz_test.go goes red — and this suite is what proves the
+// second line still holds.
+const permissiveSelfUpdateRule = `(calendar.calendar_members_via_calendar.user ?= @request.auth.id && ` +
+	`calendar.calendar_members_via_calendar.role ?= "owner") || (user = @request.auth.id)`
 
 const calMemberColors = `blue,green,red,teal,purple,orange,tomato,flamingo,tangerine,banana,sage,basil,peacock,blueberry,lavender,grape,graphite`
 
@@ -66,39 +73,16 @@ func setupCalAuthzApp(t *testing.T) *calAuthzEnv {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	orgs := core.NewBaseCollection("orgs")
-	orgs.Id = "pbc_orgs_00001"
-	orgs.Fields.Add(&core.TextField{Name: "name", Required: true})
-	orgs.Fields.Add(&core.TextField{Name: "slug", Required: true})
-	if err := app.Save(orgs); err != nil {
-		t.Fatal(err)
-	}
-
-	userOrg := core.NewBaseCollection("user_org")
-	userOrg.Id = "pbc_user_org_01"
-	userOrg.Fields.Add(&core.RelationField{
-		Name: "org", Required: true, CollectionId: orgs.Id,
-		CascadeDelete: true, MaxSelect: 1,
-	})
-	userOrg.Fields.Add(&core.RelationField{
-		Name: "user", Required: true, CollectionId: users.Id,
-		CascadeDelete: true, MaxSelect: 1,
-	})
-	userOrg.Fields.Add(&core.SelectField{
-		Name: "role", Required: true, MaxSelect: 1,
+	users.Fields.Add(&core.SelectField{
+		Name: "role", MaxSelect: 1,
 		Values: []string{"owner", "admin", "member", "guest"},
 	})
-	if err := app.Save(userOrg); err != nil {
-		t.Fatal(err)
+	if err := app.Save(users); err != nil {
+		t.Fatalf("add users.role: %v", err)
 	}
 
 	calendars := core.NewBaseCollection("calendar_calendars")
 	calendars.Id = "pbc_cal_calendars_01"
-	calendars.Fields.Add(&core.RelationField{
-		Name: "org", Required: true, CollectionId: orgs.Id,
-		CascadeDelete: true, MaxSelect: 1,
-	})
 	calendars.Fields.Add(&core.TextField{Name: "name", Required: true})
 	calendars.Fields.Add(&core.SelectField{
 		Name: "color", Required: true, MaxSelect: 1,
@@ -115,7 +99,7 @@ func setupCalAuthzApp(t *testing.T) *calAuthzEnv {
 		CascadeDelete: true, MaxSelect: 1,
 	})
 	members.Fields.Add(&core.RelationField{
-		Name: "user_org", Required: true, CollectionId: userOrg.Id,
+		Name: "user", Required: true, CollectionId: users.Id,
 		CascadeDelete: true, MaxSelect: 1,
 	})
 	members.Fields.Add(&core.SelectField{
@@ -126,7 +110,7 @@ func setupCalAuthzApp(t *testing.T) *calAuthzEnv {
 		Name: "color", Required: false, MaxSelect: 1,
 		Values: strings.Split(calMemberColors, ","),
 	})
-	updateRule := calMembersUpdateRule
+	updateRule := permissiveSelfUpdateRule
 	members.UpdateRule = &updateRule
 	if err := app.Save(members); err != nil {
 		t.Fatal(err)
@@ -136,35 +120,24 @@ func setupCalAuthzApp(t *testing.T) *calAuthzEnv {
 	// test app, so request-scoped updates run the real authorization code.
 	registerCalendarMemberAuthz(app)
 
-	org := core.NewRecord(orgs)
-	org.Set("name", "Acme")
-	org.Set("slug", "acme")
-	if err := app.Save(org); err != nil {
-		t.Fatal(err)
-	}
+	cal := calAuthzCalendar(t, app, "Team Cal")
+	otherCal := calAuthzCalendar(t, app, "Other Cal")
 
-	cal := calAuthzCalendar(t, app, org, "Team Cal")
-	otherCal := calAuthzCalendar(t, app, org, "Other Cal")
-
-	ownerUser := calGuestUser(t, app, "owner@test.local")
-	editorUser := calGuestUser(t, app, "editor@test.local")
-	viewerUser := calGuestUser(t, app, "viewer@test.local")
-
-	ownerUO := calAuthzUserOrg(t, app, ownerUser, org, "member")
-	editorUO := calAuthzUserOrg(t, app, editorUser, org, "member")
-	viewerUO := calAuthzUserOrg(t, app, viewerUser, org, "member")
+	ownerUser := calGuestUser(t, app, "owner@test.local", "member")
+	editorUser := calGuestUser(t, app, "editor@test.local", "member")
+	viewerUser := calGuestUser(t, app, "viewer@test.local", "member")
 
 	env := &calAuthzEnv{
 		app:           app,
 		calendar:      cal,
 		otherCalendar: otherCal,
-		ownerMember:   calAuthzMember(t, app, cal, ownerUO, "owner"),
-		editorMember:  calAuthzMember(t, app, cal, editorUO, "editor"),
-		viewerMember:  calAuthzMember(t, app, cal, viewerUO, "viewer"),
+		ownerMember:   calAuthzMember(t, app, cal, ownerUser, "owner"),
+		editorMember:  calAuthzMember(t, app, cal, editorUser, "editor"),
+		viewerMember:  calAuthzMember(t, app, cal, viewerUser, "viewer"),
 	}
 	// Give the owner an owner membership on the OTHER calendar too, so an
 	// owner-driven re-point to it is authorized by the ownsTarget branch.
-	calAuthzMember(t, app, otherCal, ownerUO, "owner")
+	calAuthzMember(t, app, otherCal, ownerUser, "owner")
 
 	env.ownerToken = calAuthzToken(t, ownerUser)
 	env.editorToken = calAuthzToken(t, editorUser)
@@ -173,11 +146,10 @@ func setupCalAuthzApp(t *testing.T) *calAuthzEnv {
 	return env
 }
 
-func calAuthzCalendar(t *testing.T, app core.App, org *core.Record, name string) *core.Record {
+func calAuthzCalendar(t *testing.T, app core.App, name string) *core.Record {
 	t.Helper()
 	col, _ := app.FindCollectionByNameOrId("calendar_calendars")
 	r := core.NewRecord(col)
-	r.Set("org", org.Id)
 	r.Set("name", name)
 	r.Set("color", "blue")
 	if err := app.Save(r); err != nil {
@@ -186,25 +158,12 @@ func calAuthzCalendar(t *testing.T, app core.App, org *core.Record, name string)
 	return r
 }
 
-func calAuthzUserOrg(t *testing.T, app core.App, user, org *core.Record, role string) *core.Record {
-	t.Helper()
-	col, _ := app.FindCollectionByNameOrId("user_org")
-	r := core.NewRecord(col)
-	r.Set("user", user.Id)
-	r.Set("org", org.Id)
-	r.Set("role", role)
-	if err := app.Save(r); err != nil {
-		t.Fatal(err)
-	}
-	return r
-}
-
-func calAuthzMember(t *testing.T, app core.App, cal, userOrg *core.Record, role string) *core.Record {
+func calAuthzMember(t *testing.T, app core.App, cal, user *core.Record, role string) *core.Record {
 	t.Helper()
 	col, _ := app.FindCollectionByNameOrId("calendar_members")
 	r := core.NewRecord(col)
 	r.Set("calendar", cal.Id)
-	r.Set("user_org", userOrg.Id)
+	r.Set("user", user.Id)
 	r.Set("role", role)
 	if err := app.Save(r); err != nil {
 		t.Fatal(err)
@@ -240,7 +199,7 @@ func calAuthzScenario(env *calAuthzEnv, memberID, token, body string, status int
 
 // TestCalMembersAuthz_ViewerCannotSelfPromote is THE regression test: a viewer
 // PATCHing {"role":"owner"} on their OWN membership row must be REJECTED. The
-// PB updateRule authorizes the self-PATCH (user_org.user = auth.id), so a 403
+// PB updateRule authorizes the self-PATCH (user = auth.id), so a 403
 // here proves the Go guard — not the rule — is blocking the privilege escalation.
 func TestCalMembersAuthz_ViewerCannotSelfPromote(t *testing.T) {
 	env := setupCalAuthzApp(t)

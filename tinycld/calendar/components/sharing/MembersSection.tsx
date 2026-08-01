@@ -29,7 +29,7 @@ export function MembersSection({
 
     const isOwner = currentUserRole === 'owner'
     const ownerCount = members.filter(m => m.role === 'owner').length
-    const existingUserOrgIds = new Set(members.map(m => m.userOrgId))
+    const existingUserIds = new Set(members.map(m => m.userId))
 
     return (
         <View className="gap-3">
@@ -75,7 +75,7 @@ export function MembersSection({
             <AddMemberDialog
                 isVisible={dialogOpen}
                 calendarId={calendarId}
-                existingUserOrgIds={existingUserOrgIds}
+                existingUserIds={existingUserIds}
                 onClose={() => setDialogOpen(false)}
             />
         </View>

@@ -3,18 +3,81 @@ package calendar
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
-	"github.com/emersion/go-webdav/caldav"
+	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"tinycld.org/core/audit"
+	"tinycld.org/core/caldav"
+	"tinycld.org/core/coreserver"
 	"tinycld.org/core/notify"
-	"tinycld.org/core/userorg"
+	"tinycld.org/core/offboard"
 )
+
+// calDAVSource maps the calendar collections onto core's CalDAV server.
+//
+// This literal mirrors the manifest's `caldav` block, which is what a multi-org
+// tenant serves: the router materializes the manifest block into the tenant's
+// runtime config and core mounts CalDAV from it, so the mount below is
+// host-only (see Register vs RegisterTenant). Keep the two in sync.
+//
+// There are no permission callbacks here on purpose. Authorization comes from
+// the calendar_calendars / calendar_events access rules the migrations ship,
+// which core evaluates with app.CanAccessRecord — one definition, shared by the
+// REST API, the web UI, and this protocol path.
+var calDAVSource = caldav.Source{
+	Slug:               "calendar",
+	Prefix:             "/caldav",
+	CalendarCollection: "calendar_calendars",
+	EventCollection:    "calendar_events",
+	Calendar: caldav.CalendarMap{
+		Name:        "name",
+		Description: "description",
+	},
+	Event: caldav.EventMap{
+		Calendar:    "calendar",
+		UID:         "ical_uid",
+		Owner:       "created_by",
+		Title:       "title",
+		Description: "description",
+		Location:    "location",
+		Start:       "start",
+		End:         "end",
+		AllDay:      "all_day",
+		Recurrence:  "recurrence",
+		Guests:      "guests",
+		Reminder:    "reminder",
+		BusyStatus:  "busy_status",
+		Visibility:  "visibility",
+		Updated:     "updated",
+		Created:     "created",
+		// busy_status and visibility are required selects with no schema
+		// default, and a minimal VEVENT carries neither TRANSP nor CLASS — so
+		// without these a client PUT is rejected with "cannot be blank".
+		Defaults: map[string]any{
+			"busy_status": "busy",
+			"visibility":  "default",
+		},
+	},
+	// go-webdav turns a backend error into an http.Error and returns nil, so
+	// the error never reaches the router's Sentry middleware — which sees only
+	// the response status. This is the one seam where the real error and its
+	// stack survive. Not-found (which every unauthorized probe resolves to) is
+	// filtered by core before it gets here.
+	OnError: func(ctx context.Context, op string, err error) {
+		hub := sentry.GetHubFromContext(ctx)
+		if hub == nil {
+			hub = sentry.CurrentHub()
+		}
+		hub.WithScope(func(scope *sentry.Scope) {
+			scope.SetTag("caldav.op", op)
+			hub.CaptureException(err)
+		})
+	},
+}
 
 // appIsLive reports whether the app still has an open database connection.
 // The invite notifier and the reminder/subscription schedulers run in
@@ -23,49 +86,47 @@ import (
 // down, ConcurrentDB() is nil and any record query (PocketBase v0.38
 // RecordQuery) panics on the nil DB instead of returning an error. Bail out
 // instead of touching the DB in that window.
-func appIsLive(app *pocketbase.PocketBase) bool {
+func appIsLive(app core.App) bool {
 	return app != nil && app.ConcurrentDB() != nil
 }
 
+// Register composes the calendar server — the package's single entry point,
+// called by the generator's package_extensions.go in BOTH the single-org app
+// and a multi-org tenant. The CalDAV mount runs in both: a per-org tenant
+// build links exactly the org's features, so the artifact is the gate.
+// Registered outside OnServe because caldav.Register binds its own OnServe
+// handler, and the caldavHook TS binding must exist before jsvm runs the hook
+// files (jsvm executes them synchronously, so a later registration dies at
+// boot with "caldavHook is not defined").
 func Register(app *pocketbase.PocketBase) {
-	// Reassignable authorship FKs surfaced to the leave-org transaction.
-	// Without this, a user with calendar_events they created can't leave the
-	// org (the required FK blocks the user_org delete).
-	userorg.RegisterReassignable(userorg.ReassignableRef{Collection: "calendar_events", Field: "created_by"})
+	registerShared(app)
+	caldav.Register(app, []caldav.Source{calDAVSource}, coreserver.CalDAVHostBindings())
+}
 
-	// Audit logging for calendar collections
+// registerShared is the single source of truth for what BOTH compositions run:
+// record hooks, request-scoped authorization, endpoints, audit/quota/notify
+// registrations, and the per-org background schedulers.
+func registerShared(app *pocketbase.PocketBase) {
+	// Reassignable authorship FKs surfaced to core's account-offboarding
+	// transaction. Without this, deleting a user who created calendar_events
+	// fails: the required FK blocks the users delete.
+	offboard.RegisterReassignable(offboard.ReassignableRef{Collection: "calendar_events", Field: "created_by"})
+
+	// Audit logging for calendar collections. Single-org: audit rows carry no
+	// org, so only the display label is customized.
 	audit.RegisterCollection(app, "calendar_calendars", &audit.CollectionConfig{
 		ExtractLabel: audit.LabelFromField("name"),
 	})
 	audit.RegisterCollection(app, "calendar_events", &audit.CollectionConfig{
-		ResolveOrg: func(a core.App, record *core.Record) string {
-			calendarID := record.GetString("calendar")
-			if calendarID == "" {
-				return ""
-			}
-			return audit.ResolveViaRelation(a, "calendar_calendars", calendarID, "org")
-		},
 		ExtractLabel: audit.LabelFromField("title"),
 	})
-	audit.RegisterCollection(app, "calendar_members", &audit.CollectionConfig{
-		ResolveOrg: func(a core.App, record *core.Record) string {
-			calendarID := record.GetString("calendar")
-			if calendarID == "" {
-				return ""
-			}
-			return audit.ResolveViaRelation(a, "calendar_calendars", calendarID, "org")
-		},
-	})
+	audit.RegisterCollection(app, "calendar_members", &audit.CollectionConfig{})
 
-	// Auto-create personal calendar when a user joins an org
-	app.OnRecordAfterCreateSuccess("user_org").BindFunc(func(e *core.RecordEvent) error {
-		handleUserOrgCreated(app, e.Record)
-		return e.Next()
-	})
-
-	// Clean up orphaned calendars when a user leaves an org
-	app.OnRecordAfterDeleteSuccess("user_org").BindFunc(func(e *core.RecordEvent) error {
-		handleUserOrgDeleted(app, e.Record)
+	// Auto-create a personal calendar for every new user. Single-org: the
+	// deployment IS the org, so this binds to users rather than the former
+	// user_org junction. The teardown side is core's (offboard.OffboardUser).
+	app.OnRecordAfterCreateSuccess("users").BindFunc(func(e *core.RecordEvent) error {
+		handleUserCreated(app, e.Record)
 		return e.Next()
 	})
 
@@ -153,73 +214,10 @@ func Register(app *pocketbase.PocketBase) {
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		go startSubscriptionSync(app)
 		go startReminderScheduler(app)
-
-		backend := newInstrumentedBackend(&CalDAVBackend{app: app})
-		handler := caldav.Handler{Backend: backend, Prefix: "/caldav"}
-
-		serveCalDAV := func(re *core.RequestEvent) error {
-			_, _, ok := re.Request.BasicAuth()
-			if !ok {
-				re.Response.Header().Set("WWW-Authenticate", `Basic realm="TinyCld CalDAV"`)
-				http.Error(re.Response, "Authentication required", http.StatusUnauthorized)
-				return nil
-			}
-
-			ctx := context.WithValue(re.Request.Context(), httpRequestKey, re.Request)
-			handler.ServeHTTP(re.Response, re.Request.WithContext(ctx))
-			return nil
-		}
-
-		e.Router.Any("/caldav/{path...}", serveCalDAV)
-		e.Router.Any("/caldav", serveCalDAV)
-
-		e.Router.Any("/.well-known/caldav", func(re *core.RequestEvent) error {
-			http.Redirect(re.Response, re.Request, "/caldav/", http.StatusMovedPermanently)
-			return nil
-		})
-
 		return e.Next()
 	})
 
-	// Auto-create owner membership when a calendar is created via the API.
-	// The calendar_members create rule requires an existing owner, so the first
-	// membership must be created server-side.
-	app.OnRecordCreateRequest("calendar_calendars").BindFunc(func(e *core.RecordRequestEvent) error {
-		if err := e.Next(); err != nil {
-			return err
-		}
-
-		auth := e.Auth
-		if auth == nil {
-			return nil
-		}
-
-		orgID := e.Record.GetString("org")
-		userOrg, err := app.FindFirstRecordByFilter(
-			"user_org",
-			"user = {:user} && org = {:org}",
-			map[string]any{"user": auth.Id, "org": orgID},
-		)
-		if err != nil {
-			return nil
-		}
-
-		memberCollection, err := app.FindCollectionByNameOrId("calendar_members")
-		if err != nil {
-			return nil
-		}
-
-		member := core.NewRecord(memberCollection)
-		member.Set("calendar", e.Record.Id)
-		member.Set("user_org", userOrg.Id)
-		member.Set("role", "owner")
-		if err := app.Save(member); err != nil {
-			app.Logger().Warn("calendar: failed to auto-create owner membership",
-				"calendar", e.Record.Id, "error", err)
-		}
-
-		return nil
-	})
+	registerOwnerMembershipBootstrap(app)
 
 	// Notify invited user when a new calendar membership is created
 	app.OnRecordAfterCreateSuccess("calendar_members").BindFunc(func(e *core.RecordEvent) error {
@@ -227,11 +225,12 @@ func Register(app *pocketbase.PocketBase) {
 		return e.Next()
 	})
 
-	// Authorize calendar_members create at the Go layer. The PB rule
-	// (calOwnerRule) traverses a back-relation through user_org, which
-	// PB v0.36 evaluates inconsistently — non-superuser creates always
-	// 400 even when the auth user IS an owner. Enforce here instead:
-	// only owners of the calendar can add members.
+	// Authorize calendar_members create at the Go layer. An owner-check PB rule
+	// has to traverse the calendar_members back-relation, which PocketBase
+	// evaluated inconsistently for non-superuser creates (always 400, even when
+	// the auth user IS an owner) — that is why migration 1715400000 relaxed the
+	// rule to a bare authenticated check. This hook is the real gate: only
+	// owners of the calendar can add members.
 	app.OnRecordCreateRequest("calendar_members").BindFunc(func(e *core.RecordRequestEvent) error {
 		auth := e.Auth
 		if auth == nil {
@@ -267,6 +266,48 @@ func Register(app *pocketbase.PocketBase) {
 	})
 
 	registerRecurrenceUntilHooks(app)
+}
+
+// registerOwnerMembershipBootstrap auto-creates the creator's owner membership
+// when a calendar is created via the API. The calendar_members create rule
+// (migration 1830000004) admits a membership only when the caller ALREADY owns
+// the calendar — which the very first membership on a new calendar cannot
+// satisfy — so something privileged has to write that first row. This hook is
+// it, in the single-org app and in a tenant alike (calendar's Go links into
+// tenants via RegisterTenant; the interim pb-hook that duplicated this while
+// tenants ran no feature Go has been deleted). Without it a calendar comes out
+// with zero members: owned by nobody, manageable by nobody.
+//
+// Split out from registerShared so tenant-shaped tests can bind it in
+// isolation (same rationale as registerCalendarMemberAuthz). Takes core.App so
+// a tests.TestApp can bind it directly.
+func registerOwnerMembershipBootstrap(app core.App) {
+	app.OnRecordCreateRequest("calendar_calendars").BindFunc(func(e *core.RecordRequestEvent) error {
+		if err := e.Next(); err != nil {
+			return err
+		}
+
+		auth := e.Auth
+		if auth == nil {
+			return nil
+		}
+
+		memberCollection, err := app.FindCollectionByNameOrId("calendar_members")
+		if err != nil {
+			return nil
+		}
+
+		member := core.NewRecord(memberCollection)
+		member.Set("calendar", e.Record.Id)
+		member.Set("user", auth.Id)
+		member.Set("role", "owner")
+		if err := app.Save(member); err != nil {
+			app.Logger().Warn("calendar: failed to auto-create owner membership",
+				"calendar", e.Record.Id, "error", err)
+		}
+
+		return nil
+	})
 }
 
 // registerCalendarMemberAuthz binds the request-scoped authorization guards for
@@ -344,8 +385,6 @@ func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record)
 		return
 	}
 
-	userOrgID := memberRecord.GetString("user_org")
-	calendarID := memberRecord.GetString("calendar")
 	role := memberRecord.GetString("role")
 
 	// Skip notifications for owner memberships (auto-created)
@@ -353,63 +392,42 @@ func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record)
 		return
 	}
 
-	userOrgRecord, err := app.FindRecordById("user_org", userOrgID)
-	if err != nil {
+	userID := memberRecord.GetString("user")
+	if userID == "" {
 		return
 	}
-	userID := userOrgRecord.GetString("user")
-	orgID := userOrgRecord.GetString("org")
 
-	calendar, err := app.FindRecordById("calendar_calendars", calendarID)
+	calendar, err := app.FindRecordById("calendar_calendars", memberRecord.GetString("calendar"))
 	if err != nil {
 		return
 	}
-	calendarName := calendar.GetString("name")
-
-	orgRecord, err := app.FindRecordById("orgs", orgID)
-	if err != nil {
-		return
-	}
-	orgSlug := orgRecord.GetString("slug")
 
 	notify.NotifyUser(app, notify.NotifyParams{
 		UserID:  userID,
-		OrgID:   orgID,
 		Type:    "calendar_invite",
 		Package: "calendar",
-		Title:   fmt.Sprintf("You were added to calendar: %s", calendarName),
+		Title:   fmt.Sprintf("You were added to calendar: %s", calendar.GetString("name")),
 		Body:    fmt.Sprintf("You now have %s access", role),
-		URL:     fmt.Sprintf("/a/%s/calendar", orgSlug),
+		URL:     "/calendar",
 	})
 }
 
 // userIsOwner reports whether the given user holds an "owner" calendar_members
-// row for the given calendar (via any of their user_org records).
+// row for the given calendar.
+//
+// Single-org: memberships point at users directly, so this is one query. It
+// used to fan out over every user_org row the user held.
 func userIsOwner(app core.App, calendarID, userID string) (bool, error) {
-	userOrgs, err := app.FindRecordsByFilter(
-		"user_org",
-		"user = {:userId}",
-		"", 0, 0,
-		map[string]any{"userId": userID},
+	owners, err := app.FindRecordsByFilter(
+		"calendar_members",
+		"calendar = {:calId} && user = {:userId} && role = 'owner'",
+		"", 1, 0,
+		map[string]any{"calId": calendarID, "userId": userID},
 	)
 	if err != nil {
 		return false, err
 	}
-	for _, uo := range userOrgs {
-		owners, err := app.FindRecordsByFilter(
-			"calendar_members",
-			"calendar = {:calId} && user_org = {:uoId} && role = 'owner'",
-			"", 1, 0,
-			map[string]any{"calId": calendarID, "uoId": uo.Id},
-		)
-		if err != nil {
-			return false, err
-		}
-		if len(owners) > 0 {
-			return true, nil
-		}
-	}
-	return false, nil
+	return len(owners) > 0, nil
 }
 
 // guardLastOwner returns an error if removing or demoting the membership

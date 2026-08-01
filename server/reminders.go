@@ -9,6 +9,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/teambition/rrule-go"
+	"tinycld.org/core/caldav"
 	"tinycld.org/core/notify"
 )
 
@@ -131,7 +132,7 @@ func expandOccurrenceStarts(
 		return []time.Time{baseStart}, nil
 	}
 
-	rule := recurrenceToRRule(rec)
+	rule := caldav.RecurrenceToRRule(rec)
 	if rule == "" {
 		return nil, nil
 	}
@@ -166,32 +167,20 @@ func notifyReminderMembers(app core.App, event *core.Record, reminderMinutes flo
 	}
 
 	for _, member := range members {
-		userOrgRecord, err := app.FindRecordById("user_org", member.GetString("user_org"))
-		if err != nil {
+		userID := member.GetString("user")
+		if userID == "" {
 			continue
 		}
-		userID := userOrgRecord.GetString("user")
-		orgID := userOrgRecord.GetString("org")
-		orgSlug := lookupOrgSlug(app, orgID)
 
 		notify.NotifyUser(app, notify.NotifyParams{
 			UserID:  userID,
-			OrgID:   orgID,
 			Type:    "calendar_reminder",
 			Package: "calendar",
 			Title:   title,
 			Body:    fmt.Sprintf("Starts in %.0f minutes", reminderMinutes),
-			URL:     fmt.Sprintf("/a/%s/calendar/%s", orgSlug, event.Id),
+			URL:     fmt.Sprintf("/calendar/%s", event.Id),
 		})
 	}
-}
-
-func lookupOrgSlug(app core.App, orgID string) string {
-	record, err := app.FindRecordById("orgs", orgID)
-	if err != nil {
-		return ""
-	}
-	return record.GetString("slug")
 }
 
 func cleanExpiredReminderEntries() {

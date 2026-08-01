@@ -1,14 +1,13 @@
 import { eq } from '@tanstack/db'
 import { DocumentTitle } from '@tinycld/core/components/DocumentTitle'
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
+import { useAuth } from '@tinycld/core/lib/auth'
 import { handleMutationErrorsWithForm } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
-import { useCurrentUserOrg } from '@tinycld/core/lib/use-current-user-org'
 import { useNavigateBack } from '@tinycld/core/lib/use-navigate-back'
-import { useOrgInfo } from '@tinycld/core/lib/use-org-info'
 import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { useForm, z, zodResolver } from '@tinycld/core/ui/form'
@@ -58,8 +57,7 @@ export default function EventEditorScreen() {
     const fgColor = useThemeColor('foreground')
     const mutedColor = useThemeColor('muted-foreground')
     const breakpoint = useBreakpoint()
-    const { orgSlug } = useOrgInfo()
-    const userOrg = useCurrentUserOrg(orgSlug)
+    const { user } = useAuth()
     const { calendars, mineCalendars, calendarMap } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
     const navigateBack = useNavigateBack(() => orgHref('calendar'))
@@ -137,11 +135,10 @@ export default function EventEditorScreen() {
 
     const createEvent = useMutation({
         mutationFn: mutation(function* (data: z.infer<typeof eventSchema>) {
-            if (!userOrg) throw new Error('No organization context')
             yield eventsCollection.insert({
                 id: newRecordId(),
                 calendar: data.calendar,
-                created_by: userOrg.id,
+                created_by: user.id,
                 title: data.title.trim(),
                 description: data.description,
                 location: data.location,
@@ -154,6 +151,7 @@ export default function EventEditorScreen() {
                 busy_status: data.busy_status,
                 visibility: data.visibility,
                 ical_uid: '',
+                from_subscription: false,
             })
         }),
         onSuccess: navigateBack,
@@ -233,7 +231,7 @@ export default function EventEditorScreen() {
     // For new events, the calendar field is populated from defaultCalendar
     // once the live query resolves. Submitting before that yields a 400
     // because `calendar` is a required relation in the PB schema.
-    const canSubmit = !activeMutation.isPending && !!userOrg && !isLoadingEvent && !!calendarValue
+    const canSubmit = !activeMutation.isPending && !isLoadingEvent && !!calendarValue
 
     const isDesktop = breakpoint === 'desktop'
     const guests = event?.guests ?? []

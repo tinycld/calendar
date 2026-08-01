@@ -370,6 +370,7 @@ export function EventDetailPopover({
         >
             <View
                 ref={popoverRef}
+                testID="event-detail-popover"
                 className="absolute border border-border bg-background"
                 style={{
                     width: POPOVER_WIDTH,

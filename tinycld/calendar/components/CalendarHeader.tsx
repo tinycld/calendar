@@ -31,7 +31,12 @@ export function CalendarHeader() {
                     <Menu size={22} color={fgColor} />
                 </Pressable>
 
-                <Text style={{ fontSize: 18, fontWeight: '600', color: fgColor }}>{dateLabel}</Text>
+                <Text
+                    testID="calendar-date-label"
+                    style={{ fontSize: 18, fontWeight: '600', color: fgColor }}
+                >
+                    {dateLabel}
+                </Text>
 
                 <View className="flex-1" />
 
@@ -82,7 +87,10 @@ export function CalendarHeader() {
                 <ChevronRight size={20} color={fgColor} />
             </Pressable>
 
-            <Text style={{ fontSize: 20, fontWeight: '600', color: fgColor, flex: 1 }}>
+            <Text
+                testID="calendar-date-label"
+                style={{ fontSize: 20, fontWeight: '600', color: fgColor, flex: 1 }}
+            >
                 {dateLabel}
             </Text>
 

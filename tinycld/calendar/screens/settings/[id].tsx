@@ -23,10 +23,9 @@ export default function CalendarSettingsScreen() {
 
     const { user } = useAuth()
 
-    const [calendarsCollection, membersCollection, userOrgsCollection, usersCollection] = useStore(
+    const [calendarsCollection, membersCollection, usersCollection] = useStore(
         'calendar_calendars',
         'calendar_members',
-        'user_org',
         'users'
     )
 
@@ -40,13 +39,11 @@ export default function CalendarSettingsScreen() {
         query =>
             query
                 .from({ m: membersCollection })
-                .join({ uo: userOrgsCollection }, ({ m, uo }) => eq(m.user_org, uo.id))
-                .join({ u: usersCollection }, ({ uo, u }) => eq(uo.user, u.id))
+                .join({ u: usersCollection }, ({ m, u }) => eq(m.user, u.id))
                 .where(({ m }) => eq(m.calendar, id ?? ''))
-                .select(({ m, uo, u }) => ({
+                .select(({ m, u }) => ({
                     membershipId: m.id,
-                    userOrgId: uo.id,
-                    userId: uo.user,
+                    userId: m.user,
                     role: m.role,
                     name: u.name,
                     email: u.email,
@@ -56,16 +53,10 @@ export default function CalendarSettingsScreen() {
 
     const members: CalendarMemberRowData[] = (memberRows ?? []).map(r => ({
         membershipId: r.membershipId,
-        userOrgId: r.userOrgId ?? '',
         userId: r.userId ?? '',
         name: r.name ?? '',
         email: r.email ?? '',
         role: r.role as CalendarRole,
-        // Match against the auth user's id rather than user_org id —
-        // useCurrentUserOrg has a multi-step async dependency that can be
-        // null on first render, causing the screen to think the user
-        // isn't a member of their own calendar (and silently rendering
-        // it read-only).
         isCurrentUser: r.userId === user.id,
     }))
 
