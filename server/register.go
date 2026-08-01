@@ -90,33 +90,17 @@ func appIsLive(app core.App) bool {
 	return app != nil && app.ConcurrentDB() != nil
 }
 
-// Register composes the calendar server for the SINGLE-ORG app: the shared
-// set plus the host-only tail. The generator's package_extensions.go calls it.
+// Register composes the calendar server — the package's single entry point,
+// called by the generator's package_extensions.go in BOTH the single-org app
+// and a multi-org tenant. The CalDAV mount runs in both: a per-org tenant
+// build links exactly the org's features, so the artifact is the gate.
+// Registered outside OnServe because caldav.Register binds its own OnServe
+// handler, and the caldavHook TS binding must exist before jsvm runs the hook
+// files (jsvm executes them synchronously, so a later registration dies at
+// boot with "caldavHook is not defined").
 func Register(app *pocketbase.PocketBase) {
 	registerShared(app)
-
-	// ---- Host-only ----
-	// CalDAV mount. A multi-org tenant mounts /caldav itself, from the
-	// materialized manifest `caldav` block (coreserver.RegisterTenant), so
-	// mounting here too would double-bind the routes. The materialized lists
-	// are authoritative for what a tenant serves; this call is the single-org
-	// equivalent. Registered outside OnServe because it binds its own OnServe
-	// handler, and the caldavHook TS binding must exist before jsvm runs the
-	// hook files (jsvm executes them synchronously, so a later registration
-	// dies at boot with "caldavHook is not defined").
 	caldav.Register(app, []caldav.Source{calDAVSource}, coreserver.CalDAVHostBindings())
-}
-
-// RegisterTenant composes the calendar server for a multi-org TENANT process:
-// the shared set only. The router's pinned package menu calls it, gated by the
-// org's resolved package set (multi-org/docs/SCOPE-tenant-feature-go.md).
-//
-// Do NOT hand-pick registrations here — add to registerShared so both
-// compositions get them, or to Register's host-only tail with a reason. A
-// hand-rolled subset is exactly the drift that produced
-// multi-org/docs/FINDING-tenant-composition-gap.md.
-func RegisterTenant(app *pocketbase.PocketBase) {
-	registerShared(app)
 }
 
 // registerShared is the single source of truth for what BOTH compositions run:
