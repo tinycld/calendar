@@ -24,6 +24,11 @@ const (
 	fetchTimeout     = 30 * time.Second
 	maxResponseBytes = 10 * 1024 * 1024 // 10 MB
 	staleErrorDays   = 7
+
+	// An UNTIL further out than this is rrule-go's "no UNTIL" filler rather
+	// than a date any real feed carries. 100 years clears every plausible
+	// genuine bound while staying far below the ~292-year filler.
+	unboundedRuleYears = 100
 )
 
 func startSubscriptionSync(app *pocketbase.PocketBase) {
@@ -310,8 +315,13 @@ func parseRRuleUntil(rule string) time.Time {
 		return time.Time{}
 	}
 	until := r.GetUntil()
-	// rrule-go returns 9999-01-01 for unbounded rules
-	if until.Year() > 9000 {
+	// An unbounded rule has no UNTIL, but rrule-go still reports one: it fills
+	// the field with `time.Now() + math.MaxInt64` nanoseconds, i.e. ~292 years
+	// out (year 2318 today), NOT the 9999 sentinel an earlier version used. A
+	// fixed year threshold therefore never matches and every unbounded rule
+	// looks bounded. Detect it by distance from now instead, which is stable
+	// across both representations.
+	if until.IsZero() || until.After(time.Now().AddDate(unboundedRuleYears, 0, 0)) {
 		return time.Time{}
 	}
 	return until
