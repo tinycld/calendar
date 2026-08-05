@@ -67,6 +67,28 @@ jobs:
       - name: Typecheck + unit
         working-directory: ws/${{ env.PACKAGE }}
         run: pnpm exec tinycld-pkg check
+      # calendar/server carries the security-critical Go: the subscription
+      # fetcher's SSRF defenses (host validation, the DNS-rebinding-resistant
+      # pinned dialer, redirect re-validation, the response cap), the
+      # calendar_members authz/RLS rules, and the guest lifecycle. A hosted
+      # multi-org tenant runs these rules as its whole authorization boundary.
+      # `tinycld-pkg check` is biome + tsc + vitest and has no Go runner, so
+      # without this step none of it is exercised on CI.
+      #
+      # go mod download is not optional: in workspace mode the transitive
+      # /go.mod hashes live in go.work.sum, not go.sum, and `go test` fails with
+      # "missing go.sum entry for go.mod file" without it. The go.work itself
+      # was written by the generator during `pnpm install` above.
+      - name: Go build
+        working-directory: ws/${{ env.PACKAGE }}/server
+        run: |
+          go mod download
+          go build ./...
+      # -count=1 defeats the test cache so a green run always reflects this
+      # commit's code rather than a cached result keyed on unchanged inputs.
+      - name: Go tests
+        working-directory: ws/${{ env.PACKAGE }}/server
+        run: go test -count=1 ./...
 
   e2e:
     name: E2E
