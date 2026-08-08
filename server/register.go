@@ -266,6 +266,11 @@ func registerShared(app *pocketbase.PocketBase) {
 	})
 
 	registerRecurrenceUntilHooks(app)
+
+	// FTS index-sync plus calendar's contribution to the federated
+	// /api/search. In registerShared so a hosted tenant indexes and searches
+	// identically to the single-org app.
+	registerSearch(app)
 }
 
 // registerOwnerMembershipBootstrap auto-creates the creator's owner membership
