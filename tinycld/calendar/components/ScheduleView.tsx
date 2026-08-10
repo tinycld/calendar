@@ -251,7 +251,7 @@ interface ScheduleShortcutsArgs {
 function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleShortcutsArgs) {
     const storedIndex = useCalendarUIStore(s => s.scheduleFocusedIndex)
     const setFocusedIndex = useCalendarUIStore(s => s.setScheduleFocusedIndex)
-    useShortcutScope('list')
+    const scopeOwner = useShortcutScope('list')
 
     const focusedIndex = events.length === 0 ? 0 : Math.min(storedIndex, events.length - 1)
     const focusedId = events[focusedIndex]?.id ?? null
@@ -299,7 +299,7 @@ function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleS
         [events.length, focusedId, openEventDetail, onNewEvent, setFocusedIndex]
     )
 
-    useRegisterShortcuts(shortcuts)
+    useRegisterShortcuts(shortcuts, scopeOwner)
 
     return { focusedId }
 }
