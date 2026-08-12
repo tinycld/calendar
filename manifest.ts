@@ -1,12 +1,16 @@
 const manifest = {
     name: 'Calendar',
     slug: 'calendar',
-    version: '0.2.1',
+    version: '0.3.0',
     description: 'Shared calendars, events and reminders',
     routes: { directory: 'screens' },
     nav: { label: 'Calendar', icon: 'calendar', order: 8, shortcut: 'c' },
     sidebar: { component: 'sidebar' },
     slots: ['sidebar.after-calendars'],
+    // Other packages contribute read-only event feeds (e.g. cards' due dates)
+    // that render on the grid with a sidebar visibility toggle. See
+    // core/lib/event-sources/types.ts for the contract.
+    eventSourceHost: true,
     provider: { component: 'provider' },
     migrations: { directory: 'pb-migrations' },
     collections: { register: 'collections', types: 'types' },

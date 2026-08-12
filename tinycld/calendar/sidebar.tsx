@@ -15,6 +15,7 @@ import { CalendarDays, Columns3, Grid3X3, Link2, List } from 'lucide-react-nativ
 import { useCallback, useMemo, useState } from 'react'
 import { View } from 'react-native'
 import { CalendarList } from './components/CalendarList'
+import { EventSourceToggles } from './components/EventSourceToggles'
 import { MiniCalendar } from './components/MiniCalendar'
 import { SubscriptionDialog } from './components/SubscriptionDialog'
 import { useVisibleCalendars } from './hooks/useCalendarEvents'
@@ -138,6 +139,8 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
             />
 
             <SidebarDivider />
+
+            <EventSourceToggles />
 
             <SidebarSlot target="calendar" slot="sidebar.after-calendars" />
 

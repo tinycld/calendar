@@ -76,6 +76,12 @@ function EventCard({
 
     return (
         <Pressable
+            // Carries the event id — for contributed source events that is the
+            // 'src:<sourceId>:<itemId>' synthetic id, which is how e2e can
+            // target a source's row without colliding with the same title
+            // rendered elsewhere (e.g. the frozen cards board behind this
+            // screen, whose text Playwright still counts as visible).
+            testID={`calendar-event-${event.id}`}
             className="flex-row rounded-lg overflow-hidden"
             onPress={e => onPress(event.id, e)}
             style={highlight}

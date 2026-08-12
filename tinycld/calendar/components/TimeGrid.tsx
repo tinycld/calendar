@@ -13,6 +13,7 @@ import {
 import { useCalendarMap } from '../hooks/useCalendarEvents'
 import { getTimeLabel, isToday } from '../hooks/useCalendarNavigation'
 import { type LayoutEvent, layoutTimedEvents } from '../layout'
+import { isSourceEventId } from '../lib/event-source-ids'
 import { parseEventId } from '../lib/recurrence'
 import type { CalendarEvents } from '../types'
 import { CurrentTimeIndicator } from './CurrentTimeIndicator'
@@ -165,11 +166,15 @@ export function TimeGrid({
                                     if (!layout) return null
                                     const cal = calendarMap.get(event.calendar)
                                     const colors = getCalendarColorResolved(cal?.color ?? 'blue')
-                                    // Recurring occurrences carry a synthetic id and
-                                    // subscribed calendars are read-only — neither can
-                                    // be rescheduled by dragging in v1.
+                                    // Recurring occurrences carry a synthetic id,
+                                    // subscribed calendars are read-only, and
+                                    // contributed source events have no row to
+                                    // reschedule — none can be dragged.
                                     const isOccurrence = !!parseEventId(event.id).occurrenceDate
-                                    const dragDisabled = isOccurrence || !!cal?.subscription_url
+                                    const dragDisabled =
+                                        isOccurrence ||
+                                        !!cal?.subscription_url ||
+                                        isSourceEventId(event.id)
                                     return (
                                         <EventBlock
                                             key={event.id}

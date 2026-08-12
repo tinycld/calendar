@@ -19,6 +19,12 @@ describe('calendar manifest', () => {
         expect(manifest.seed?.script).toBe('seed')
     })
 
+    it('hosts event-source contributions', () => {
+        // Cards' due-date source (and any future feed) targets this flag; the
+        // generator refuses a contribution aimed at a non-host package.
+        expect(manifest.eventSourceHost).toBe(true)
+    })
+
     it('declares a nav entry', () => {
         expect(manifest.nav?.label).toBe('Calendar')
         expect(manifest.nav?.icon).toBe('calendar')

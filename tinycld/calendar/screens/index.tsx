@@ -1,5 +1,6 @@
 import { DocumentTitle } from '@tinycld/core/components/DocumentTitle'
 import { DayView } from '../components/DayView'
+import { EventSourcesHost } from '../components/EventSourcesHost'
 import { MonthView } from '../components/MonthView'
 import { ScheduleView } from '../components/ScheduleView'
 import { WeekView } from '../components/WeekView'
@@ -17,6 +18,7 @@ export default function CalendarScreen() {
     return (
         <>
             <DocumentTitle pkg="Calendar" />
+            <EventSourcesHost />
             {pickView(viewMode)}
         </>
     )

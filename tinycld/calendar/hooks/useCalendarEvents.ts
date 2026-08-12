@@ -6,6 +6,7 @@ import { expandRecurringEvents, parseEventId } from '../lib/recurrence'
 import { useCalendarUIStore } from '../stores/calendar-ui-store'
 import type { CalendarColorKey, CalendarEvents, CalendarWithGroup } from '../types'
 import { type MembershipInfo, useCalendarData } from './useCalendarData'
+import { SOURCE_PSEUDO_CALENDARS, useSourceEvents } from './useSourceEvents'
 
 interface VisibleCalendarsState {
     calendars: CalendarWithGroup[]
@@ -59,7 +60,15 @@ export function useVisibleCalendars(): VisibleCalendarsState {
 }
 
 export function useCalendarMap(): Map<string, CalendarWithGroup> {
-    return useVisibleCalendars().calendarMap
+    const { calendarMap } = useVisibleCalendars()
+    // Pseudo-calendars for contributed event sources ride the same map, so
+    // every view's `calendarMap.get(event.calendar)` color lookup works
+    // unchanged for source events. Real entries win a (never expected) key
+    // collision because they are merged second.
+    return useMemo(() => {
+        if (SOURCE_PSEUDO_CALENDARS.size === 0) return calendarMap
+        return new Map([...SOURCE_PSEUDO_CALENDARS, ...calendarMap])
+    }, [calendarMap])
 }
 
 /**
@@ -83,6 +92,10 @@ export function useCalendarMap(): Map<string, CalendarWithGroup> {
 export function useCalendarEvents(startDate: Date, endDate: Date) {
     const { visibleIds, isLoading: calendarsLoading } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
+    // Contributed source events merge in below. Independent of visibleIds by
+    // design: hiding every native calendar must not hide the sources, and
+    // source loading never blocks the grid's own isLoading.
+    const sourceEvents = useSourceEvents(startDate, endDate)
 
     const visibleIdsArr = useMemo(() => [...visibleIds], [visibleIds])
     const rangeStartIso = useMemo(() => startDate.toISOString(), [startDate])
@@ -105,21 +118,23 @@ export function useCalendarEvents(startDate: Date, endDate: Date) {
     )
 
     const events = useMemo(() => {
-        if (!rawEvents) return []
+        const own = rawEvents ?? []
         // The server filter over-includes non-recurring events whose
         // recurrence_until is empty (the same condition admits open-ended
         // recurring events). Drop non-recurring rows that ended before the
         // range begins; recurring rows pass through to expandRecurringEvents.
-        const inRange = rawEvents.filter(e => {
+        const inRange = own.filter(e => {
             if (e.recurrence) return true
             return new Date(e.end) > startDate
         })
-        return expandRecurringEvents({
+        const expanded = expandRecurringEvents({
             events: inRange as CalendarEvents[],
             rangeStart: startDate,
             rangeEnd: endDate,
         })
-    }, [rawEvents, startDate, endDate])
+        if (sourceEvents.length === 0) return expanded
+        return [...expanded, ...sourceEvents].sort((a, b) => a.start.localeCompare(b.start))
+    }, [rawEvents, sourceEvents, startDate, endDate])
 
     return { events, isLoading: calendarsLoading || eventsLoading }
 }
