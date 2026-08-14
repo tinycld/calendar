@@ -130,9 +130,34 @@ test.describe('Calendar — Sharing UI', () => {
             await page.getByRole('button', { name: 'Add' }).last().click()
 
             // Dialog closes on success — wait for the search field to disappear.
+            //
+            // This is NOT a readiness signal for the server. membersCollection
+            // .insert() is an optimistic pbtsdb write: onSuccess fires when the
+            // local store accepts the row, before the round-trip commits. So
+            // the dialog closing means "the mutation was issued", and anything
+            // reading the real database can still race it.
             await expect(page.getByPlaceholder('Search by name or email')).not.toBeVisible({
                 timeout: 5_000,
             })
+
+            // The OWNER's view of the share (R1/D4), asserted FIRST because the
+            // reload discards the optimistic insert — so this row can only come
+            // from the server's list rule, which makes it the point at which
+            // the membership is known to be committed. (The self-only rule that
+            // 1830000007 replaced passed every pre-reload assertion while
+            // "Shared with" showed nobody but the caller. Do not weaken this to
+            // a pre-reload check.)
+            //
+            // It also has to come first. Polling CalDAV before this was reading
+            // the database while the insert was still in flight: fine on an idle
+            // machine, but under ~7 parallel workers the commit landed after the
+            // 5s poll gave up. Ordering the server-confirmed check ahead of the
+            // cross-tier one removes the race instead of widening the window.
+            await page.reload()
+            await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
+            await expect(
+                page.getByTestId(/^calendar-member-row-/).filter({ hasText: 'Invited Tester' })
+            ).toBeVisible({ timeout: 5_000 })
 
             // The cross-tier check: the sharee must now see the calendar in
             // their PROPFIND. This proves the membership row landed AND that
@@ -147,17 +172,6 @@ test.describe('Calendar — Sharing UI', () => {
                     )
                 }
             }).toPass({ timeout: 5_000 })
-
-            // The OWNER's view of the share (R1/D4). A reload discards the
-            // optimistic insert, so this row can only come from the server's
-            // list rule — the self-only rule 1830000007 replaced passed every
-            // assertion above while "Shared with" showed nobody but the
-            // caller. Do not weaken this to a pre-reload check.
-            await page.reload()
-            await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
-            await expect(
-                page.getByTestId(/^calendar-member-row-/).filter({ hasText: 'Invited Tester' })
-            ).toBeVisible({ timeout: 5_000 })
         } finally {
             await close()
         }

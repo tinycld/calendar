@@ -8,6 +8,7 @@
         "./manifest": "./manifest.ts",
         "./types": "./tinycld/calendar/types.ts",
         "./collections": "./tinycld/calendar/collections.ts",
+        "./automation": "./tinycld/calendar/automation.ts",
         "./screens/*": "./tinycld/calendar/screens/*.tsx",
         "./sidebar": "./tinycld/calendar/sidebar.tsx",
         "./provider": "./tinycld/calendar/provider.tsx",

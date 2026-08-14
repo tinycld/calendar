@@ -112,6 +112,12 @@ func registerShared(app *pocketbase.PocketBase) {
 	// fails: the required FK blocks the users delete.
 	offboard.RegisterReassignable(offboard.ReassignableRef{Collection: "calendar_events", Field: "created_by"})
 
+	// Personal automation rules on calendar events resolve their owner through
+	// calendar_members (created_by alone would scope a shared calendar's rules
+	// to whoever created each event), and create-event needs a Go handler for
+	// its date math.
+	registerAutomation()
+
 	// Audit logging for calendar collections. Single-org: audit rows carry no
 	// org, so only the display label is customized.
 	audit.RegisterCollection(app, "calendar_calendars", &audit.CollectionConfig{
