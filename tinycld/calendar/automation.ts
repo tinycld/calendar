@@ -32,6 +32,52 @@ const automation = {
                 { key: 'from_subscription', label: 'From a subscribed feed' },
             ],
         },
+        {
+            id: 'event-rescheduled',
+            label: 'An event is rescheduled',
+            collection: 'calendar_events',
+            on: 'update',
+            ownerField: 'created_by',
+            // Only a time change counts. An event whose title or location was
+            // edited has not been rescheduled, and firing on those would make
+            // "tell me when this moves" useless.
+            watch: ['start', 'end'],
+            fields: [
+                'title',
+                'location',
+                'start',
+                'end',
+                { key: 'all_day', label: 'All day' },
+                'calendar',
+            ],
+        },
+        {
+            id: 'event-removed',
+            label: 'An event is removed',
+            collection: 'calendar_events',
+            on: 'delete',
+            ownerField: 'created_by',
+            fields: ['title', 'location', 'start', 'end', 'calendar'],
+        },
+        {
+            // Admin hygiene: a subscribed feed that stops syncing goes quiet
+            // rather than announcing itself, so the calendar silently drifts
+            // out of date. calendar_calendars carries no owner column at all,
+            // so this trigger CANNOT auto-detect and has no ownerField to
+            // declare — server/automation.go registers a calendar_members
+            // resolver for it. A Go filter gates it to a non-empty error, so
+            // a successful sync clearing the field doesn't fire it.
+            id: 'feed-sync-failed',
+            label: 'A calendar feed fails to sync',
+            collection: 'calendar_calendars',
+            on: 'update',
+            watch: ['subscription_error'],
+            fields: [
+                { key: 'name', label: 'Calendar' },
+                { key: 'subscription_error', label: 'Error' },
+                { key: 'subscription_url', label: 'Feed URL' },
+            ],
+        },
     ],
     // Native, not a record-op: v1 params carry no date math, so "three days
     // from now" has to be computed somewhere. The handler takes plain numbers

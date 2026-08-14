@@ -353,3 +353,65 @@ func TestActionCreateEvent_UntitledFallback(t *testing.T) {
 		t.Fatalf("expected an (untitled) event (err %v)", err)
 	}
 }
+
+// calendar_calendars carries no owner column of any kind, so this resolver is
+// the ONLY thing that makes personal rules on feed failures possible.
+func TestCalendarOwnerResolver_ResolvesMembers(t *testing.T) {
+	app, alice, bob := setupAutomationApp(t)
+	cal := newCalendar(t, app, "Team")
+	addMember(t, app, cal.Id, alice, "owner")
+	addMember(t, app, cal.Id, bob, "viewer")
+
+	owners := calendarOwnerResolver(app, cal)
+	if len(owners) != 2 {
+		t.Fatalf("owners = %v, want both members", owners)
+	}
+	seen := map[string]bool{owners[0]: true, owners[1]: true}
+	if !seen[alice] || !seen[bob] {
+		t.Fatalf("owners = %v, want alice and bob", owners)
+	}
+
+	if owners := calendarOwnerResolver(app, nil); owners != nil {
+		t.Errorf("nil record: got %v, want nil", owners)
+	}
+}
+
+func TestCalendarOwnerResolver_NoMembersResolvesNil(t *testing.T) {
+	app, _, _ := setupAutomationApp(t)
+	cal := newCalendar(t, app, "Orphan")
+
+	if owners := calendarOwnerResolver(app, cal); owners != nil {
+		t.Fatalf("owners = %v, want nil for a calendar with no members", owners)
+	}
+}
+
+// subscription_error changes in BOTH directions — the sync path clears it on
+// every success — so a rule meant for failures must not fire on recovery.
+func TestCalendarSyncFailed_OnlyFiresOnAnActualError(t *testing.T) {
+	app, _, _ := setupAutomationApp(t)
+	cal := newCalendar(t, app, "Feed")
+
+	cal.Set("subscription_error", "HTTP 404 fetching feed")
+	if err := app.Save(cal); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	if !calendarSyncFailed(app, cal) {
+		t.Error("a non-empty subscription_error must be admitted")
+	}
+
+	// The success path writes "" back; whitespace is treated the same way so
+	// a provider echoing a blank line doesn't read as a failure.
+	for _, cleared := range []string{"", "   "} {
+		cal.Set("subscription_error", cleared)
+		if err := app.Save(cal); err != nil {
+			t.Fatalf("save: %v", err)
+		}
+		if calendarSyncFailed(app, cal) {
+			t.Errorf("subscription_error %q must NOT be treated as a failure", cleared)
+		}
+	}
+
+	if calendarSyncFailed(app, nil) {
+		t.Error("a nil record must not be treated as a failure")
+	}
+}

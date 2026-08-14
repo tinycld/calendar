@@ -21,6 +21,26 @@ import hundreds of events at once, so a rule that reacts to every new event
 will react to all of them. Add the condition **From a subscribed feed is
 false** to limit a rule to events people actually created.
 
+## When an event moves or disappears
+
+**An event is rescheduled** fires only when the start or end time changes —
+editing a title or location is not a reschedule, so a rule watching for moves
+stays quiet through ordinary edits.
+
+**An event is removed** fires when an event is deleted.
+
+Both cover every event on a calendar you belong to, not only ones you created.
+
+## When a subscribed feed stops working
+
+**A calendar feed fails to sync** fires when a subscribed calendar can't be
+fetched — the URL moved, access was revoked, the server is down. Without a rule
+this is silent: the calendar simply stops updating and quietly drifts out of
+date.
+
+It fires on the failure only, not when a feed recovers. Pair it with a
+notification if you rely on a subscribed calendar being current.
+
 ## Creating an event from a rule
 
 The action **Create an event** adds an event to your calendar. Instead of a

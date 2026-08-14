@@ -14,7 +14,41 @@ import (
 // action. Called from registerShared before hooks load.
 func registerAutomation() {
 	automation.RegisterOwnerResolver("calendar:event-added", eventOwnerResolver)
+	// Reschedules and removals belong to the same people the event does.
+	automation.RegisterOwnerResolver("calendar:event-rescheduled", eventOwnerResolver)
+	automation.RegisterOwnerResolver("calendar:event-removed", eventOwnerResolver)
+
+	// calendar_calendars has no owner column of any kind, so this trigger
+	// cannot auto-detect and has no ownerField to fall back on — without a
+	// resolver, personal rules would never fire for it.
+	automation.RegisterOwnerResolver("calendar:feed-sync-failed", calendarOwnerResolver)
+	automation.RegisterTriggerFilter("calendar:feed-sync-failed", calendarSyncFailed)
+
 	automation.RegisterAction("calendar:create-event", actionCreateEvent)
+}
+
+// calendarOwnerResolver maps a calendar_calendars row to its members.
+//
+// Unlike eventOwnerResolver, which reaches the calendar through the event's
+// `calendar` relation, here the record IS the calendar.
+func calendarOwnerResolver(app core.App, record *core.Record) []string {
+	if record == nil {
+		return nil
+	}
+	return calendarMemberIDs(app, record.Id)
+}
+
+// calendarSyncFailed is the TriggerFilter for "calendar:feed-sync-failed".
+//
+// The declaration watches subscription_error, which changes in BOTH
+// directions: the sync path clears it on every success (subscription.go's
+// "Mark success" block). Without this gate, a feed recovering would fire a
+// rule meant for failures.
+func calendarSyncFailed(app core.App, record *core.Record) bool {
+	if record == nil {
+		return false
+	}
+	return strings.TrimSpace(record.GetString("subscription_error")) != ""
 }
 
 // eventOwnerResolver maps a new calendar_events row to the users the event
@@ -35,6 +69,16 @@ func eventOwnerResolver(app core.App, record *core.Record) []string {
 	}
 
 	calendarID := record.GetString("calendar")
+	if calendarID == "" {
+		return nil
+	}
+	return calendarMemberIDs(app, calendarID)
+}
+
+// calendarMemberIDs lists the users who belong to a calendar. Shared by both
+// resolvers: one arrives via an event's `calendar` relation, the other with
+// the calendar record itself.
+func calendarMemberIDs(app core.App, calendarID string) []string {
 	if calendarID == "" {
 		return nil
 	}
