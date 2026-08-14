@@ -104,10 +104,30 @@ func calendarMemberIDs(app core.App, calendarID string) []string {
 	return owners
 }
 
+// writableCalendarRoles are the memberships that permit creating an event.
+// Mirrors calendar_events' own create rule, which admits any member whose role
+// is not "viewer" (migration 1715000000). The engine writes with a superuser
+// Save, so that rule never runs for a rule-created event and this is the only
+// thing enforcing it.
+var writableCalendarRoles = map[string]bool{
+	"owner":  true,
+	"editor": true,
+}
+
 // ownedCalendarFor returns the calendar a rule-created event should land in:
-// the one the rule's owner owns. Prefers an explicit "owner" membership and
-// falls back to any membership, so a user who only has editor access to a
-// shared calendar still gets their event somewhere real.
+// the one the rule's owner owns, or failing that one they can actually write
+// to.
+//
+// Membership alone is NOT enough. Falling back to any membership put events
+// into calendars where the owner is only a viewer — someone else's calendar,
+// shared read-only. Resolving from memberships does make it impossible to
+// write somewhere the owner has no relationship with, but belonging as a
+// viewer is not permission to write, and the events collection's own create
+// rule says so.
+//
+// Returning an error rather than picking a viewer calendar is deliberate: the
+// run is recorded as failed and the author can see why, which is a better
+// outcome than an event silently appearing on a colleague's calendar.
 func ownedCalendarFor(app core.App, userID string) (string, error) {
 	if userID == "" {
 		return "", fmt.Errorf("no user to resolve a calendar for")
@@ -136,11 +156,17 @@ func ownedCalendarFor(app core.App, userID string) (string, error) {
 		}
 	}
 	for _, member := range members {
+		if !writableCalendarRoles[member.GetString("role")] {
+			continue
+		}
 		if calID := member.GetString("calendar"); calID != "" {
 			return calID, nil
 		}
 	}
-	return "", fmt.Errorf("user %s has memberships but none name a calendar", userID)
+	return "", fmt.Errorf(
+		"user %s has no calendar they can write to (viewer-only memberships cannot receive rule-created events)",
+		userID,
+	)
 }
 
 // paramInt reads a numeric param, tolerating an empty or malformed value by

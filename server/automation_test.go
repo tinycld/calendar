@@ -180,7 +180,7 @@ func TestOwnedCalendarFor_PrefersTheOwnedCalendar(t *testing.T) {
 	}
 }
 
-func TestOwnedCalendarFor_FallsBackToAnyMembership(t *testing.T) {
+func TestOwnedCalendarFor_FallsBackToAWritableMembership(t *testing.T) {
 	app, alice, _ := setupAutomationApp(t)
 	shared := newCalendar(t, app, "Shared only")
 	addMember(t, app, shared.Id, alice, "editor")
@@ -191,6 +191,40 @@ func TestOwnedCalendarFor_FallsBackToAnyMembership(t *testing.T) {
 	}
 	if got != shared.Id {
 		t.Fatalf("calendar = %s, want %s", got, shared.Id)
+	}
+}
+
+// A viewer membership is read-only. Falling back to it put rule-created events
+// onto someone else's calendar — the engine saves as superuser, so
+// calendar_events' own create rule (which excludes viewers) never runs.
+func TestOwnedCalendarFor_RefusesAViewerOnlyMembership(t *testing.T) {
+	app, alice, bob := setupAutomationApp(t)
+	shared := newCalendar(t, app, "Bob's calendar")
+	addMember(t, app, shared.Id, bob, "owner")
+	addMember(t, app, shared.Id, alice, "viewer")
+
+	if _, err := ownedCalendarFor(app, alice); err == nil {
+		t.Fatal("a viewer-only membership must not receive rule-created events")
+	}
+}
+
+// A viewer membership must not shadow a writable one, whichever row comes
+// back first.
+func TestOwnedCalendarFor_SkipsViewerRowsToFindAWritableOne(t *testing.T) {
+	app, alice, bob := setupAutomationApp(t)
+	readOnly := newCalendar(t, app, "Read only")
+	writable := newCalendar(t, app, "Writable")
+	addMember(t, app, readOnly.Id, bob, "owner")
+	// Created first, so a naive "first row wins" would pick the viewer one.
+	addMember(t, app, readOnly.Id, alice, "viewer")
+	addMember(t, app, writable.Id, alice, "editor")
+
+	got, err := ownedCalendarFor(app, alice)
+	if err != nil {
+		t.Fatalf("ownedCalendarFor: %v", err)
+	}
+	if got != writable.Id {
+		t.Fatalf("calendar = %s, want the writable one (%s)", got, writable.Id)
 	}
 }
 

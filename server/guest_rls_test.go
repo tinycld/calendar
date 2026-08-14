@@ -82,6 +82,14 @@ func calGuestUser(t *testing.T, app core.App, email, role string) *core.Record {
 	col, _ := app.FindCollectionByNameOrId("users")
 	r := core.NewRecord(col)
 	r.SetEmail(email)
+	// Derived from the email rather than left to PocketBase, which fills an
+	// unset username with "users" + a random 5-digit suffix — the same shape
+	// its own test fixture uses (users75657, users69238). Across a full suite
+	// run those collide often enough to fail a test that passes in isolation,
+	// on "username: Value must be unique" rather than anything to do with the
+	// test. Emails are already unique per app, so this makes usernames unique
+	// too, and deterministic.
+	r.Set("username", "u_"+strings.NewReplacer("@", "_at_", ".", "_", "+", "_").Replace(email))
 	r.Set("name", "Test")
 	r.Set("role", role)
 	r.SetVerified(true)
