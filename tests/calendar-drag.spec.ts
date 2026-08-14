@@ -47,22 +47,44 @@ test.describe('Calendar — Drag to resize', () => {
         // first event (09:00), so nothing overlaps it. The in-SPA "+ Create"
         // button is a router.push, not a hard goto that would race the lazy
         // route chunk's compile.
-        await page.getByText('+ Create', { exact: true }).click()
-        await expect(page.getByText('New Event')).toBeVisible({ timeout: 20_000 })
+        //
+        // The click is retried until the form is up: "+ Create" is painted by
+        // the sidebar as soon as the package mounts, but its router.push is a
+        // no-op until the router has committed the calendar route — so a click
+        // that lands in that window is silently swallowed and the form never
+        // opens. Re-clicking a form that IS open is harmless (the assertion
+        // passes on the first poll), so this converges either way.
+        await expect(async () => {
+            await page.getByText('+ Create', { exact: true }).click()
+            await expect(page.getByText('New Event')).toBeVisible({ timeout: 2_000 })
+        }).toPass({ timeout: 30_000 })
         await page.getByPlaceholder('Event title').fill(title)
         await page.getByPlaceholder('YYYY-MM-DD').first().fill(today)
         await page.getByPlaceholder('YYYY-MM-DD').last().fill(today)
         await page.getByPlaceholder('HH:MM').first().fill('08:00')
         await page.getByPlaceholder('HH:MM').last().fill('09:00')
         await page.getByRole('button', { name: 'Save' }).click()
+        // Gate on the form closing, which EventQuickCreate does from the
+        // mutation's onSuccess — so this is the signal that the write actually
+        // committed. Navigating straight after the click raced it: the Day
+        // view would render before the event existed and the block assertion
+        // below would find nothing.
+        await expect(page.getByText('New Event')).toBeHidden({ timeout: 20_000 })
 
         // Day view, then wheel the grid to the top so the 08:00 block is on
         // screen (the grid auto-scrolls to the current hour). RN's ScrollView
         // scrolls via the wheel; scrollIntoViewIfNeeded doesn't drive it.
         await navigateToPackage(page, 'calendar')
-        await page.getByRole('button', { name: 'Day', exact: true }).click()
         const block = await gridBlock(page, title)
-        await expect(block.first()).toBeAttached({ timeout: 10_000 })
+        // Same retry shape as "+ Create" above, and for the same reason: the
+        // Day button is a router.push that no-ops until the calendar route has
+        // committed, so a click landing in that window leaves the grid on Week
+        // view — where this event's block isn't rendered. Re-clicking Day once
+        // it's already active is a no-op, so this converges.
+        await expect(async () => {
+            await page.getByRole('button', { name: 'Day', exact: true }).click()
+            await expect(block.first()).toBeAttached({ timeout: 3_000 })
+        }).toPass({ timeout: 30_000 })
         // Wheel fully to the top, then back down so the 08:00 block sits
         // mid-viewport — at the very top it straddles the bottom fold and the
         // downward resize drag would run off-screen.
