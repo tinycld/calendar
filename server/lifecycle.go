@@ -1,6 +1,8 @@
 package calendar
 
 import (
+	"fmt"
+
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -33,39 +35,47 @@ func handleUserCreated(app core.App, user *core.Record) {
 		return
 	}
 
-	calCollection, err := app.FindCollectionByNameOrId("calendar_calendars")
-	if err != nil {
-		app.Logger().Warn("calendar lifecycle: calendar_calendars collection not found", "error", err)
-		return
-	}
-
 	userName := user.GetString("name")
 	if userName == "" {
 		userName = user.GetString("email")
 	}
 
-	cal := core.NewRecord(calCollection)
-	cal.Set("name", userName)
-	cal.Set("description", "")
-	cal.Set("color", "blue")
-	if err := app.Save(cal); err != nil {
-		app.Logger().Warn("calendar lifecycle: failed to create personal calendar",
-			"user", user.Id, "error", err)
-		return
-	}
+	// Calendar + owner membership in one transaction. Two reasons: a calendar
+	// with no owner row is unusable and unreachable by the RLS rules, so the
+	// pair must be atomic; and automation's owner resolution for calendar
+	// triggers reads calendar_members, so a calendar visible to a rule before
+	// its membership exists would resolve to no owner (see
+	// tinycld/docs/automation.md).
+	err = app.RunInTransaction(func(txApp core.App) error {
+		calCollection, err := txApp.FindCollectionByNameOrId("calendar_calendars")
+		if err != nil {
+			return fmt.Errorf("calendar_calendars collection not found: %w", err)
+		}
 
-	memberCollection, err := app.FindCollectionByNameOrId("calendar_members")
+		cal := core.NewRecord(calCollection)
+		cal.Set("name", userName)
+		cal.Set("description", "")
+		cal.Set("color", "blue")
+		if err := txApp.Save(cal); err != nil {
+			return fmt.Errorf("create personal calendar: %w", err)
+		}
+
+		memberCollection, err := txApp.FindCollectionByNameOrId("calendar_members")
+		if err != nil {
+			return fmt.Errorf("calendar_members collection not found: %w", err)
+		}
+
+		member := core.NewRecord(memberCollection)
+		member.Set("calendar", cal.Id)
+		member.Set("user", user.Id)
+		member.Set("role", "owner")
+		if err := txApp.Save(member); err != nil {
+			return fmt.Errorf("create calendar member: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		app.Logger().Warn("calendar lifecycle: calendar_members collection not found", "error", err)
-		return
-	}
-
-	member := core.NewRecord(memberCollection)
-	member.Set("calendar", cal.Id)
-	member.Set("user", user.Id)
-	member.Set("role", "owner")
-	if err := app.Save(member); err != nil {
-		app.Logger().Warn("calendar lifecycle: failed to create calendar member",
-			"calendar", cal.Id, "error", err)
+		app.Logger().Warn("calendar lifecycle: failed to provision personal calendar",
+			"user", user.Id, "error", err)
 	}
 }
