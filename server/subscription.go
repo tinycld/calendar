@@ -134,7 +134,27 @@ func syncSubscription(app core.App, calRecord *core.Record) error {
 // applyFeed upserts the feed's events into the calendar and prunes
 // sync-managed events that left the feed. Split from syncSubscription so
 // tests can drive it with parsed feeds — fetchICS rejects loopback by design.
+//
+// The whole feed is applied in ONE transaction. Every event write here fires
+// the calendar_events create/update hook, which is what dispatches automation
+// rules — so without a transaction a 200-event feed would dispatch 200 rule
+// runs mid-sync, each racing the writes still to come (and the
+// calendar_calendars save at the end, which is its own trigger collection).
+// PocketBase delays the after-success hooks until commit and skips them on
+// rollback, so rules instead see a settled calendar, once. See
+// tinycld/docs/automation.md, "Your ingress must finish before it fires a
+// trigger".
+//
+// The network fetch deliberately stays outside (syncSubscription): holding a
+// write transaction open across an HTTP round-trip would serialize every
+// other writer behind a slow feed.
 func applyFeed(app core.App, calRecord *core.Record, filteredEvents []ical.Event) error {
+	return app.RunInTransaction(func(txApp core.App) error {
+		return applyFeedTx(txApp, calRecord, filteredEvents)
+	})
+}
+
+func applyFeedTx(app core.App, calRecord *core.Record, filteredEvents []ical.Event) error {
 	now := time.Now().UTC()
 
 	owner, err := findSubscriptionOwner(app, calRecord.Id)
