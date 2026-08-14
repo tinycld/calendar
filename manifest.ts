@@ -14,6 +14,10 @@ const manifest = {
     provider: { component: 'provider' },
     migrations: { directory: 'pb-migrations' },
     collections: { register: 'collections', types: 'types' },
+    // Trigger + action catalog for workflow rules. The Go side
+    // (server/automation.go) registers the calendar_members owner resolver and
+    // the create-event handler.
+    automation: { definitions: 'automation' },
     seed: { script: 'seed' },
     help: { directory: 'help' },
     server: { package: 'server', module: 'tinycld.org/packages/calendar' },
