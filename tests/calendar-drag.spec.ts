@@ -32,7 +32,16 @@ test.describe('Calendar — Drag to resize', () => {
 
     test('dragging an event bottom edge extends its end time', async ({ page }) => {
         const title = `Drag Resize ${Date.now()}`
-        const today = new Date().toISOString().split('T')[0]
+        // The LOCAL day, never toISOString()'s UTC one — west of Greenwich the
+        // UTC date rolls over at, e.g., 7pm CDT, and an event created on
+        // "tomorrow" is simply absent from today's Day view. This spec failed
+        // every evening until the runner's local day was used.
+        const now = new Date()
+        const today = [
+            now.getFullYear(),
+            String(now.getMonth() + 1).padStart(2, '0'),
+            String(now.getDate()).padStart(2, '0'),
+        ].join('-')
 
         // Create a one-off event today 08:00–09:00 — earlier than the seed's
         // first event (09:00), so nothing overlaps it. The in-SPA "+ Create"

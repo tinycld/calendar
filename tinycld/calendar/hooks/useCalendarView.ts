@@ -6,6 +6,7 @@ import type { GestureResponderEvent } from 'react-native'
 import type { AnchorRect, PopoverState } from '../stores/calendar-ui-store'
 import { useCalendarUIStore } from '../stores/calendar-ui-store'
 import { addDays, addMonths, addWeeks, parseDate, toDateString } from './useCalendarNavigation'
+import { sourceEventHref } from './useSourceEvents'
 
 export type ViewMode = 'day' | 'week' | 'month' | 'schedule'
 
@@ -89,6 +90,15 @@ export function useCalendarView(): CalendarViewState {
 
     const openEventDetail = useCallback(
         (eventId: string, e?: GestureResponderEvent) => {
+            // A contributed source event has no calendar_events row for the
+            // detail popover to query — it navigates to the item's own href
+            // (e.g. the card behind a due date) instead. Every view funnels
+            // presses through here, so this is the single interception point.
+            const href = sourceEventHref(eventId)
+            if (href) {
+                router.push(href)
+                return
+            }
             let anchorRect: AnchorRect | undefined
             if (e?.currentTarget) {
                 const target = e.currentTarget as unknown as Element
@@ -104,7 +114,7 @@ export function useCalendarView(): CalendarViewState {
             }
             storeOpenEventDetail(eventId, anchorRect)
         },
-        [storeOpenEventDetail]
+        [storeOpenEventDetail, router]
     )
 
     return {

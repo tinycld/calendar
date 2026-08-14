@@ -76,6 +76,12 @@ function EventCard({
 
     return (
         <Pressable
+            // Carries the event id — for contributed source events that is the
+            // 'src:<sourceId>:<itemId>' synthetic id, which is how e2e can
+            // target a source's row without colliding with the same title
+            // rendered elsewhere (e.g. the frozen cards board behind this
+            // screen, whose text Playwright still counts as visible).
+            testID={`calendar-event-${event.id}`}
             className="flex-row rounded-lg overflow-hidden"
             onPress={e => onPress(event.id, e)}
             style={highlight}
@@ -251,7 +257,7 @@ interface ScheduleShortcutsArgs {
 function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleShortcutsArgs) {
     const storedIndex = useCalendarUIStore(s => s.scheduleFocusedIndex)
     const setFocusedIndex = useCalendarUIStore(s => s.setScheduleFocusedIndex)
-    useShortcutScope('list')
+    const scopeOwner = useShortcutScope('list')
 
     const focusedIndex = events.length === 0 ? 0 : Math.min(storedIndex, events.length - 1)
     const focusedId = events[focusedIndex]?.id ?? null
@@ -299,7 +305,7 @@ function useScheduleShortcuts({ events, openEventDetail, onNewEvent }: ScheduleS
         [events.length, focusedId, openEventDetail, onNewEvent, setFocusedIndex]
     )
 
-    useRegisterShortcuts(shortcuts)
+    useRegisterShortcuts(shortcuts, scopeOwner)
 
     return { focusedId }
 }
