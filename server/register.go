@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -263,13 +262,11 @@ func registerShared(app *pocketbase.PocketBase) {
 
 	registerCalendarMemberAuthz(app)
 
-	// Auto-generate ical_uid for events created via the web UI
-	app.OnRecordCreate("calendar_events").BindFunc(func(e *core.RecordEvent) error {
-		if e.Record.GetString("ical_uid") == "" {
-			e.Record.Set("ical_uid", "urn:uuid:"+uuid.NewString())
-		}
-		return e.Next()
-	})
+	bindICalUIDHook(app)
+
+	// The iCalendar file endpoints backing the CLI's export/import. Raw routes,
+	// so they carry their own authorization — see ics_endpoints.go.
+	registerICSEndpoints(app)
 
 	registerRecurrenceUntilHooks(app)
 
