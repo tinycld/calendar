@@ -21,6 +21,13 @@ const manifest = {
     seed: { script: 'seed' },
     help: { directory: 'help' },
     server: { package: 'server', module: 'tinycld.org/packages/calendar' },
+    // Contributes the `tinycld calendar` command group. Both scopes are needed:
+    // read for agenda/list/events/show/export, write for add/rm/rsvp/import.
+    cli: {
+        package: 'cli',
+        module: 'tinycld.org/packages/calendar/cli',
+        scopes: ['calendar:read', 'calendar:write'],
+    },
     // Server-side TS hooks: drop a *.pb.ts into pb-hooks/ to extend calendar
     // behavior alongside the Go, including the caldavHook interception points
     // (see help/caldav-hooks.md).
