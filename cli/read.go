@@ -50,14 +50,16 @@ func newAgendaCmd(c *client.Client) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			raw := make([]eventRow, len(events))
 			rows := make([][]string, len(events))
 			for i, e := range events {
+				raw[i] = eventRow{event: e, CalendarName: names[e.Calendar]}
 				rows[i] = []string{
 					formatWhen(e), e.Title, names[e.Calendar], e.Location, guestSummary(e), e.ID,
 				}
 			}
 			if err := o.Write(cmd.OutOrStdout(),
-				[]string{"WHEN", "EVENT", "CALENDAR", "WHERE", "GUESTS", "ID"}, rows, events); err != nil {
+				[]string{"WHEN", "EVENT", "CALENDAR", "WHERE", "GUESTS", "ID"}, rows, raw); err != nil {
 				return err
 			}
 			o.Info(cmd.ErrOrStderr(), "%d event(s) in the next %d day(s)", len(events), days)
@@ -94,16 +96,18 @@ func newListCmd(c *client.Client) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			raw := make([]calendarRow, len(calendars))
 			rows := make([][]string, len(calendars))
 			for i, cal := range calendars {
 				kind := "calendar"
 				if cal.SubscriptionURL != "" {
 					kind = "subscription"
 				}
+				raw[i] = calendarRow{calendar: cal, Role: roles[cal.ID], Kind: kind}
 				rows[i] = []string{cal.Name, roles[cal.ID], kind, cal.Color, cal.ID}
 			}
 			return o.Write(cmd.OutOrStdout(),
-				[]string{"NAME", "ROLE", "KIND", "COLOR", "ID"}, rows, calendars)
+				[]string{"NAME", "ROLE", "KIND", "COLOR", "ID"}, rows, raw)
 		},
 	}
 	return cmd
@@ -157,14 +161,16 @@ func newEventsCmd(c *client.Client) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			raw := make([]eventRow, len(events))
 			rows := make([][]string, len(events))
 			for i, e := range events {
+				raw[i] = eventRow{event: e, CalendarName: names[e.Calendar]}
 				rows[i] = []string{
 					formatWhen(e), e.Title, names[e.Calendar], e.Location, guestSummary(e), e.ID,
 				}
 			}
 			return o.Write(cmd.OutOrStdout(),
-				[]string{"WHEN", "EVENT", "CALENDAR", "WHERE", "GUESTS", "ID"}, rows, events)
+				[]string{"WHEN", "EVENT", "CALENDAR", "WHERE", "GUESTS", "ID"}, rows, raw)
 		},
 	}
 	fl := cmd.Flags()
@@ -213,7 +219,8 @@ func newShowCmd(c *client.Client) *cobra.Command {
 			for _, g := range e.Guests {
 				rows = append(rows, []string{"Guest", guestLine(g)})
 			}
-			return o.Write(cmd.OutOrStdout(), []string{"FIELD", "VALUE"}, rows, e)
+			return o.Write(cmd.OutOrStdout(), []string{"FIELD", "VALUE"}, rows,
+				eventRow{event: e, CalendarName: names[e.Calendar]})
 		},
 	}
 }

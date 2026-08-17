@@ -42,6 +42,27 @@ type calendar struct {
 	Updated         string `json:"updated"`
 }
 
+// calendarRow is what `calendar list` emits as JSON: the record plus the two
+// columns the table derives. ROLE decides whether a write will be accepted, so
+// a script that has to choose a calendar to write to needs it as much as a
+// human reading the table does — and it is not on the record, because it comes
+// from a separate calendar_members lookup.
+//
+// The embedded struct keeps the record's own field names intact, so `.id` and
+// `.name` still read the way the collection stores them.
+type calendarRow struct {
+	calendar
+	Role string `json:"role"`
+	Kind string `json:"kind"`
+}
+
+// eventRow is the same idea for the event listings: CALENDAR renders a name
+// resolved from a separate lookup, while the record carries only the id.
+type eventRow struct {
+	event
+	CalendarName string `json:"calendar_name"`
+}
+
 // guest mirrors the EventGuest shape stored in the events `guests` JSON
 // column. RSVP is the field `calendar rsvp` writes.
 type guest struct {
