@@ -513,3 +513,79 @@ func TestJSONOutputIsStable(t *testing.T) {
 		t.Errorf("--json returned %d calendars, want 2", len(calendars))
 	}
 }
+
+// Every column the table renders must be reachable from --json.
+//
+// ROLE and KIND are joined/derived at render time, so they live on the row
+// wrapper rather than the record. Without them a script cannot answer "which
+// calendars may I write to" at all — it would have to parse the table, and the
+// live smoke test had to do exactly that. `o.Write` takes the headers and the
+// JSON payload as separate arguments, so nothing but a test keeps them in step.
+func TestListJSONCarriesRoleAndKind(t *testing.T) {
+	f := book(t)
+	_, c := f.serve()
+
+	out, _, err := runCmd(t, c, "calendar", "list", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rows []struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+		Role string `json:"role"`
+		Kind string `json:"kind"`
+	}
+	if err := json.Unmarshal([]byte(out), &rows); err != nil {
+		t.Fatalf("--json is not a stable array: %v\n%s", err, out)
+	}
+	for _, r := range rows {
+		if r.Role == "" {
+			t.Errorf("calendar %q carries no role in --json; the table has a ROLE column", r.Name)
+		}
+		if r.Kind == "" {
+			t.Errorf("calendar %q carries no kind in --json; the table has a KIND column", r.Name)
+		}
+		// The record's own fields must survive the wrapper.
+		if r.ID == "" || r.Name == "" {
+			t.Errorf("the row wrapper dropped a record field: %+v", r)
+		}
+	}
+}
+
+// Same contract for the event listings and `show`: the CALENDAR column renders
+// a name resolved from a separate lookup, while the record holds only the id.
+func TestEventJSONCarriesCalendarName(t *testing.T) {
+	for _, args := range [][]string{
+		{"calendar", "agenda", "--days", "3650", "--json"},
+		{"calendar", "events", "--from", "2020-01-01", "--to", "2030-01-01", "--json"},
+	} {
+		t.Run(args[1], func(t *testing.T) {
+			f := book(t)
+			_, c := f.serve()
+
+			out, _, err := runCmd(t, c, args...)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var rows []struct {
+				ID           string `json:"id"`
+				Calendar     string `json:"calendar"`
+				CalendarName string `json:"calendar_name"`
+			}
+			if err := json.Unmarshal([]byte(out), &rows); err != nil {
+				t.Fatalf("--json is not a stable array: %v\n%s", err, out)
+			}
+			if len(rows) == 0 {
+				t.Fatal("no events returned; the fixture should carry some")
+			}
+			for _, r := range rows {
+				if r.CalendarName == "" {
+					t.Errorf("event %q carries no calendar_name; the table has a CALENDAR column", r.ID)
+				}
+				if r.Calendar == "" {
+					t.Errorf("the row wrapper dropped the calendar id: %+v", r)
+				}
+			}
+		})
+	}
+}
