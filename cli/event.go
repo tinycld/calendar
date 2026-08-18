@@ -193,6 +193,21 @@ func formatWhen(e event) string {
 	return start.Local().Format("2006-01-02 15:04")
 }
 
+// formatEnd renders an event's end the way formatWhen renders its start —
+// local, and to the same precision. `calendar show` printed the raw stored
+// value here, so one row read "2026-08-20 14:30" and the next the underlying
+// UTC timestamp, which looks like the event ends on a different day.
+func formatEnd(e event) string {
+	end, ok := parseEventTime(e.End)
+	if !ok {
+		return e.End
+	}
+	if e.AllDay {
+		return end.Local().Format("2006-01-02")
+	}
+	return end.Local().Format("2006-01-02 15:04")
+}
+
 // parseWhen reads a user-supplied time. A bare date is accepted so
 // `--start 2026-08-20` works for an all-day event without the user having to
 // type a midnight clock time.

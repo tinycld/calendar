@@ -132,7 +132,12 @@ func newEventsCmd(c *client.Client) *cobra.Command {
 			}
 			ctx := cmd.Context()
 
-			start := time.Now().Truncate(24 * time.Hour)
+			// Local midnight, not UTC. Truncate works on absolute time, so it
+			// lands on UTC midnight — which for anyone behind UTC starts "today"
+			// hours late and silently drops that morning's events. An explicit
+			// --from already parses in time.Local (parseWhen), so this matches.
+			now := time.Now()
+			start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 			if from != "" {
 				if start, err = parseWhen(from); err != nil {
 					return err
@@ -207,7 +212,7 @@ func newShowCmd(c *client.Client) *cobra.Command {
 				{"Title", e.Title},
 				{"Calendar", names[e.Calendar]},
 				{"Start", formatWhen(e)},
-				{"End", e.End},
+				{"End", formatEnd(e)},
 				{"All day", yesNo(e.AllDay)},
 				{"Location", e.Location},
 				{"Recurrence", orDash(e.Recurrence)},
