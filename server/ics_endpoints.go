@@ -301,7 +301,6 @@ func handleICSImport(app core.App, re *core.RequestEvent) error {
 	}
 
 	result := icsImportResult{}
-	if len(body) > 0 { app.Logger().Error("ICSPROBE", "body", string(body)) }
 	for index, cal := range decodeICSDocuments(body, &result) {
 		for _, child := range cal.Children {
 			if child.Name != ical.CompEvent {

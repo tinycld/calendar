@@ -246,6 +246,9 @@ func actionCreateEvent(app core.App, req automation.ActionRequest) error {
 	end := start.Add(time.Duration(durationMinutes) * time.Minute)
 
 	record := core.NewRecord(collection)
+	// An explicit id up front is what lets the write be stamped below: the
+	// provenance sentinel is keyed by record id, so it has to exist before Save.
+	record.Set("id", core.GenerateDefaultRandomId())
 	record.Set("calendar", calendarID)
 	record.Set("created_by", req.OwnerID)
 	record.Set("title", title)
@@ -265,7 +268,11 @@ func actionCreateEvent(app core.App, req automation.ActionRequest) error {
 		record.Set("reminder", reminder)
 	}
 
-	if err := app.Save(record); err != nil {
+	// calendar:event-added watches calendar_events, so this create fires the
+	// very trigger that can invoke this action. Stamping provenance carries the
+	// firing's depth onto the new row, which is what makes such a rule stop at
+	// the chain-depth cap instead of creating events forever.
+	if err := automation.MarkEngineWrite(req, record.Id, func() error { return app.Save(record) }); err != nil {
 		return fmt.Errorf("calendar:create-event: %w", err)
 	}
 	return nil
