@@ -84,7 +84,7 @@ test.describe('Calendar — Sharing UI', () => {
         // available to the test). A record deep-link is the only stable way
         // to land on this exact calendar's settings, so the goto is
         // intentional rather than in-app screen navigation.
-        await page.goto(`/calendar/settings/${cal.id}`)
+        await page.goto(`/a/calendar/settings/${cal.id}`)
         await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
 
         // The seed user "Test User" appears as a member with the "Owner" role.
@@ -113,7 +113,7 @@ test.describe('Calendar — Sharing UI', () => {
 
             // Drive the sharing UI as the owner.
             await login(page)
-            await page.goto(`/calendar/settings/${cal.id}`)
+            await page.goto(`/a/calendar/settings/${cal.id}`)
             await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
 
             await page.getByRole('button', { name: 'Add people' }).click()
@@ -182,7 +182,7 @@ test.describe('Calendar — Sharing UI', () => {
         const cal = pickPersonalCalendar(calendars)
 
         await login(page)
-        await page.goto(`/calendar/settings/${cal.id}`)
+        await page.goto(`/a/calendar/settings/${cal.id}`)
         await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
 
         // The current user (Test User) is the only owner of their personal
