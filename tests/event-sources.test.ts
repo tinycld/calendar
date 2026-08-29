@@ -15,7 +15,7 @@ function item(overrides: Partial<EventSourceItem> = {}): EventSourceItem {
         start: '2026-08-04T00:00:00.000Z',
         end: '2026-08-04T23:59:59.999Z',
         allDay: true,
-        href: { pathname: '/cards/[cardId]', params: { cardId: 'card1' } },
+        href: { pathname: '/a/cards/[cardId]', params: { cardId: 'card1' } },
         ...overrides,
     }
 }
@@ -94,7 +94,7 @@ describe('sourceEventHref', () => {
     it('resolves a source event to its item href', () => {
         useEventSourcesStore.getState().setSourceItems('cards-due', [item()], false)
         expect(sourceEventHref('src:cards-due:card1')).toEqual({
-            pathname: '/cards/[cardId]',
+            pathname: '/a/cards/[cardId]',
             params: { cardId: 'card1' },
         })
     })
