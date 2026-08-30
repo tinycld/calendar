@@ -4,8 +4,12 @@ function log(...args: unknown[]) {
     process.stdout.write(`[seed:calendar] ${args.join(' ')}\n`)
 }
 
+// Structural mirror of core's SeedContext (core/lib/packages/config-types.ts).
+// Declared locally rather than imported so this package stays decoupled.
 interface SeedContext {
     user: { id: string; email: string; name: string }
+    // The seeded collaborator — the other member of the shared calendars.
+    companion?: { id: string; email: string; name: string }
 }
 
 function today() {
@@ -935,7 +939,7 @@ async function seedEvents(pb: PocketBase, calendarMap: Record<string, string>, u
     }
 }
 
-export default async function seed(pb: PocketBase, { user }: SeedContext) {
+export default async function seed(pb: PocketBase, { user, companion }: SeedContext) {
     // Count events, not calendars: the lifecycle hook auto-creates a personal
     // calendar for every new user, so calendars exist before any seeding.
     const existingEvents = await pb.collection('calendar_events').getList(1, 1, {
@@ -946,10 +950,10 @@ export default async function seed(pb: PocketBase, { user }: SeedContext) {
         return
     }
 
-    // Every other user in the database is someone the seed can share with.
-    const otherUsers = await pb.collection('users').getFullList({
-        filter: `id != "${user.id}"`,
-    })
+    // The seeded companion is the other member of the Team/Holidays calendars.
+    // Resolving this from "any other user in the database" wrote calendar_members
+    // rows owned by real accounts, which a user-scoped reset can never reclaim.
+    const otherUsers = companion ? [companion] : []
 
     const calendarMap = await seedCalendars(pb, user.id, otherUsers)
 
