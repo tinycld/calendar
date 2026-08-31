@@ -14,7 +14,7 @@ import (
 // real pb-hooks + the ONE piece of feature Go the bootstrap depends on
 // (registerOwnerMembershipBootstrap), which a tenant now runs because
 // calendar's Go links into serve-org via the pinned menu
-// (multi-org/docs/SCOPE-tenant-feature-go.md; the interim pb-hook that used to
+// (hosting/docs/SCOPE-tenant-feature-go.md; the interim pb-hook that used to
 // duplicate it was deleted when that landed).
 //
 // The specific question here: calendar_members' restored owner-check

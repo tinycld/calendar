@@ -34,7 +34,7 @@ const manifest = {
     hooks: { directory: 'pb-hooks' },
     // CalDAV over /caldav, served by core (tinycld.org/core/caldav). This
     // mirrors the calDAVSource literal in server/register.go, which is what the
-    // single-tenant app registers. A multi-org tenant serves CalDAV from this
+    // single-tenant app registers. A hosting tenant serves CalDAV from this
     // block (the router materializes it into the tenant's runtime config) —
     // that is why the Go-side mount is host-only even though calendar's other
     // Go links into tenants via RegisterTenant.
