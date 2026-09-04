@@ -12,7 +12,7 @@ import (
 // setupEventSearchApp builds the minimal schema fts.Search reads for calendar:
 // users with a `disabled` flag (the disabled-account check queries it),
 // calendar_calendars, calendar_members, calendar_events, and the FTS virtual
-// table. Mirrors cards' setupSearchApp — the two packages share the membership
+// table. Mirrors boards' setupSearchApp — the two packages share the membership
 // scope shape, so they need the same fixture skeleton.
 func setupEventSearchApp(t *testing.T) *tests.TestApp {
 	t.Helper()
@@ -219,7 +219,7 @@ func TestSearchEventsExcludesTerms(t *testing.T) {
 
 func TestSearchEventsTitlesATitlelessRow(t *testing.T) {
 	// calendar_events.title is `required, min: 1`, so no validated write can
-	// produce an empty one — unlike cards, whose title is optional. What IS
+	// produce an empty one — unlike boards, whose title is optional. What IS
 	// reachable is an event whose stored title went missing: a direct SQL write
 	// or a partially-failed migration. The placeholder covers that, because a
 	// blank row would be unreadable and unclickable in both the palette and the

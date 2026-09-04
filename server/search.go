@@ -26,7 +26,7 @@ var ftsConfig = fts.Config{
 		{FTS: "location", Field: "location"},
 	},
 	// An event is visible to the members of its calendar, which is the same
-	// membership shape cards uses: calendar_members(calendar, user).
+	// membership shape boards uses: calendar_members(calendar, user).
 	Scope: fts.MemberScope{
 		Table:       "calendar_members",
 		MemberField: "calendar",
@@ -47,7 +47,7 @@ var ftsConfig = fts.Config{
 // Deliberately fts.RegisterSync rather than fts.Register: the latter also mounts
 // GET /api/calendar/search, and calendar has no in-app search box to serve.
 // Federation is the only consumer, so a per-package route would be dead on
-// arrival — the same dead endpoint cards is in the process of losing.
+// arrival — the same dead endpoint boards is in the process of losing.
 func registerSearch(app *pocketbase.PocketBase) {
 	fts.RegisterSync(app, ftsConfig)
 	search.RegisterSources(searchSource())

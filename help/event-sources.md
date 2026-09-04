@@ -1,12 +1,12 @@
 ---
 title: Items from other apps on your calendar
 summary: Show and hide read-only feeds other apps contribute, like card due dates
-tags: [sources, feeds, cards, due dates, toggle]
+tags: [sources, feeds, boards, due dates, toggle]
 order: 90
 ---
 
 Some apps in your workspace can place their own items on your calendar. For
-example, with the Cards app installed, every card with a due date appears as an
+example, with the Boards app installed, every card with a due date appears as an
 all-day item on the day it is due.
 
 These items are read-only on the calendar: you can't drag them to a new day or

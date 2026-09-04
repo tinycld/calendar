@@ -7,7 +7,7 @@ const manifest = {
     nav: { label: 'Calendar', icon: 'calendar', order: 8, shortcut: 'c' },
     sidebar: { component: 'sidebar' },
     slots: ['sidebar.after-calendars'],
-    // Other packages contribute read-only event feeds (e.g. cards' due dates)
+    // Other packages contribute read-only event feeds (e.g. boards' due dates)
     // that render on the grid with a sidebar visibility toggle. See
     // core/lib/event-sources/types.ts for the contract.
     eventSourceHost: true,
