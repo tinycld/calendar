@@ -7,7 +7,7 @@ const manifest = {
     nav: { label: 'Calendar', icon: 'calendar', order: 8, shortcut: 'c' },
     sidebar: { component: 'sidebar' },
     slots: ['sidebar.after-calendars'],
-    // Other packages contribute read-only event feeds (e.g. cards' due dates)
+    // Other packages contribute read-only event feeds (e.g. boards' due dates)
     // that render on the grid with a sidebar visibility toggle. See
     // core/lib/event-sources/types.ts for the contract.
     eventSourceHost: true,
@@ -34,7 +34,7 @@ const manifest = {
     hooks: { directory: 'pb-hooks' },
     // CalDAV over /caldav, served by core (tinycld.org/core/caldav). This
     // mirrors the calDAVSource literal in server/register.go, which is what the
-    // single-tenant app registers. A multi-org tenant serves CalDAV from this
+    // single-tenant app registers. A hosting tenant serves CalDAV from this
     // block (the router materializes it into the tenant's runtime config) —
     // that is why the Go-side mount is host-only even though calendar's other
     // Go links into tenants via RegisterTenant.

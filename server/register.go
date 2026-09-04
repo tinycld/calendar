@@ -18,7 +18,7 @@ import (
 
 // calDAVSource maps the calendar collections onto core's CalDAV server.
 //
-// This literal mirrors the manifest's `caldav` block, which is what a multi-org
+// This literal mirrors the manifest's `caldav` block, which is what a hosting
 // tenant serves: the router materializes the manifest block into the tenant's
 // runtime config and core mounts CalDAV from it, so the mount below is
 // host-only (see Register vs RegisterTenant). Keep the two in sync.
@@ -91,7 +91,7 @@ func appIsLive(app core.App) bool {
 
 // Register composes the calendar server — the package's single entry point,
 // called by the generator's package_extensions.go in BOTH the single-org app
-// and a multi-org tenant. The CalDAV mount runs in both: a per-org tenant
+// and a hosting tenant. The CalDAV mount runs in both: a per-org tenant
 // build links exactly the org's features, so the artifact is the gate.
 // Registered outside OnServe because caldav.Register binds its own OnServe
 // handler, and the caldavHook TS binding must exist before jsvm runs the hook

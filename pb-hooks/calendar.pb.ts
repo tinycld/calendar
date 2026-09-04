@@ -55,7 +55,7 @@ onRecordCreate((e) => {
 // NOTE: this file used to carry an interim owner-membership bootstrap
 // (duplicating server/register.go's Go hook) because serve-org once linked no
 // feature Go. Calendar's Go now runs in tenants too (RegisterTenant, via the
-// router's pinned menu — multi-org/docs/SCOPE-tenant-feature-go.md), so the
+// router's pinned menu — hosting/docs/SCOPE-tenant-feature-go.md), so the
 // Go hook covers both compositions and the TS duplicate was deleted rather
 // than left to drift. See registerOwnerMembershipBootstrap in
 // server/register.go.

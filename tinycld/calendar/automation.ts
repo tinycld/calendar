@@ -10,7 +10,7 @@ import type { CalendarSchema } from './types'
 // events a colleague added. server/automation.go registers an owner resolver
 // over calendar_members that supersedes this ownerField; the declaration keeps
 // it so the trigger still resolves an owner in a deployment where calendar's
-// Go isn't linked (a multi-org tenant).
+// Go isn't linked (a hosting tenant).
 const automation = {
     triggers: [
         {

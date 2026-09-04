@@ -74,7 +74,7 @@ jobs:
       # fetcher's SSRF defenses (host validation, the DNS-rebinding-resistant
       # pinned dialer, redirect re-validation, the response cap), the
       # calendar_members authz/RLS rules, and the guest lifecycle. A hosted
-      # multi-org tenant runs these rules as its whole authorization boundary.
+      # hosting tenant runs these rules as its whole authorization boundary.
       # `tinycld-pkg check` is biome + tsc + vitest and has no Go runner, so
       # without this step none of it is exercised on CI.
       #

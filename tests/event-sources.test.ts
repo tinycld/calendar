@@ -15,7 +15,7 @@ function item(overrides: Partial<EventSourceItem> = {}): EventSourceItem {
         start: '2026-08-04T00:00:00.000Z',
         end: '2026-08-04T23:59:59.999Z',
         allDay: true,
-        href: { pathname: '/a/cards/[cardId]', params: { cardId: 'card1' } },
+        href: { pathname: '/a/boards/[cardId]', params: { cardId: 'card1' } },
         ...overrides,
     }
 }
@@ -40,13 +40,13 @@ describe('useSourceEvents', () => {
         })
 
         act(() => {
-            useEventSourcesStore.getState().setSourceItems('cards-due', [item()], false)
+            useEventSourcesStore.getState().setSourceItems('boards-due', [item()], false)
         })
 
         expect(result.current).toHaveLength(1)
         const evt = result.current[0]
-        expect(evt.id).toBe('src:cards-due:card1')
-        expect(evt.calendar).toBe('src:cards-due')
+        expect(evt.id).toBe('src:boards-due:card1')
+        expect(evt.calendar).toBe('src:boards-due')
         expect(evt.title).toBe('Ship the release')
         expect(evt.all_day).toBe(true)
         expect(evt.recurrence).toBe('')
@@ -57,13 +57,13 @@ describe('useSourceEvents', () => {
     it('drops items from hidden sources', () => {
         const { result } = renderHook(() => useSourceEvents(RANGE_START, RANGE_END))
         act(() => {
-            useEventSourcesStore.getState().setSourceItems('cards-due', [item()], false)
-            useEventSourcesStore.getState().toggleSource('cards-due')
+            useEventSourcesStore.getState().setSourceItems('boards-due', [item()], false)
+            useEventSourcesStore.getState().toggleSource('boards-due')
         })
         expect(result.current).toEqual([])
 
         act(() => {
-            useEventSourcesStore.getState().toggleSource('cards-due')
+            useEventSourcesStore.getState().toggleSource('boards-due')
         })
         expect(result.current).toHaveLength(1)
     })
@@ -72,7 +72,7 @@ describe('useSourceEvents', () => {
         const { result } = renderHook(() => useSourceEvents(RANGE_START, RANGE_END))
         act(() => {
             useEventSourcesStore.getState().setSourceItems(
-                'cards-due',
+                'boards-due',
                 [
                     item({
                         id: 'stale',
@@ -84,7 +84,7 @@ describe('useSourceEvents', () => {
                 false
             )
         })
-        expect(result.current.map(e => e.id)).toEqual(['src:cards-due:current'])
+        expect(result.current.map(e => e.id)).toEqual(['src:boards-due:current'])
     })
 })
 
@@ -92,17 +92,17 @@ describe('sourceEventHref', () => {
     beforeEach(resetStore)
 
     it('resolves a source event to its item href', () => {
-        useEventSourcesStore.getState().setSourceItems('cards-due', [item()], false)
-        expect(sourceEventHref('src:cards-due:card1')).toEqual({
-            pathname: '/a/cards/[cardId]',
+        useEventSourcesStore.getState().setSourceItems('boards-due', [item()], false)
+        expect(sourceEventHref('src:boards-due:card1')).toEqual({
+            pathname: '/a/boards/[cardId]',
             params: { cardId: 'card1' },
         })
     })
 
     it('returns null for ordinary event ids and unknown items', () => {
-        useEventSourcesStore.getState().setSourceItems('cards-due', [item()], false)
+        useEventSourcesStore.getState().setSourceItems('boards-due', [item()], false)
         expect(sourceEventHref('r8f3k2m9x1p7q4w')).toBeNull()
-        expect(sourceEventHref('src:cards-due:missing')).toBeNull()
+        expect(sourceEventHref('src:boards-due:missing')).toBeNull()
     })
 })
 
@@ -119,17 +119,17 @@ describe('event-sources store', () => {
 
     it('tracks loading sources without duplicates and clears them', () => {
         const store = useEventSourcesStore.getState()
-        store.setSourceItems('cards-due', [], true)
-        store.setSourceItems('cards-due', [], true)
-        expect(useEventSourcesStore.getState().loadingSourceIds).toEqual(['cards-due'])
-        store.setSourceItems('cards-due', [item()], false)
+        store.setSourceItems('boards-due', [], true)
+        store.setSourceItems('boards-due', [], true)
+        expect(useEventSourcesStore.getState().loadingSourceIds).toEqual(['boards-due'])
+        store.setSourceItems('boards-due', [item()], false)
         expect(useEventSourcesStore.getState().loadingSourceIds).toEqual([])
     })
 
     it('clearSource removes a source entirely', () => {
         const store = useEventSourcesStore.getState()
-        store.setSourceItems('cards-due', [item()], true)
-        store.clearSource('cards-due')
+        store.setSourceItems('boards-due', [item()], true)
+        store.clearSource('boards-due')
         const state = useEventSourcesStore.getState()
         expect(state.itemsBySource).toEqual({})
         expect(state.loadingSourceIds).toEqual([])

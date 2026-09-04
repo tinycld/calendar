@@ -20,7 +20,7 @@ describe('calendar manifest', () => {
     })
 
     it('hosts event-source contributions', () => {
-        // Cards' due-date source (and any future feed) targets this flag; the
+        // Boards' due-date source (and any future feed) targets this flag; the
         // generator refuses a contribution aimed at a non-host package.
         expect(manifest.eventSourceHost).toBe(true)
     })
