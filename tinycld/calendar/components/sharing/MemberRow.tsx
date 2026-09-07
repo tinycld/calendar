@@ -23,7 +23,6 @@ interface MemberRowProps {
 }
 
 export function MemberRow({ member, canEdit, canRemove, onRoleChange, onRemove }: MemberRowProps) {
-    const mutedColor = useThemeColor('muted-foreground')
     const dangerColor = useThemeColor('danger')
 
     return (
@@ -51,37 +50,11 @@ export function MemberRow({ member, canEdit, canRemove, onRoleChange, onRemove }
                 ) : null}
             </View>
 
-            {canEdit ? (
-                <Menu>
-                    <Menu.Trigger>
-                        <Pressable className="flex-row items-center gap-1 px-2.5 py-1 rounded-md border border-border bg-background">
-                            <Text className="text-foreground text-xs font-medium">
-                                {roleLabel(member.role)}
-                            </Text>
-                            <ChevronDown size={14} color={mutedColor} />
-                        </Pressable>
-                    </Menu.Trigger>
-                    <Menu.Portal>
-                        <Menu.Overlay />
-                        <Menu.Content presentation="popover" placement="bottom" align="end">
-                            {ROLE_OPTIONS.map(opt => (
-                                <Menu.Item
-                                    key={opt.value}
-                                    onPress={() => onRoleChange(member.membershipId, opt.value)}
-                                >
-                                    <Menu.ItemTitle>{opt.label}</Menu.ItemTitle>
-                                </Menu.Item>
-                            ))}
-                        </Menu.Content>
-                    </Menu.Portal>
-                </Menu>
-            ) : (
-                <View className="px-2.5 py-1 rounded-md bg-surface-secondary">
-                    <Text className="text-foreground text-xs font-medium">
-                        {roleLabel(member.role)}
-                    </Text>
-                </View>
-            )}
+            <RolePill
+                canEdit={canEdit}
+                role={member.role}
+                onChange={role => onRoleChange(member.membershipId, role)}
+            />
 
             {canRemove ? (
                 <Pressable
@@ -96,5 +69,48 @@ export function MemberRow({ member, canEdit, canRemove, onRoleChange, onRemove }
                 <View style={{ width: 28, height: 28 }} />
             )}
         </View>
+    )
+}
+
+function RolePill({
+    canEdit,
+    role,
+    onChange,
+}: {
+    canEdit: boolean
+    role: CalendarRole
+    onChange: (role: CalendarRole) => void
+}) {
+    const mutedColor = useThemeColor('muted-foreground')
+
+    if (!canEdit) {
+        return (
+            <View className="px-2.5 py-1 rounded-md bg-surface-secondary">
+                <Text className="text-foreground text-xs font-medium">{roleLabel(role)}</Text>
+            </View>
+        )
+    }
+
+    return (
+        <Menu
+            trigger={
+                <Pressable className="flex-row items-center gap-1 px-2.5 py-1 rounded-md border border-border bg-background">
+                    <Text className="text-foreground text-xs font-medium">{roleLabel(role)}</Text>
+                    <ChevronDown size={14} color={mutedColor} />
+                </Pressable>
+            }
+            placement="bottom-end"
+            presentation="popover"
+            title="Role"
+        >
+            {ROLE_OPTIONS.map(opt => (
+                <Menu.Item
+                    key={opt.value}
+                    label={opt.label}
+                    isSelected={opt.value === role}
+                    onSelect={() => onChange(opt.value)}
+                />
+            ))}
+        </Menu>
     )
 }
