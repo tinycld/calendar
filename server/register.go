@@ -13,6 +13,7 @@ import (
 	"tinycld.org/core/caldav"
 	"tinycld.org/core/coreserver"
 	"tinycld.org/core/notify"
+	"tinycld.org/core/oauth"
 	"tinycld.org/core/offboard"
 )
 
@@ -106,6 +107,10 @@ func Register(app *pocketbase.PocketBase) {
 // record hooks, request-scoped authorization, endpoints, audit/quota/notify
 // registrations, and the per-org background schedulers.
 func registerShared(app *pocketbase.PocketBase) {
+	// What an OAuth token may reach in this package. Core knows nothing about
+	// it until this runs; see oauth.Package for the shape.
+	oauth.RegisterPackage(oauthPackage())
+
 	// Reassignable authorship FKs surfaced to core's account-offboarding
 	// transaction. Without this, deleting a user who created calendar_events
 	// fails: the required FK blocks the users delete.
