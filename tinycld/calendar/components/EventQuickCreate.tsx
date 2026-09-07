@@ -5,9 +5,9 @@ import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
-import { BottomDrawer } from '@tinycld/core/ui/bottom-drawer'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { TextInput, useForm, z, zodResolver } from '@tinycld/core/ui/form'
+import { Sheet } from '@tinycld/core/ui/sheet'
 import { useRouter } from 'expo-router'
 import { Users, X } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
@@ -136,19 +136,8 @@ function MobileQuickCreate({
     }
 
     return (
-        <BottomDrawer isOpen={isVisible} onClose={onClose}>
-            <View className="p-5 gap-3 w-full">
-                <View className="flex-row justify-between items-center">
-                    <Pressable onPress={onClose}>
-                        <Text className="text-muted-foreground" style={{ fontSize: 14 }}>
-                            Cancel
-                        </Text>
-                    </Pressable>
-                    <Button onPress={onSave} size="sm">
-                        <ButtonText>Save</ButtonText>
-                    </Button>
-                </View>
-
+        <Sheet isOpen={isVisible} onClose={onClose} title="New Event">
+            <Sheet.Body>
                 <TextInput control={control} name="title" placeholder="Add title" autoFocus />
 
                 <View className="gap-1">
@@ -166,8 +155,18 @@ function MobileQuickCreate({
                         Add guests
                     </Text>
                 </Pressable>
-            </View>
-        </BottomDrawer>
+            </Sheet.Body>
+            <Sheet.Footer>
+                <Pressable onPress={onClose} className="px-3 py-1.5">
+                    <Text className="text-muted-foreground" style={{ fontSize: 14 }}>
+                        Cancel
+                    </Text>
+                </Pressable>
+                <Button onPress={onSave} size="sm">
+                    <ButtonText>Save</ButtonText>
+                </Button>
+            </Sheet.Footer>
+        </Sheet>
     )
 }
 
