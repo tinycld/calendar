@@ -16,7 +16,7 @@
 //     than a permission error.
 //
 //   - SEARCH IS FEDERATED. Calendar contributes a source to core's
-//     /api/search, so `tinycld search "pkg:calendar standup"` already works.
+//     /api/search, so `tinycld search "calendar: standup"` already works.
 //     There is deliberately no `calendar search` here that duplicates it.
 //
 //   - EXPORT/IMPORT ARE THE ONLY TYPED ROUTES, and they must be. The iCalendar
