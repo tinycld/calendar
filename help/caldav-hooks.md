@@ -105,6 +105,6 @@ caldavHook({
 })
 ```
 
-## Multi-org deployments
+## Hosted deployments
 
-Under the hosting router each organization runs in its own process. Those processes run the same package TypeScript with the same bindings, so **`caldavHook` works identically there** — the router materializes your org's hook files and the tenant registers them at boot. The rest of CalDAV, including all of its access checks, is likewise identical in both deployment shapes.
+Under the hosting router each server runs in its own process. Those processes run the same package TypeScript with the same bindings, so **`caldavHook` works identically there** — the router materializes your server's hook files and the process registers them at boot. The rest of CalDAV, including all of its access checks, is likewise identical in both deployment shapes.

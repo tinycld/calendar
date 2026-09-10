@@ -17,6 +17,9 @@ Part of [TinyCld](https://tinycld.org/) — the open-source, self-hosted Google 
 - **CalDAV sync.** Native `/caldav/` endpoint. Apple Calendar, GNOME Calendar, DAVx5, Thunderbird — any CalDAV client just works.
 - **Real-time updates.** Edits from any client appear instantly in every other session.
 - **Quick create.** One-keystroke event creation from any view.
+- **iCalendar export / import.** `GET /api/calendar/export` streams a calendar as an `.ics` file and `POST /api/calendar/import` upserts one back, matching events on `ical_uid` so a re-import updates rather than duplicates (`server/ics_endpoints.go`). Export needs membership in any role; import needs owner or editor — a viewer may export but not import.
+- **Search.** `server/search.go` keeps an FTS index over title, description, and location and registers a federated search source, so events show up in the app's cross-package palette (`/`, scoped with a `calendar:` chip) and in `tinycld search`.
+- **Contributed event sources.** `eventSourceHost: true` in the manifest lets other packages place read-only items on the grid (e.g. card due dates) with a per-feed visibility toggle in the sidebar — `components/EventSourcesHost.tsx`, `components/EventSourceToggles.tsx`, `hooks/useSourceEvents.ts`.
 
 ## Automation rules
 
@@ -44,13 +47,13 @@ Rules are declared with `automation: { definitions: 'automation' }` in `manifest
 
 This package contributes:
 
-- **Screens** — routes at `/calendar`.
+- **Screens** — routes at `/a/calendar`.
 - **Provider** — a wrapping context that loads calendar memberships and visible-calendar state.
 - **Nav entry** — sidebar icon with keyboard shortcut `c`.
 - **Sidebar slot** — `sidebar.after-calendars`, exposed for other packages to inject sections (e.g. "My Booking Pages") below the calendar list. See [Sidebar slots](https://tinycld.org/docs/anatomy/sidebar-slots).
 - **Collections** — `calendar_calendars`, `calendar_members`, `calendar_events` (pbtsdb, live-queried).
 - **Migrations** — schema under `pb-migrations/`.
-- **Go server module** — the CalDAV field map core's protocol server is driven by (`tinycld.org/core/caldav`), plus the subscription poller, reminder scheduler, and membership guards, wired into the app shell's PocketBase binary.
+- **Go server module** — the CalDAV field map core's protocol server is driven by (`tinycld.org/core/caldav`), plus the subscription poller, reminder scheduler, and membership guards, wired into the app shell's PocketBase binary. It also registers the federated search source (`server/search.go`), the iCalendar export/import routes (`server/ics_endpoints.go`), and the package's OAuth scopes (`server/oauth_scopes.go`).
 - **TS hook points** — `caldavHook({ beforeWrite, beforeDelete, canRead, filterList })` for customizing CalDAV without forking the Go. See `help/caldav-hooks.md`.
 
 The package depends on `@tinycld/core` at runtime (React, pbtsdb, `~/lib/*`). The app shell has no knowledge of this package at compile time — everything is discovered at generator time by scanning the workspace members.
@@ -73,7 +76,7 @@ pnpm run packages:unlink @tinycld/calendar
 
 ## Command line
 
-This package's command group in the `tinycld` binary. The Go source lives in `cli/`, declared by a `cli` block in `manifest.ts` naming the Go module and the OAuth scopes (`calendar:read`, `calendar:write`). The server cross-compiles the binary; users download it from **Settings → Personal → About**.
+This package's command group in the `tinycld` binary. The Go source lives in `cli/`, declared by a `cli` block in `manifest.ts` naming the Go package and module. The OAuth scopes the commands need (`calendar:read`, `calendar:write`) are not in the manifest: `server/oauth_scopes.go` registers them via `oauth.RegisterPackage`, together with the collections and routes each scope governs. The server cross-compiles the binary; users download it from **Settings → Personal → About**.
 
 Nine commands, under `tinycld calendar` (alias `cal`):
 
@@ -112,11 +115,11 @@ pnpm run checks           # biome + tsc across the app shell + linked packages
 - `package.json` — name, exports map, peer deps
 - `tsconfig.json` — thin extend of the app shell's package tsconfig base
 - `pb-migrations/` — PocketBase migrations
-- `server/` — Go server module: CalDAV field map, subscription poller, reminder scheduler, membership guards, and `automation.go`
+- `server/` — Go server module: CalDAV field map, subscription poller, reminder scheduler, membership guards, `automation.go`, `search.go` (FTS index + federated search source), `ics_endpoints.go` (iCalendar export/import routes), and `oauth_scopes.go` (OAuth scope registration)
 - `cli/` — Go source for this package's `tinycld` command group
 - `help/` — in-app help topics (markdown + frontmatter)
 - `tests/` — vitest unit tests + Playwright e2e specs
-- `tinycld/calendar/` — TypeScript source (screens, provider, collections, and `automation.ts`)
+- `tinycld/calendar/` — TypeScript source (screens, provider, collections, the event-source host components and hooks, and `automation.ts`)
 
 ## License
 

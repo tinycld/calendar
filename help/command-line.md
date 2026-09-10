@@ -85,7 +85,9 @@ tinycld calendar import --calendar Work work.ics
 ```
 
 Export writes a calendar as a standard iCalendar (`.ics`) file, which any
-other calendar application can read.
+other calendar application can read. When `--out` names a file that already
+exists, export asks before overwriting it; pass `--yes` in scripts to skip
+the prompt.
 
 Import matches each event on its UID, so re-importing a file you exported
 updates those events instead of duplicating them. An event that cannot be read
@@ -93,16 +95,33 @@ is reported and skipped rather than failing the whole file. Importing needs
 editor or owner access — being able to read a calendar is not enough.
 
 To follow a calendar that someone else keeps updated, subscribe to its URL
-instead of importing once — see
-[Items from other apps on your calendar](help://calendar:event-sources). To
-keep a desktop or phone client continuously in sync, use CalDAV — see
+instead of importing once — in the app, use **Subscribe to calendar** at the
+bottom of the calendar sidebar. To keep a desktop or phone client
+continuously in sync, use CalDAV — see
 [Connecting a calendar client](help://calendar:caldav).
+
+## Searching
+
+There is no `calendar search` command. Events are part of the app-wide
+search instead: press `/` in the app and type `calendar:` to scope the
+palette to your events, or from the terminal run
+
+```
+tinycld search "calendar: standup"
+```
+
+Both match on an event's title, description, and location. See
+[Searching across packages](help://core:search).
 
 ## Scripting
 
-Every command accepts `--json` for stable, machine-readable output:
+Every command accepts `--json` for stable, machine-readable output. `list`
+adds `role` and `kind` (`calendar` or `subscription`) to each calendar, and
+`agenda`, `events`, and `show` add `calendar_name` to each event alongside
+the calendar id. `role` is the field to check before scripting a write,
+since it decides whether the server will accept one:
 
 ```
 tinycld calendar agenda --json | jq '.[].title'
-tinycld calendar list --json | jq '.[].name'
+tinycld calendar list --json | jq '.[] | select(.role != "viewer") | .name'
 ```
