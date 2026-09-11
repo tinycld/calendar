@@ -426,10 +426,8 @@ func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record)
 }
 
 // userIsOwner reports whether the given user holds an "owner" calendar_members
-// row for the given calendar.
-//
-// Single-org: memberships point at users directly, so this is one query. It
-// used to fan out over every user_org row the user held.
+// row for the given calendar. Memberships point at users directly, so this is
+// a single query.
 func userIsOwner(app core.App, calendarID, userID string) (bool, error) {
 	owners, err := app.FindRecordsByFilter(
 		"calendar_members",
