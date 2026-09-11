@@ -1,4 +1,4 @@
-import { MemberAvatar } from '@tinycld/core/components/settings/members/MemberAvatar'
+import { Avatar } from '@tinycld/core/components/Avatar'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { Menu } from '@tinycld/core/ui/menu'
 import { ChevronDown, X } from 'lucide-react-native'
@@ -30,7 +30,13 @@ export function MemberRow({ member, canEdit, canRemove, onRoleChange, onRemove }
             testID={`calendar-member-row-${member.userId}`}
             className="flex-row items-center gap-3 py-2.5 px-3"
         >
-            <MemberAvatar name={member.name} email={member.email} size={36} />
+            <Avatar
+                name={member.name}
+                email={member.email}
+                size={36}
+                palette="soft"
+                shape="squircle"
+            />
 
             <View className="flex-1">
                 <View className="flex-row items-center gap-1.5">

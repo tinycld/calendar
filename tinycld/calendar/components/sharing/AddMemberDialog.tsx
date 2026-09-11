@@ -1,4 +1,4 @@
-import { MemberAvatar } from '@tinycld/core/components/settings/members/MemberAvatar'
+import { Avatar } from '@tinycld/core/components/Avatar'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
@@ -239,7 +239,7 @@ function CandidateRow({
     const email = candidate.email ?? ''
     return (
         <View className="flex-row items-center gap-3 py-1">
-            <MemberAvatar name={name} email={email} size={32} />
+            <Avatar name={name} email={email} size={32} palette="soft" shape="squircle" />
             <View className="flex-1">
                 <Text className="text-foreground font-medium" style={{ fontSize: 14 }}>
                     {name || email}
