@@ -7,7 +7,7 @@
 // draft-then-commit contract (see use-column-resize.ts): a dragRef mirror so
 // the platform handlers read live state without re-binding, an optimistic
 // preview pushed to the drag store on every move, and a single DB write on
-// release. The useOrgLiveQuery then reconciles the final position.
+// release. The useMyLiveQuery then reconciles the final position.
 
 import { captureException } from '@tinycld/core/lib/errors'
 import type { DragContext, DragGestureHandlers } from '@tinycld/core/lib/gestures'

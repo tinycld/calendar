@@ -53,7 +53,7 @@ async function scheduleEventReminders(events: CalendarEvents[], alreadyScheduled
  * with a reminder value > 0.
  *
  * Implemented imperatively (collection iteration + subscribeChanges) rather
- * than via useOrgLiveQuery. A live-query subscription here cross-fires with
+ * than via useMyLiveQuery. A live-query subscription here cross-fires with
  * the screens' own live queries when views remount on mode change, producing
  * "setState during render" warnings (TanStack DB starts sync synchronously
  * on collection creation, which notifies sibling subscribers mid-render).

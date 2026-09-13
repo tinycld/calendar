@@ -1,8 +1,8 @@
 import { eq } from '@tanstack/db'
+import { useLiveQuery } from '@tanstack/react-db'
 import { useAuth } from '@tinycld/core/lib/auth'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
-import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
 import { useCallback, useMemo } from 'react'
 import type { CalendarColorKey, CalendarWithGroup } from '../types'
 
@@ -17,13 +17,13 @@ export function useCalendarData() {
     const [calendarsCollection] = useStore('calendar_calendars')
     const [membersCollection] = useStore('calendar_members')
 
-    const { data: allCalendars, isLoading: calendarsLoading } = useOrgLiveQuery(query =>
+    const { data: allCalendars, isLoading: calendarsLoading } = useLiveQuery(query =>
         query.from({ cal: calendarsCollection })
     )
 
     const userId = user.id
 
-    const { data: memberships, isLoading: membershipsLoading } = useOrgLiveQuery(
+    const { data: memberships, isLoading: membershipsLoading } = useLiveQuery(
         query => query.from({ mem: membersCollection }).where(({ mem }) => eq(mem.user, userId)),
         [userId]
     )
