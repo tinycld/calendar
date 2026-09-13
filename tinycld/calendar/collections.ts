@@ -10,7 +10,7 @@ import type { CalendarSchema } from './types'
 type MergedSchema = Omit<Schema, keyof CalendarSchema> & CalendarSchema
 
 // Hoisted rather than written inline at each call site: an inline
-// `collectionOptions` literal defeats `alwaysExpand` inference in pbtsdb 0.8.0.
+// `collectionOptions` literal defeats `alwaysFetchRelations` inference in pbtsdb.
 const indexing = {
     autoIndex: 'eager' as const,
     defaultIndexType: BasicIndex,
@@ -28,7 +28,6 @@ export function registerCollections(
     const calendar_members = newCollection('calendar_members', {
         omitOnInsert: ['created', 'updated'] as const,
         relations: { calendar: calendar_calendars, user: coreStores.users },
-        alwaysExpand: ['calendar', 'user'],
         collectionOptions: indexing,
     })
 
