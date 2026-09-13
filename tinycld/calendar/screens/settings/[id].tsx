@@ -1,4 +1,5 @@
 import { eq } from '@tanstack/db'
+import { useLiveQuery } from '@tanstack/react-db'
 import { DocumentTitle } from '@tinycld/core/components/DocumentTitle'
 import { useAuth } from '@tinycld/core/lib/auth'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
@@ -6,7 +7,6 @@ import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useNavigateBack } from '@tinycld/core/lib/use-navigate-back'
-import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
 import { useLocalSearchParams } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { useState } from 'react'
@@ -29,13 +29,13 @@ export default function CalendarSettingsScreen() {
         'users'
     )
 
-    const { data: calendars } = useOrgLiveQuery(
+    const { data: calendars } = useLiveQuery(
         query => query.from({ cal: calendarsCollection }).where(({ cal }) => eq(cal.id, id ?? '')),
         [id]
     )
     const calendar = calendars?.[0]
 
-    const { data: memberRows } = useOrgLiveQuery(
+    const { data: memberRows } = useLiveQuery(
         query =>
             query
                 .from({ m: membersCollection })

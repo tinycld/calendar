@@ -4,7 +4,17 @@ import type { createCollection } from 'pbtsdb/core'
 import { BasicIndex } from 'pbtsdb/core'
 import type { CalendarSchema } from './types'
 
-type MergedSchema = Schema & CalendarSchema
+// Replace (not intersect) the generated entries for calendar's own collections —
+// a plain intersection would merge each overlapping entry field-wise, letting
+// a generated `any` absorb any typed override (see drive's collections.ts).
+type MergedSchema = Omit<Schema, keyof CalendarSchema> & CalendarSchema
+
+// Hoisted rather than written inline at each call site: an inline
+// `collectionOptions` literal defeats `alwaysFetchRelations` inference in pbtsdb.
+const indexing = {
+    autoIndex: 'eager' as const,
+    defaultIndexType: BasicIndex,
+}
 
 export function registerCollections(
     newCollection: ReturnType<typeof createCollection<MergedSchema>>,
@@ -12,19 +22,13 @@ export function registerCollections(
 ) {
     const calendar_calendars = newCollection('calendar_calendars', {
         omitOnInsert: ['created', 'updated'] as const,
-        collectionOptions: {
-            autoIndex: 'eager' as const,
-            defaultIndexType: BasicIndex,
-        },
+        collectionOptions: indexing,
     })
 
     const calendar_members = newCollection('calendar_members', {
         omitOnInsert: ['created', 'updated'] as const,
-        expand: { calendar: calendar_calendars, user: coreStores.users },
-        collectionOptions: {
-            autoIndex: 'eager' as const,
-            defaultIndexType: BasicIndex,
-        },
+        relations: { calendar: calendar_calendars, user: coreStores.users },
+        collectionOptions: indexing,
     })
 
     const calendar_events = newCollection('calendar_events', {
@@ -36,10 +40,7 @@ export function registerCollections(
         // are already loaded eagerly (calendar_calendars, users), so
         // consumers look them up by id locally — see useCalendarData.
         syncMode: 'on-demand' as const,
-        collectionOptions: {
-            autoIndex: 'eager' as const,
-            defaultIndexType: BasicIndex,
-        },
+        collectionOptions: indexing,
     })
 
     return {

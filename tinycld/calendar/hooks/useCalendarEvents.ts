@@ -1,6 +1,6 @@
 import { and, eq, gte, inArray, lte, or } from '@tanstack/db'
+import { useLiveQuery } from '@tanstack/react-db'
 import { useStore } from '@tinycld/core/lib/pocketbase'
-import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
 import { useEffect, useMemo } from 'react'
 import { expandRecurringEvents, parseEventId } from '../lib/recurrence'
 import { useCalendarUIStore } from '../stores/calendar-ui-store'
@@ -101,7 +101,7 @@ export function useCalendarEvents(startDate: Date, endDate: Date) {
     const rangeStartIso = useMemo(() => startDate.toISOString(), [startDate])
     const rangeEndIso = useMemo(() => endDate.toISOString(), [endDate])
 
-    const { data: rawEvents, isLoading: eventsLoading } = useOrgLiveQuery(
+    const { data: rawEvents, isLoading: eventsLoading } = useLiveQuery(
         query => {
             if (visibleIdsArr.length === 0) return null
             return query
@@ -149,7 +149,7 @@ export function useEventDetail(eventId: string | undefined): {
 
     const { baseId, occurrenceDate } = parseEventId(eventId ?? '')
 
-    const { data: events } = useOrgLiveQuery(
+    const { data: events } = useLiveQuery(
         query => {
             if (!baseId) return null
             return query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, baseId))

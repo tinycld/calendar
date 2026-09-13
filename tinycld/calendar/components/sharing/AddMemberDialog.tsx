@@ -1,8 +1,8 @@
+import { useLiveQuery } from '@tanstack/react-db'
 import { Avatar } from '@tinycld/core/components/Avatar'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
-import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { Dialog } from '@tinycld/core/ui/dialog'
 import { Search } from 'lucide-react-native'
@@ -38,7 +38,7 @@ export function AddMemberDialog({
 
     const [usersCollection, membersCollection] = useStore('users', 'calendar_members')
 
-    const { data: candidatesRaw } = useOrgLiveQuery(q =>
+    const { data: candidatesRaw } = useLiveQuery(q =>
         q.from({ u: usersCollection }).select(({ u }) => ({
             userId: u.id,
             name: u.name,

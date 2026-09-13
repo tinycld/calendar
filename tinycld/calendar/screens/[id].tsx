@@ -1,4 +1,5 @@
 import { eq } from '@tanstack/db'
+import { useLiveQuery } from '@tanstack/react-db'
 import { DocumentTitle } from '@tinycld/core/components/DocumentTitle'
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { useAuth } from '@tinycld/core/lib/auth'
@@ -8,7 +9,6 @@ import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useNavigateBack } from '@tinycld/core/lib/use-navigate-back'
-import { useOrgLiveQuery } from '@tinycld/core/lib/use-org-live-query'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { useForm, z, zodResolver } from '@tinycld/core/ui/form'
 import { useLocalSearchParams } from 'expo-router'
@@ -66,7 +66,7 @@ export default function EventEditorScreen() {
     const isNew = !id || id === 'new'
     const lookupId = isNew ? '' : baseId
 
-    const { data: existingEvents } = useOrgLiveQuery(
+    const { data: existingEvents } = useLiveQuery(
         query => {
             if (!lookupId) return null
             return query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, lookupId))
