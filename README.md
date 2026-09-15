@@ -98,18 +98,17 @@ In-app help is `help/command-line.md`. See [the command line tool](https://tinyc
 This package is not run standalone — it only makes sense inside an app shell checkout.
 
 ```sh
-cd ../tinycld
-pnpm run dev              # expo + pocketbase with calendar linked
-pnpm run test             # includes this package's layout tests
-pnpm run checks           # biome + tsc across the app shell + linked packages
+pnpm exec tinycld-pkg check      # biome + tsc + vitest, scoped to this package
+pnpm exec tinycld-pkg test:e2e   # playwright, this package only
+cd ../tinycld && pnpm run dev    # expo + pocketbase with calendar linked
 ```
 
-**Do not** run `pnpm install` (or any other package manager's install) inside this directory. Peer dependencies resolve through the app shell's `node_modules/`; installing here creates duplicate copies of `react`, `react-native`, etc. and breaks TypeScript.
+**Do not** run `pnpm install` (or any other package manager's install) inside this directory — install only at the workspace root. Dependencies hoist to the root `node_modules/`; installing here creates duplicate copies of `react`, `react-native`, etc. and breaks TypeScript.
 
 ## Package anatomy
 
 - `manifest.ts` — single source of truth for capabilities (routes, nav, sidebar, collections, migrations, server module, automation, cli, help)
-- `package.json` — name, exports map, peer deps
+- `package.json` — name and exports map; framework deps come from the workspace root, and the `@tinycld/core` pin lives in `manifest.ts` as `peerVersions`
 - `tsconfig.json` — thin extend of the app shell's package tsconfig base
 - `pb-migrations/` — PocketBase migrations
 - `server/` — Go server module: CalDAV field map, subscription poller, reminder scheduler, membership guards, `automation.go`, `search.go` (FTS index + federated search source), `ics_endpoints.go` (iCalendar export/import routes), and `oauth_scopes.go` (OAuth scope registration)
