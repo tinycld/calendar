@@ -60,19 +60,16 @@ The package depends on `@tinycld/core` at runtime (React, pbtsdb, `~/lib/*`). Th
 
 ## Installation
 
-From inside your app shell checkout (`tinycld/tinycld`):
+From your workspace root (the directory that contains the `tinycld` app shell checkout):
 
 ```sh
-pnpm run packages:install <this-repo-git-url>
+npx @tinycld/bootstrap@latest --assemble-only --with calendar
+pnpm install
 ```
 
-That clones the repo next to the app shell as a workspace member sibling, symlinks it into `node_modules/@tinycld/calendar`, and runs the generator to wire up routes, collections, migrations, and Go server extensions.
+Bootstrap clones this repo as a `calendar/` sibling of the app shell (or clone it there by hand), and `pnpm install` links it into `node_modules/@tinycld/calendar` and runs the generator to wire up routes, collections, migrations, and Go server extensions.
 
-To remove:
-
-```sh
-pnpm run packages:unlink @tinycld/calendar
-```
+To remove, delete the `calendar/` sibling clone and re-run `pnpm install`.
 
 ## Command line
 
