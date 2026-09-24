@@ -66,13 +66,12 @@ export default function EventEditorScreen() {
     const isNew = !id || id === 'new'
     const lookupId = isNew ? '' : baseId
 
-    const { data: existingEvents } = useLiveQuery(
-        query => {
+    const { data: existingEvents } = useLiveQuery({
+        query: query => {
             if (!lookupId) return null
             return query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, lookupId))
         },
-        [lookupId]
-    )
+    })
     const event = existingEvents?.[0]
 
     // For new events, default start to the next half-hour and end to one

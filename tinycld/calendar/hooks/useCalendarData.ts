@@ -23,10 +23,10 @@ export function useCalendarData() {
 
     const userId = user.id
 
-    const { data: memberships, isLoading: membershipsLoading } = useLiveQuery(
-        query => query.from({ mem: membersCollection }).where(({ mem }) => eq(mem.user, userId)),
-        [userId]
-    )
+    const { data: memberships, isLoading: membershipsLoading } = useLiveQuery({
+        query: query =>
+            query.from({ mem: membersCollection }).where(({ mem }) => eq(mem.user, userId)),
+    })
 
     const membershipByCalendar = useMemo(
         () =>
