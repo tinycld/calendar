@@ -101,8 +101,8 @@ export function useCalendarEvents(startDate: Date, endDate: Date) {
     const rangeStartIso = useMemo(() => startDate.toISOString(), [startDate])
     const rangeEndIso = useMemo(() => endDate.toISOString(), [endDate])
 
-    const { data: rawEvents, isLoading: eventsLoading } = useLiveQuery(
-        query => {
+    const { data: rawEvents, isLoading: eventsLoading } = useLiveQuery({
+        query: query => {
             if (visibleIdsArr.length === 0) return null
             return query
                 .from({ evt: eventsCollection })
@@ -114,8 +114,7 @@ export function useCalendarEvents(startDate: Date, endDate: Date) {
                     )
                 )
         },
-        [visibleIdsArr, rangeStartIso, rangeEndIso]
-    )
+    })
 
     const events = useMemo(() => {
         const own = rawEvents ?? []
@@ -149,13 +148,12 @@ export function useEventDetail(eventId: string | undefined): {
 
     const { baseId, occurrenceDate } = parseEventId(eventId ?? '')
 
-    const { data: events } = useLiveQuery(
-        query => {
+    const { data: events } = useLiveQuery({
+        query: query => {
             if (!baseId) return null
             return query.from({ evt: eventsCollection }).where(({ evt }) => eq(evt.id, baseId))
         },
-        [baseId]
-    )
+    })
 
     return useMemo(() => {
         if (!baseId || !events?.length) return { event: undefined, calendar: undefined }

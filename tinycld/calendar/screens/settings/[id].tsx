@@ -29,14 +29,14 @@ export default function CalendarSettingsScreen() {
         'users'
     )
 
-    const { data: calendars } = useLiveQuery(
-        query => query.from({ cal: calendarsCollection }).where(({ cal }) => eq(cal.id, id ?? '')),
-        [id]
-    )
+    const { data: calendars } = useLiveQuery({
+        query: query =>
+            query.from({ cal: calendarsCollection }).where(({ cal }) => eq(cal.id, id ?? '')),
+    })
     const calendar = calendars?.[0]
 
-    const { data: memberRows } = useLiveQuery(
-        query =>
+    const { data: memberRows } = useLiveQuery({
+        query: query =>
             query
                 .from({ m: membersCollection })
                 .join({ u: usersCollection }, ({ m, u }) => eq(m.user, u.id))
@@ -48,8 +48,7 @@ export default function CalendarSettingsScreen() {
                     name: u.name,
                     email: u.email,
                 })),
-        [id]
-    )
+    })
 
     const members: CalendarMemberRowData[] = (memberRows ?? []).map(r => ({
         membershipId: r.membershipId,
