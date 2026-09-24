@@ -3,6 +3,7 @@ package calendar
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/pocketbase/pocketbase/core"
@@ -288,4 +289,43 @@ func TestCalUserDeleteGuard_OffboardUnaffected(t *testing.T) {
 	}
 	requireAnonymized(t, env.app, env.owner, true)
 	requireRole(t, env.app, env.calendar, env.member, "owner")
+}
+
+// Decision: an account delete with no plan (ModeKeep) is refused while the
+// user is the only owner of a calendar other people use, and nothing changes;
+// the message says what to do.
+func TestCalNoPlanDelete_RefusedForSoleOwnedSharedCalendar(t *testing.T) {
+	env := setupCalOffboardApp(t)
+
+	_, err := offboard.OffboardUser(env.app, env.owner.Id,
+		offboard.Plan{Mode: offboard.ModeKeep}, env.owner.Id)
+	if !errors.Is(err, offboard.ErrInvalidPlan) {
+		t.Fatalf("err = %v, want ErrInvalidPlan", err)
+	}
+	for _, want := range []string{env.calendar.GetString("name"), "Make one of them an owner or delete the calendar"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not mention %q", err, want)
+		}
+	}
+	requireRole(t, env.app, env.calendar, env.owner, "owner")
+	requireRole(t, env.app, env.calendar, env.member, "viewer")
+	requireEventKept(t, env)
+	requireAnonymized(t, env.app, env.owner, false)
+}
+
+// With no sole-owned calendar that other people use, a no-plan delete goes
+// through and leaves every calendar as it is.
+func TestCalNoPlanDelete_AllowedWithoutSoleOwnedSharedCalendar(t *testing.T) {
+	env := setupCalOffboardApp(t)
+	personal := calAuthzCalendar(t, env.app, "Personal")
+	calAuthzMember(t, env.app, personal, env.outsider, "owner")
+	calAuthzMember(t, env.app, env.calendar, env.outsider, "viewer")
+
+	if _, err := offboard.OffboardUser(env.app, env.outsider.Id,
+		offboard.Plan{Mode: offboard.ModeKeep}, env.outsider.Id); err != nil {
+		t.Fatalf("OffboardUser: %v", err)
+	}
+	requireRole(t, env.app, personal, env.outsider, "owner")
+	requireRole(t, env.app, env.calendar, env.owner, "owner")
+	requireAnonymized(t, env.app, env.outsider, true)
 }

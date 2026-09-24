@@ -64,8 +64,9 @@ func calendarHeir(leaverID string, plan offboard.Plan, actorUserID string) strin
 // upgrades the heir's membership: it never deletes a calendar, an event or a
 // membership, and it leaves every calendar that has another owner alone.
 //
-// With no heir (a self-delete in delete-my-data mode) it follows core's
-// last-owner guard: refuse, and tell the user what to do first. A calendar
+// With no heir (a self-delete in delete-my-data or keep mode, keep being an
+// account delete with no plan) it follows core's last-owner guard: refuse,
+// and tell the user what to do first. A calendar
 // nobody else uses is left as it is, because no one loses access to it.
 func handOverSoleOwnedCalendars(txApp core.App, leaver *core.Record, plan offboard.Plan, actorUserID string) error {
 	owned, err := findSoleOwnedCalendars(txApp, leaver.Id)
@@ -81,7 +82,8 @@ func handOverSoleOwnedCalendars(txApp core.App, leaver *core.Record, plan offboa
 		for _, cal := range owned {
 			if cal.OtherMembers > 0 {
 				return fmt.Errorf("%w: you are the only owner of the calendar %q, which other people use. "+
-					"Make one of them an owner, or choose a successor for your content, before you delete your account",
+					"Make one of them an owner or delete the calendar, or choose a successor for your content, "+
+					"before you delete your account",
 					offboard.ErrInvalidPlan, cal.Name)
 			}
 		}
