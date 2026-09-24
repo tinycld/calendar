@@ -207,7 +207,7 @@ func TestCalOffboard_GuestSuccessorRefused(t *testing.T) {
 }
 
 // D: a direct REST delete of your own account, while you are the only owner of
-// a calendar other people use, is refused and points at /api/account/delete.
+// a calendar other people use, is refused and points at account settings.
 func TestCalUserDeleteGuard_RefusesSoleOwnerOfSharedCalendar(t *testing.T) {
 	env := setupCalOffboardApp(t)
 	// The event's created_by would block the delete on its own; remove it so
@@ -221,7 +221,7 @@ func TestCalUserDeleteGuard_RefusesSoleOwnerOfSharedCalendar(t *testing.T) {
 		URL:                   "/api/collections/users/records/" + env.owner.Id,
 		Headers:               map[string]string{"Authorization": env.ownerToken},
 		ExpectedStatus:        http.StatusForbidden,
-		ExpectedContent:       []string{`/api/account/delete`, `Team Cal`},
+		ExpectedContent:       []string{`account settings`, `Team Cal`},
 		TestAppFactory:        func(testing.TB) *tests.TestApp { return env.app },
 		DisableTestAppCleanup: true,
 	}).Test(t)

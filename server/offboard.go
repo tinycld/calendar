@@ -163,9 +163,9 @@ func registerSoleOwnerDeleteGuard(app core.App) {
 		for _, cal := range owned {
 			if cal.OtherMembers > 0 {
 				return e.ForbiddenError(fmt.Sprintf(
-					"This account is the only owner of the calendar %q, which other people use. "+
-						"Make one of them an owner first, or delete the account through "+
-						"/api/account/delete, which hands the calendar over.", cal.Name), nil)
+					"You are the only owner of a calendar %q other people use. "+
+						"Make someone else an owner, delete the calendar, or delete your account "+
+						"through account settings and choose a successor.", cal.Name), nil)
 			}
 		}
 		return e.Next()
