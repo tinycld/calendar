@@ -116,6 +116,11 @@ func registerShared(app *pocketbase.PocketBase) {
 	// fails: the required FK blocks the users delete.
 	offboard.RegisterReassignable(offboard.ReassignableRef{Collection: "calendar_events", Field: "created_by"})
 
+	// A calendar whose only owner leaves must get a new owner, and a direct
+	// users delete must not strip one away. See offboard.go.
+	offboard.RegisterHandler("calendar", handOverSoleOwnedCalendars)
+	registerSoleOwnerDeleteGuard(app)
+
 	// Personal automation rules on calendar events resolve their owner through
 	// calendar_members (created_by alone would scope a shared calendar's rules
 	// to whoever created each event), and create-event needs a Go handler for

@@ -12,7 +12,9 @@ import (
 // than on the old user_org junction. There is no matching delete handler —
 // account teardown is core's job (offboard.OffboardUser), which reassigns or
 // deletes a departing user's content through the reassignable-FK registry that
-// Register populates. A second cleanup path here would race it.
+// Register populates, and runs calendar's offboard handler (offboard.go) to
+// hand over the calendars the user alone owns. A second cleanup path here
+// would race it.
 func handleUserCreated(app core.App, user *core.Record) {
 	// A share-link guest is a real users row, but must not be provisioned a
 	// personal calendar: the auto-minted owner membership would contradict the
