@@ -97,6 +97,41 @@ func TestCalTenantHooks_CalendarCreatorGetsOwnerMembership(t *testing.T) {
 	}).Test(t)
 }
 
+// A superuser is not a users record, so it cannot be a member. The seed creates
+// calendars as a superuser and writes the memberships it wants itself; the hook
+// must not try to add one, which failed validation and logged a warning per
+// calendar.
+func TestCalTenantHooks_SuperuserCreateAttemptsNoMembership(t *testing.T) {
+	app, _, _ := setupCalTenantWithHooks(t)
+
+	superuser, err := app.FindAuthRecordByEmail(core.CollectionNameSuperusers, "test@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempts := 0
+	app.OnRecordCreate("calendar_members").BindFunc(func(e *core.RecordEvent) error {
+		attempts++
+		return e.Next()
+	})
+
+	(&tests.ApiScenario{
+		Name:                  "superuser creates a calendar",
+		Method:                http.MethodPost,
+		URL:                   "/api/collections/calendar_calendars/records",
+		Body:                  strings.NewReader(`{"name":"Seeded Cal","color":"blue"}`),
+		Headers:               map[string]string{"Authorization": calAuthzToken(t, superuser), "Content-Type": "application/json"},
+		ExpectedStatus:        200,
+		ExpectedContent:       []string{`"name":"Seeded Cal"`},
+		TestAppFactory:        func(t testing.TB) *tests.TestApp { return app },
+		DisableTestAppCleanup: true,
+		AfterTestFunc: func(t testing.TB, _ *tests.TestApp, _ *http.Response) {
+			if attempts != 0 {
+				t.Fatalf("the hook attempted %d membership(s) for a superuser, want 0", attempts)
+			}
+		},
+	}).Test(t)
+}
+
 // And the hook must not become a new way in. It bootstraps the CREATOR's own
 // membership only; the takeover the rule exists to stop stays stopped.
 func TestCalTenantHooks_OutsiderStillCannotSelfGrantOwnership(t *testing.T) {
