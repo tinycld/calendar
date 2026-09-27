@@ -305,8 +305,10 @@ func registerOwnerMembershipBootstrap(app core.App) {
 			return err
 		}
 
+		// A superuser is not a users record and cannot be a member; a
+		// superuser caller (the seed) writes the memberships it wants itself.
 		auth := e.Auth
-		if auth == nil {
+		if auth == nil || auth.IsSuperuser() {
 			return nil
 		}
 
