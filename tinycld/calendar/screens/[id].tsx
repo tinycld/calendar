@@ -19,6 +19,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } fro
 import { EventForm } from '../components/EventForm'
 import { EventGuestList } from '../components/EventGuestList'
 import { useVisibleCalendars } from '../hooks/useCalendarEvents'
+import { calendarReturnParams } from '../lib/editor-return'
 import { parseEventId } from '../lib/recurrence'
 
 const eventSchema = z.object({
@@ -126,9 +127,10 @@ export default function EventEditorScreen() {
     const { calendars, mineCalendars, calendarMap } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
     const navigateBack = useNavigateBack(() => orgHref('calendar'))
-    // The calendar's view mode and focused date live in the URL. Read them
-    // the way useCalendarView does — globally, not locally, so they resolve
-    // from any depth — and carry them back on the return below.
+    // The calendar's view mode and focused date live in the URL, and every
+    // create entry point passes them into this route's push (see
+    // lib/editor-return.ts). Read them globally rather than locally so they
+    // resolve from any depth, and reflect them back on the return below.
     const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
 
     // After a create, go to the calendar explicitly rather than popping.
@@ -147,12 +149,7 @@ export default function EventEditorScreen() {
     // someone who created an event from Month view on a distant date back on
     // Week view at today — nowhere near the event they just made.
     const afterCreate = () =>
-        router.replace(
-            orgHref('calendar', {
-                ...(view ? { view } : {}),
-                ...(date ? { date } : {}),
-            })
-        )
+        router.replace(orgHref('calendar', calendarReturnParams({ view, date })))
 
     const { baseId } = parseEventId(id ?? '')
     const isNew = !id || id === 'new'
