@@ -8,12 +8,13 @@ import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { TextInput, useForm, z, zodResolver } from '@tinycld/core/ui/form'
 import { Sheet } from '@tinycld/core/ui/sheet'
-import { useRouter } from 'expo-router'
+import { useGlobalSearchParams, useRouter } from 'expo-router'
 import { Users, X } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
 import { Pressable, Text, View } from 'react-native'
 import { useVisibleCalendars } from '../hooks/useCalendarEvents'
 import { getTimeLabel } from '../hooks/useCalendarNavigation'
+import { eventEditorParams } from '../lib/editor-return'
 
 const quickCreateSchema = z.object({
     title: z.string().min(1, 'Title is required'),
@@ -115,6 +116,23 @@ function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () 
     return { control, onSave, dayLabel, timeLabel }
 }
 
+/**
+ * "More options" leaves the popover for the full editor. The calendar's
+ * view/date live in the URL — read them globally so they resolve from any
+ * depth — and carry them into the push, so the editor can return to the same
+ * view and date after the create.
+ */
+function useMoreOptions(onClose: () => void) {
+    const router = useRouter()
+    const orgHref = useOrgHref()
+    const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
+
+    return () => {
+        onClose()
+        router.push(orgHref('calendar/[id]', eventEditorParams('new', { view, date })))
+    }
+}
+
 function MobileQuickCreate({
     isVisible,
     initialDate,
@@ -122,18 +140,12 @@ function MobileQuickCreate({
     onClose,
 }: EventQuickCreateProps) {
     const mutedColor = useThemeColor('muted-foreground')
-    const router = useRouter()
-    const orgHref = useOrgHref()
     const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
         initialDate,
         initialHour,
         onClose
     )
-
-    const onMoreOptions = () => {
-        onClose()
-        router.push(orgHref('calendar/[id]', { id: 'new' }))
-    }
+    const onMoreOptions = useMoreOptions(onClose)
 
     return (
         <Sheet isOpen={isVisible} onClose={onClose} title="New Event">
@@ -178,20 +190,14 @@ function DesktopQuickCreate({
 }: EventQuickCreateProps) {
     const mutedColor = useThemeColor('muted-foreground')
     const shadowColor = useThemeColor('overlay-backdrop')
-    const router = useRouter()
-    const orgHref = useOrgHref()
     const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
         initialDate,
         initialHour,
         onClose
     )
+    const onMoreOptions = useMoreOptions(onClose)
 
     if (!isVisible) return null
-
-    const onMoreOptions = () => {
-        onClose()
-        router.push(orgHref('calendar/[id]', { id: 'new' }))
-    }
 
     return (
         <Pressable

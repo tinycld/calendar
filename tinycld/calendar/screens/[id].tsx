@@ -11,13 +11,15 @@ import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useNavigateBack } from '@tinycld/core/lib/use-navigate-back'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { useForm, z, zodResolver } from '@tinycld/core/ui/form'
-import { useLocalSearchParams } from 'expo-router'
+import { router, useGlobalSearchParams, useLocalSearchParams } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
+import { useMemo, useRef } from 'react'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native'
 import { EventForm } from '../components/EventForm'
 import { EventGuestList } from '../components/EventGuestList'
 import { useVisibleCalendars } from '../hooks/useCalendarEvents'
+import { calendarReturnParams } from '../lib/editor-return'
 import { parseEventId } from '../lib/recurrence'
 
 const eventSchema = z.object({
@@ -51,6 +53,70 @@ function nextHalfHour(d: Date): Date {
     return out
 }
 
+type EventFormValues = z.infer<typeof eventSchema>
+
+interface FormSeedSource {
+    event:
+        | {
+              title: string
+              description: string
+              location: string
+              all_day: boolean
+              recurrence: string
+              calendar: string
+              busy_status: EventFormValues['busy_status']
+              visibility: EventFormValues['visibility']
+              reminder: number
+          }
+        | undefined
+    startDate: Date
+    endDate: Date
+    defaultCalendar: string
+}
+
+// The form's initial field values, for an edit (from the row) or a create
+// (empty, in the resolved default calendar). Pure, so the caller can rebuild
+// it only when something it reads has actually changed.
+function buildFormSeed({
+    event,
+    startDate,
+    endDate,
+    defaultCalendar,
+}: FormSeedSource): EventFormValues {
+    const dates = {
+        startDate: startDate.toISOString().split('T')[0],
+        startTime: startDate.toTimeString().slice(0, 5),
+        endDate: endDate.toISOString().split('T')[0],
+        endTime: endDate.toTimeString().slice(0, 5),
+    }
+    if (!event) {
+        return {
+            title: '',
+            description: '',
+            location: '',
+            ...dates,
+            all_day: false,
+            recurrence: '',
+            calendar: defaultCalendar,
+            busy_status: 'busy',
+            visibility: 'default',
+            reminderMinutes: 30,
+        }
+    }
+    return {
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        ...dates,
+        all_day: event.all_day,
+        recurrence: event.recurrence,
+        calendar: event.calendar,
+        busy_status: event.busy_status,
+        visibility: event.visibility,
+        reminderMinutes: event.reminder,
+    }
+}
+
 export default function EventEditorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>()
     const orgHref = useOrgHref()
@@ -61,6 +127,29 @@ export default function EventEditorScreen() {
     const { calendars, mineCalendars, calendarMap } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
     const navigateBack = useNavigateBack(() => orgHref('calendar'))
+    // The calendar's view mode and focused date live in the URL, and every
+    // create entry point passes them into this route's push (see
+    // lib/editor-return.ts). Read them globally rather than locally so they
+    // resolve from any depth, and reflect them back on the return below.
+    const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
+
+    // After a create, go to the calendar explicitly rather than popping.
+    //
+    // The editor is reached by a `router.push` from the sidebar's "+ Create",
+    // and that push is not always committed by the time the user saves — the
+    // spec's own retry loop around "+ Create" exists because of the same
+    // window. `router.back()` against a half-committed stack walks to
+    // whatever is below the calendar route instead of the calendar itself,
+    // leaving the editor mounted over the wrong screen: the event is saved,
+    // and the UI says nothing happened. A create always ends at the calendar,
+    // so name it rather than inferring it from history.
+    //
+    // Naming it means carrying `view` and `date` along: every create entry
+    // point pushes from the calendar screen, so dropping them would land
+    // someone who created an event from Month view on a distant date back on
+    // Week view at today — nowhere near the event they just made.
+    const afterCreate = () =>
+        router.replace(orgHref('calendar', calendarReturnParams({ view, date })))
 
     const { baseId } = parseEventId(id ?? '')
     const isNew = !id || id === 'new'
@@ -78,10 +167,66 @@ export default function EventEditorScreen() {
     // hour later — a common-sense default that avoids the zero-duration
     // start==end footgun (a fresh `new Date()` for both fields produces
     // two identical timestamps because they're computed in the same render).
-    const startDate = event ? new Date(event.start) : nextHalfHour(new Date())
-    const endDate = event ? new Date(event.end) : new Date(startDate.getTime() + 60 * 60 * 1000)
+    //
+    // Frozen on mount. `new Date()` answers differently on every render, so
+    // reading it inline made the seed below differ every render too — see the
+    // seed's comment for why that is not merely wasteful.
+    const newEventClock = useMemo(() => {
+        const start = nextHalfHour(new Date())
+        return { start, end: new Date(start.getTime() + 60 * 60 * 1000) }
+    }, [])
+    const startDate = event ? new Date(event.start) : newEventClock.start
+    const endDate = event ? new Date(event.end) : newEventClock.end
 
     const defaultCalendar = mineCalendars[0]?.id ?? calendars[0]?.id ?? ''
+
+    // The form's seed.
+    //
+    // `values`, not `defaultValues`, because for a new event the calendar
+    // resolves a few renders after mount and a form seeded with an empty
+    // calendar submits a required relation empty — PocketBase answers 400.
+    //
+    // But `values` has to be referentially stable across renders that change
+    // nothing. React Hook Form deep-compares it against the last one it saw
+    // and runs a full `control._reset` whenever it differs, so a seed rebuilt
+    // every render resets the form continuously. It did: the new-event branch
+    // read `new Date()` during render. Under eager sync the calendars landed
+    // before the form opened and nobody noticed; under on-demand sync they
+    // arrive late, so the resets fall while the user is submitting. That left
+    // the router half-committed — `router.back()` walked to a different route
+    // with the editor still mounted, so a saved event looked like it had
+    // never been saved, even though the write returned 200.
+    //
+    // The memo is keyed on a serialization of exactly what the seed reads.
+    // Keying on `event` itself would not hold: it is a row from a live query,
+    // so its identity changes on every sync tick even when nothing it
+    // contains has.
+    const seedSource = {
+        event,
+        startDate,
+        endDate,
+        defaultCalendar,
+    }
+    const seedKey = JSON.stringify([
+        event?.id,
+        event?.title,
+        event?.description,
+        event?.location,
+        event?.all_day,
+        event?.recurrence,
+        event?.calendar,
+        event?.busy_status,
+        event?.visibility,
+        event?.reminder,
+        startDate.getTime(),
+        endDate.getTime(),
+        defaultCalendar,
+    ])
+    const seedRef = useRef<{ key: string; value: EventFormValues } | null>(null)
+    if (seedRef.current?.key !== seedKey) {
+        seedRef.current = { key: seedKey, value: buildFormSeed(seedSource) }
+    }
+    const formSeed = seedRef.current.value
 
     const {
         control,
@@ -93,41 +238,7 @@ export default function EventEditorScreen() {
     } = useForm({
         mode: 'onChange',
         resolver: zodResolver(eventSchema),
-        // For new events, use `values` (not `defaultValues`) so the form
-        // re-syncs when defaultCalendar resolves from the live query —
-        // otherwise the form snapshots calendar='' on first render and
-        // submitting that yields a 400 from PB's required-field validation.
-        values: event
-            ? {
-                  title: event.title,
-                  description: event.description,
-                  location: event.location,
-                  startDate: startDate.toISOString().split('T')[0],
-                  startTime: startDate.toTimeString().slice(0, 5),
-                  endDate: endDate.toISOString().split('T')[0],
-                  endTime: endDate.toTimeString().slice(0, 5),
-                  all_day: event.all_day,
-                  recurrence: event.recurrence,
-                  calendar: event.calendar,
-                  busy_status: event.busy_status,
-                  visibility: event.visibility,
-                  reminderMinutes: event.reminder,
-              }
-            : {
-                  title: '',
-                  description: '',
-                  location: '',
-                  startDate: startDate.toISOString().split('T')[0],
-                  startTime: startDate.toTimeString().slice(0, 5),
-                  endDate: endDate.toISOString().split('T')[0],
-                  endTime: endDate.toTimeString().slice(0, 5),
-                  all_day: false,
-                  recurrence: '',
-                  calendar: defaultCalendar,
-                  busy_status: 'busy' as const,
-                  visibility: 'default' as const,
-                  reminderMinutes: 30,
-              },
+        values: formSeed,
     })
 
     const startDateValue = watch('startDate')
@@ -153,7 +264,7 @@ export default function EventEditorScreen() {
                 from_subscription: false,
             })
         }),
-        onSuccess: navigateBack,
+        onSuccess: afterCreate,
         onError: handleMutationErrorsWithForm({ setError, getValues }),
     })
 

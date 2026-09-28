@@ -21,6 +21,7 @@ import { SubscriptionDialog } from './components/SubscriptionDialog'
 import { useVisibleCalendars } from './hooks/useCalendarEvents'
 import { parseDate, toDateString } from './hooks/useCalendarNavigation'
 import type { ViewMode } from './hooks/useCalendarView'
+import { eventEditorParams } from './lib/editor-return'
 
 const VIEW_MODE_OPTIONS: { mode: ViewMode; label: string; icon: typeof List }[] = [
     { mode: 'schedule', label: 'Schedule', icon: List },
@@ -57,7 +58,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
     }
 
     const handleCreate = () => {
-        router.push(orgHref('calendar/[id]', { id: 'new' }))
+        router.push(orgHref('calendar/[id]', eventEditorParams('new', { view, date })))
     }
 
     const handleViewModeSelect = (mode: ViewMode) => {

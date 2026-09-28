@@ -1,3 +1,4 @@
+import { and, eq, inArray } from '@tanstack/db'
 import { useLiveQuery } from '@tanstack/react-db'
 import { Avatar } from '@tinycld/core/components/Avatar'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
@@ -38,12 +39,19 @@ export function AddMemberDialog({
 
     const [usersCollection, membersCollection] = useStore('users', 'calendar_members')
 
+    // Share-link guests hold no real standing and disabled accounts can't
+    // sign in — neither belongs in the "add a member" picker.
     const { data: candidatesRaw } = useLiveQuery(q =>
-        q.from({ u: usersCollection }).select(({ u }) => ({
-            userId: u.id,
-            name: u.name,
-            email: u.email,
-        }))
+        q
+            .from({ u: usersCollection })
+            .where(({ u }) =>
+                and(inArray(u.role, ['owner', 'admin', 'member']), eq(u.disabled, false))
+            )
+            .select(({ u }) => ({
+                userId: u.id,
+                name: u.name,
+                email: u.email,
+            }))
     )
 
     const filteredCandidates = useMemo(() => {
