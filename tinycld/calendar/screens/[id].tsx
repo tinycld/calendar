@@ -11,7 +11,7 @@ import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useNavigateBack } from '@tinycld/core/lib/use-navigate-back'
 import { Button, ButtonText } from '@tinycld/core/ui/button'
 import { useForm, z, zodResolver } from '@tinycld/core/ui/form'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router, useGlobalSearchParams, useLocalSearchParams } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
 import { useMemo, useRef } from 'react'
@@ -126,6 +126,11 @@ export default function EventEditorScreen() {
     const { calendars, mineCalendars, calendarMap } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
     const navigateBack = useNavigateBack(() => orgHref('calendar'))
+    // The calendar's view mode and focused date live in the URL. Read them
+    // the way useCalendarView does — globally, not locally, so they resolve
+    // from any depth — and carry them back on the return below.
+    const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
+
     // After a create, go to the calendar explicitly rather than popping.
     //
     // The editor is reached by a `router.push` from the sidebar's "+ Create",
@@ -136,7 +141,18 @@ export default function EventEditorScreen() {
     // leaving the editor mounted over the wrong screen: the event is saved,
     // and the UI says nothing happened. A create always ends at the calendar,
     // so name it rather than inferring it from history.
-    const afterCreate = () => router.replace(orgHref('calendar'))
+    //
+    // Naming it means carrying `view` and `date` along: every create entry
+    // point pushes from the calendar screen, so dropping them would land
+    // someone who created an event from Month view on a distant date back on
+    // Week view at today — nowhere near the event they just made.
+    const afterCreate = () =>
+        router.replace(
+            orgHref('calendar', {
+                ...(view ? { view } : {}),
+                ...(date ? { date } : {}),
+            })
+        )
 
     const { baseId } = parseEventId(id ?? '')
     const isNew = !id || id === 'new'
