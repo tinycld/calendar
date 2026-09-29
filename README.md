@@ -7,7 +7,7 @@ Part of [TinyCld](https://tinycld.org/) — the open-source, self-hosted Google 
 ## Features
 
 - **Multiple calendars.** Each user can own any number of calendars and be invited to others as owner, editor, or viewer.
-- **Day, Week, Month, Schedule views.** Keyboard-navigable, color-coded, with a live "now" indicator and all-day event bar.
+- **Day, Week, Month, Schedule views.** Color-coded, with a live "now" indicator and all-day event bar. The Schedule view is keyboard-navigable (`j` / `k` to move, `Enter` to open).
 - **Recurring events.** Daily, weekly, monthly, yearly — stored as iCalendar RRULEs so they round-trip through CalDAV.
 - **Guests & RSVP.** Invite attendees by email with `accepted` / `declined` / `tentative` / `pending` status. Organizer vs. attendee roles.
 - **Reminders.** Per-event reminder offsets flow through the app shell's unified notification bus (toast + drawer + Expo push).
@@ -16,7 +16,7 @@ Part of [TinyCld](https://tinycld.org/) — the open-source, self-hosted Google 
 - **Calendar subscriptions.** Subscribe to any external `.ics` URL (holidays, sports schedules, teammate calendars). The server polls and refreshes them on a schedule.
 - **CalDAV sync.** Native `/caldav/` endpoint. Apple Calendar, GNOME Calendar, DAVx5, Thunderbird — any CalDAV client just works.
 - **Real-time updates.** Edits from any client appear instantly in every other session.
-- **Quick create.** One-keystroke event creation from any view.
+- **Quick create.** Tap a time slot in the Day or Week view, or press `Shift+C` in the Schedule view, to create an event in a popover without leaving the grid.
 - **iCalendar export / import.** `GET /api/calendar/export` streams a calendar as an `.ics` file and `POST /api/calendar/import` upserts one back, matching events on `ical_uid` so a re-import updates rather than duplicates (`server/ics_endpoints.go`). Export needs membership in any role; import needs owner or editor — a viewer may export but not import.
 - **Search.** `server/search.go` keeps an FTS index over title, description, and location and registers a federated search source, so events show up in the app's cross-package palette (`/`, scoped with a `calendar:` chip) and in `tinycld search`.
 - **Contributed event sources.** `eventSourceHost: true` in the manifest lets other packages place read-only items on the grid (e.g. card due dates) with a per-feed visibility toggle in the sidebar — `components/EventSourcesHost.tsx`, `components/EventSourceToggles.tsx`, `hooks/useSourceEvents.ts`.
