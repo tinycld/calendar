@@ -199,4 +199,31 @@ test.describe('Calendar — Sharing UI', () => {
             .first()
         await expect(ownerRow.getByRole('button', { name: /Remove/i })).toHaveCount(0)
     })
+
+    test('Owner can rename the calendar', async ({ page }) => {
+        const calendars = await propfindCalendars()
+        const cal = pickPersonalCalendar(calendars)
+        const renamed = `Renamed ${Date.now()}`
+
+        await login(page)
+        await page.goto(`/a/calendar/settings/${cal.id}`)
+        await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
+
+        await page.getByTestId('calendar-rename-button').click()
+        const input = page.getByRole('textbox').last()
+        await input.fill(renamed)
+        await page.getByRole('button', { name: 'Rename' }).click()
+
+        // The heading reads from the same live query the mutation writes, so
+        // seeing the new name proves the write landed and synced back rather
+        // than the dialog merely closing.
+        await expect(page.getByText(renamed)).toBeVisible({ timeout: 10_000 })
+
+        // Restore the seeded name: this file runs serially and later specs
+        // (plus other files' pickPersonalCalendar) match the calendar by name.
+        await page.getByTestId('calendar-rename-button').click()
+        await page.getByRole('textbox').last().fill(cal.name)
+        await page.getByRole('button', { name: 'Rename' }).click()
+        await expect(page.getByText(cal.name).first()).toBeVisible({ timeout: 10_000 })
+    })
 })
