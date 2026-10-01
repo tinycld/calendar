@@ -2,7 +2,7 @@ import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { AlertTriangle, Check, ChevronDown, ChevronRight } from 'lucide-react-native'
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
-import type { CalendarColorKey, CalendarWithGroup } from '../types'
+import type { CalendarWithGroup } from '../types'
 import { CalendarMenu } from './CalendarMenu'
 import { getCalendarColorResolved } from './calendar-colors'
 
@@ -10,7 +10,7 @@ interface CalendarListProps {
     calendars: CalendarWithGroup[]
     visibleIds: Set<string>
     onToggle: (id: string) => void
-    onColorChange: (calendarId: string, color: CalendarColorKey) => void
+    onColorChange: (calendarId: string, color: string) => void
     onShowOnly: (calendarId: string) => void
     onRefreshSubscription?: (calendarId: string) => void
     onDeleteCalendar?: (calendarId: string) => void
@@ -32,7 +32,7 @@ function CalendarCheckbox({
     calendar: CalendarWithGroup
     isChecked: boolean
     onToggle: (id: string) => void
-    onColorChange: (calendarId: string, color: CalendarColorKey) => void
+    onColorChange: (calendarId: string, color: string) => void
     onShowOnly: (calendarId: string) => void
     onRefreshSubscription?: (calendarId: string) => void
     onDeleteCalendar?: (calendarId: string) => void
@@ -113,7 +113,7 @@ function CalendarSection({
     calendars: CalendarWithGroup[]
     visibleIds: Set<string>
     onToggle: (id: string) => void
-    onColorChange: (calendarId: string, color: CalendarColorKey) => void
+    onColorChange: (calendarId: string, color: string) => void
     onShowOnly: (calendarId: string) => void
     onRefreshSubscription?: (calendarId: string) => void
     onDeleteCalendar?: (calendarId: string) => void

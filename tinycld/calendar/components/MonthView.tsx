@@ -139,7 +139,7 @@ function MultiDayBars({ cellLayoutMap, eventMap, calendarMap, onEventPress }: Mu
             if (!event) continue
 
             const cal = calendarMap.get(event.calendar)
-            const colors = getCalendarColorResolved(cal?.color ?? 'blue')
+            const colors = getCalendarColorResolved(cal?.color)
             const top = DATE_HEADER_HEIGHT + layout.row * MULTI_DAY_ROW_HEIGHT
 
             bars.push(

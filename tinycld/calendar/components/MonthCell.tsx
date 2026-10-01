@@ -66,7 +66,7 @@ export function MonthCell({
                 if (!event) return null
 
                 const cal = calendarMap.get(event.calendar)
-                const colors = getCalendarColorResolved(cal?.color ?? 'blue')
+                const colors = getCalendarColorResolved(cal?.color)
 
                 if (event.all_day) {
                     return (

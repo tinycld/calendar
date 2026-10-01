@@ -4,7 +4,7 @@ import { useStore } from '@tinycld/core/lib/pocketbase'
 import { Dialog } from '@tinycld/core/ui/dialog'
 import { FormErrorSummary, TextInput, useForm, z, zodResolver } from '@tinycld/core/ui/form'
 import { newRecordId } from 'pbtsdb/core'
-import { CALENDAR_COLOR_KEYS } from './calendar-colors'
+import { CALENDAR_COLOR_SWATCHES } from './calendar-colors'
 
 const subscriptionSchema = z.object({
     url: z
@@ -47,7 +47,7 @@ export function SubscriptionDialog({ open, onClose }: SubscriptionDialogProps) {
     const createSubscription = useMutation({
         mutationFn: mutation(function* (data: z.infer<typeof subscriptionSchema>) {
             const randomColor =
-                CALENDAR_COLOR_KEYS[Math.floor(Math.random() * CALENDAR_COLOR_KEYS.length)]
+                CALENDAR_COLOR_SWATCHES[Math.floor(Math.random() * CALENDAR_COLOR_SWATCHES.length)]
             yield calendarsCollection.insert({
                 id: newRecordId(),
                 name: data.name,
