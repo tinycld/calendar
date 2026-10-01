@@ -3,8 +3,12 @@ package calendar
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"regexp"
+	"strings"
 	"time"
 
+	"github.com/emersion/go-webdav"
 	"github.com/getsentry/sentry-go"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -36,7 +40,13 @@ var calDAVSource = caldav.Source{
 	Calendar: caldav.CalendarMap{
 		Name:        "name",
 		Description: "description",
+		Color:       "color",
 	},
+	// A calendar's colour is per-member: each person picks their own for a
+	// shared calendar, and the calendar's own colour is only the fallback for
+	// someone who has not. Core maps fields on the calendar row and cannot
+	// name calendar_members, so the write lands here.
+	UpdateCalendar: updateCalendarProps,
 	Event: caldav.EventMap{
 		Calendar:    "calendar",
 		UID:         "ical_uid",
@@ -467,3 +477,68 @@ func guardLastOwner(app core.App, calendarID, excludeMemberID string) error {
 	}
 	return nil
 }
+
+// updateCalendarProps writes the PROPPATCH properties core cannot place on the
+// calendar row itself. Today that is the colour, which lives on the caller's
+// own calendar_members row rather than the calendar: each member picks their
+// own colour for a shared calendar, so writing the calendar's would recolour
+// it for everybody it is shared with.
+//
+// Wired into calDAVSource.UpdateCalendar. Core has already resolved and
+// authorized the calendar.
+func updateCalendarProps(
+	ctx context.Context,
+	app core.App,
+	user *core.Record,
+	calendar *core.Record,
+	update caldav.CalendarUpdate,
+) error {
+	if update.Color == nil {
+		return nil
+	}
+
+	color, err := normalizeHexColor(*update.Color)
+	if err != nil {
+		return err
+	}
+
+	members, err := app.FindRecordsByFilter(
+		"calendar_members",
+		"calendar = {:calId} && user = {:userId}",
+		"", 1, 0,
+		map[string]any{"calId": calendar.Id, "userId": user.Id},
+	)
+	if err != nil {
+		return err
+	}
+	if len(members) == 0 {
+		// Reachable only if a rule granted access without a membership; there
+		// is nowhere to store a personal colour, so say so rather than
+		// reporting a write that did not happen.
+		return fmt.Errorf("no membership to carry a colour")
+	}
+
+	members[0].Set("color", color)
+	return app.Save(members[0])
+}
+
+// normalizeHexColor accepts what a CalDAV client sends for calendar-color and
+// returns what the schema stores. macOS Calendar sends #RRGGBBAA; the alpha has
+// nowhere to live, so it is dropped rather than stored and silently ignored.
+func normalizeHexColor(raw string) (string, error) {
+	v := strings.TrimSpace(raw)
+	if v == "" {
+		// An empty value is a removal: fall back to the calendar's colour.
+		return "", nil
+	}
+	if len(v) == 9 {
+		v = v[:7]
+	}
+	if !hexColorRe.MatchString(v) {
+		return "", webdav.NewHTTPError(http.StatusConflict,
+			fmt.Errorf("calendar-color must be #RRGGBB or #RRGGBBAA"))
+	}
+	return strings.ToLower(v), nil
+}
+
+var hexColorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
