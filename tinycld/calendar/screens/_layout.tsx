@@ -50,7 +50,7 @@ export default function CalendarLayout() {
                 event={event}
                 calendarName={calendar?.name ?? ''}
                 calendarColorKey={calendar?.color ?? 'blue'}
-                anchorRect={popover.type === 'event-detail' ? popover.anchorRect : undefined}
+                anchor={popover.type === 'event-detail' ? popover.anchor : undefined}
                 onClose={closePopover}
                 onDelete={id => deleteEvent.mutate(id)}
                 isReadOnly={!!calendar?.subscription_url}

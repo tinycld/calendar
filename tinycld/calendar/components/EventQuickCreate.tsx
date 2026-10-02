@@ -1,15 +1,13 @@
-import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { useAuth } from '@tinycld/core/lib/auth'
 import { captureException } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
-import { Button, ButtonText } from '@tinycld/core/ui/button'
+import { Dialog } from '@tinycld/core/ui/dialog'
 import { TextInput, useForm, z, zodResolver } from '@tinycld/core/ui/form'
-import { Sheet } from '@tinycld/core/ui/sheet'
 import { useGlobalSearchParams, useRouter } from 'expo-router'
-import { Users, X } from 'lucide-react-native'
+import { Users } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
 import { Pressable, Text, View } from 'react-native'
 import { useVisibleCalendars } from '../hooks/useCalendarEvents'
@@ -27,32 +25,51 @@ interface EventQuickCreateProps {
     onClose: () => void
 }
 
+/**
+ * A core Dialog: on desktop and tablet its backdrop covers the whole app, so a
+ * press anywhere outside it — the grid, the sidebar, the rail — closes it; on
+ * the mobile breakpoint it becomes a sheet.
+ */
 export function EventQuickCreate({
     isVisible,
     initialDate,
     initialHour,
     onClose,
 }: EventQuickCreateProps) {
-    const isMobile = useBreakpoint() === 'mobile'
-
-    if (isMobile) {
-        return (
-            <MobileQuickCreate
-                isVisible={isVisible}
-                initialDate={initialDate}
-                initialHour={initialHour}
-                onClose={onClose}
-            />
-        )
-    }
+    const mutedColor = useThemeColor('muted-foreground')
+    const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
+        initialDate,
+        initialHour,
+        onClose
+    )
+    const onMoreOptions = useMoreOptions(onClose)
 
     return (
-        <DesktopQuickCreate
-            isVisible={isVisible}
-            initialDate={initialDate}
-            initialHour={initialHour}
-            onClose={onClose}
-        />
+        <Dialog isOpen={isVisible} onClose={onClose} title="New Event">
+            <Dialog.Body>
+                <TextInput control={control} name="title" placeholder="Add title" autoFocus />
+
+                <View className="gap-1">
+                    <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+                        {dayLabel}
+                    </Text>
+                    <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
+                        {timeLabel}
+                    </Text>
+                </View>
+
+                <Pressable className="flex-row items-center gap-2.5 py-1" onPress={onMoreOptions}>
+                    <Users size={16} color={mutedColor} />
+                    <Text className="text-primary" style={{ fontSize: 13 }}>
+                        More options
+                    </Text>
+                </Pressable>
+            </Dialog.Body>
+            <Dialog.Footer>
+                <Dialog.CancelButton onPress={onClose} />
+                <Dialog.ActionButton label="Save" onPress={onSave} />
+            </Dialog.Footer>
+        </Dialog>
     )
 }
 
@@ -131,123 +148,4 @@ function useMoreOptions(onClose: () => void) {
         onClose()
         router.push(orgHref('calendar/[id]', eventEditorParams('new', { view, date })))
     }
-}
-
-function MobileQuickCreate({
-    isVisible,
-    initialDate,
-    initialHour,
-    onClose,
-}: EventQuickCreateProps) {
-    const mutedColor = useThemeColor('muted-foreground')
-    const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
-        initialDate,
-        initialHour,
-        onClose
-    )
-    const onMoreOptions = useMoreOptions(onClose)
-
-    return (
-        <Sheet isOpen={isVisible} onClose={onClose} title="New Event">
-            <Sheet.Body>
-                <TextInput control={control} name="title" placeholder="Add title" autoFocus />
-
-                <View className="gap-1">
-                    <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
-                        {dayLabel}
-                    </Text>
-                    <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
-                        {timeLabel}
-                    </Text>
-                </View>
-
-                <Pressable className="flex-row items-center gap-2.5 py-2" onPress={onMoreOptions}>
-                    <Users size={18} color={mutedColor} />
-                    <Text className="text-muted-foreground" style={{ fontSize: 14 }}>
-                        Add guests
-                    </Text>
-                </Pressable>
-            </Sheet.Body>
-            <Sheet.Footer>
-                <Pressable onPress={onClose} className="px-3 py-1.5">
-                    <Text className="text-muted-foreground" style={{ fontSize: 14 }}>
-                        Cancel
-                    </Text>
-                </Pressable>
-                <Button onPress={onSave} size="sm">
-                    <ButtonText>Save</ButtonText>
-                </Button>
-            </Sheet.Footer>
-        </Sheet>
-    )
-}
-
-function DesktopQuickCreate({
-    isVisible,
-    initialDate,
-    initialHour,
-    onClose,
-}: EventQuickCreateProps) {
-    const mutedColor = useThemeColor('muted-foreground')
-    const shadowColor = useThemeColor('overlay-backdrop')
-    const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
-        initialDate,
-        initialHour,
-        onClose
-    )
-    const onMoreOptions = useMoreOptions(onClose)
-
-    if (!isVisible) return null
-
-    return (
-        <Pressable
-            className="absolute top-0 left-0 right-0 bottom-0 justify-center items-center z-[100]"
-            onPress={onClose}
-        >
-            <Pressable
-                className="w-[340px] rounded-xl border border-border bg-background p-4"
-                style={{
-                    shadowColor,
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.15,
-                    shadowRadius: 12,
-                    elevation: 8,
-                }}
-                onPress={e => e.stopPropagation()}
-            >
-                <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground" style={{ fontSize: 16, fontWeight: '600' }}>
-                        New Event
-                    </Text>
-                    <Pressable onPress={onClose} hitSlop={8}>
-                        <X size={18} color={mutedColor} />
-                    </Pressable>
-                </View>
-
-                <View className="gap-3 py-2">
-                    <TextInput control={control} name="title" placeholder="Add title" autoFocus />
-
-                    <View className="gap-1">
-                        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
-                            {dayLabel}
-                        </Text>
-                        <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
-                            {timeLabel}
-                        </Text>
-                    </View>
-                </View>
-
-                <View className="flex-row justify-between items-center mt-2">
-                    <Pressable onPress={onMoreOptions}>
-                        <Text className="text-primary" style={{ fontSize: 12 }}>
-                            More options
-                        </Text>
-                    </Pressable>
-                    <Button onPress={onSave} size="sm">
-                        <ButtonText>Save</ButtonText>
-                    </Button>
-                </View>
-            </Pressable>
-        </Pressable>
-    )
 }

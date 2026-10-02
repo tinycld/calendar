@@ -1,16 +1,10 @@
 import { create } from '@tinycld/core/lib/store'
-
-export interface AnchorRect {
-    x: number
-    y: number
-    width: number
-    height: number
-}
+import type { PopoverAnchor } from '@tinycld/core/ui/popover'
 
 export type PopoverState =
     | { type: 'closed' }
     | { type: 'quick-create'; date: Date; hour: number }
-    | { type: 'event-detail'; eventId: string; anchorRect?: AnchorRect }
+    | { type: 'event-detail'; eventId: string; anchor?: PopoverAnchor }
 
 interface CalendarUIState {
     popover: PopoverState
@@ -21,7 +15,7 @@ interface CalendarUIState {
      */
     scheduleFocusedIndex: number
     openQuickCreate: (date: Date, hour: number) => void
-    openEventDetail: (eventId: string, anchorRect?: AnchorRect) => void
+    openEventDetail: (eventId: string, anchor?: PopoverAnchor) => void
     closePopover: () => void
     toggleCalendar: (id: string) => void
     showOnlyCalendar: (id: string) => void
@@ -36,8 +30,8 @@ export const useCalendarUIStore = create<CalendarUIState>(set => ({
 
     openQuickCreate: (date, hour) => set({ popover: { type: 'quick-create', date, hour } }),
 
-    openEventDetail: (eventId, anchorRect) =>
-        set({ popover: { type: 'event-detail', eventId, anchorRect } }),
+    openEventDetail: (eventId, anchor) =>
+        set({ popover: { type: 'event-detail', eventId, anchor } }),
 
     closePopover: () => set({ popover: { type: 'closed' } }),
 
