@@ -6,12 +6,13 @@ import {
     SidebarSlot,
 } from '@tinycld/core/components/sidebar-primitives'
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
+import { openHelp } from '@tinycld/core/lib/help/open-help'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useWorkspaceStore } from '@tinycld/core/lib/stores/workspace-store'
 import { useGlobalSearchParams, useRouter } from 'expo-router'
-import { CalendarDays, Columns3, Grid3X3, Link2, List } from 'lucide-react-native'
+import { CalendarDays, Columns3, Grid3X3, Laptop, Link2, List } from 'lucide-react-native'
 import { useCallback, useMemo, useState } from 'react'
 import { View } from 'react-native'
 import { CalendarList } from './components/CalendarList'
@@ -149,6 +150,12 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
                 label="Subscribe to calendar"
                 icon={Link2}
                 onPress={() => setSubscribeOpen(true)}
+            />
+
+            <SidebarItem
+                label="Connect a device"
+                icon={Laptop}
+                onPress={() => openHelp('calendar:caldav')}
             />
 
             <SubscriptionDialog open={subscribeOpen} onClose={() => setSubscribeOpen(false)} />

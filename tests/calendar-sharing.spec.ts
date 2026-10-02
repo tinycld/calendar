@@ -15,12 +15,12 @@ function pickPersonalCalendar(calendars: CalDAVCalendar[]): CalDAVCalendar {
     )
 }
 
-// PB sits behind the dev.ts proxy on the test Expo port. /api/* and /caldav/*
+// PB sits behind the dev.ts proxy on the test Expo port. /api/* and /calendar/*
 // route through to PB transparently — see scripts/dev.ts::isPbPath.
 const PB_URL = 'http://127.0.0.1:7200'
 
 /**
- * Issue an authenticated PROPFIND on /caldav/u/cal/ as the given user.
+ * Issue an authenticated PROPFIND on /calendar/u/cal/ as the given user.
  * Returns the parsed calendar list, used to verify that a sharee can see
  * a calendar shared with them (or that a non-sharee cannot).
  *
@@ -29,7 +29,7 @@ const PB_URL = 'http://127.0.0.1:7200'
  */
 async function propfindCalendarsAs(user: InvitedUser): Promise<{ id: string; name: string }[]> {
     const auth = `Basic ${Buffer.from(`${user.email}:${user.password}`).toString('base64')}`
-    const res = await fetch(`${PB_URL}/caldav/u/cal/`, {
+    const res = await fetch(`${PB_URL}/calendar/u/cal/`, {
         method: 'PROPFIND',
         headers: {
             Authorization: auth,
@@ -57,7 +57,7 @@ async function propfindCalendarsAs(user: InvitedUser): Promise<{ id: string; nam
         const dnMatch = /<(?:\w+:)?displayname\b[^>]*>([\s\S]*?)<\/(?:\w+:)?displayname>/.exec(
             block
         )
-        const idMatch = /\/caldav\/u\/cal\/([^/]+)\/?$/.exec(hrefMatch[1].trim())
+        const idMatch = /\/calendar\/u\/cal\/([^/]+)\/?$/.exec(hrefMatch[1].trim())
         if (idMatch?.[1]) {
             out.push({ id: idMatch[1], name: dnMatch?.[1].trim() ?? '' })
         }
@@ -198,5 +198,34 @@ test.describe('Calendar — Sharing UI', () => {
             .filter({ hasText: 'Test User' })
             .first()
         await expect(ownerRow.getByRole('button', { name: /Remove/i })).toHaveCount(0)
+    })
+
+    test('Owner can rename the calendar', async ({ page }) => {
+        const calendars = await propfindCalendars()
+        const cal = pickPersonalCalendar(calendars)
+        const renamed = `Renamed ${Date.now()}`
+
+        await login(page)
+        await page.goto(`/a/calendar/settings/${cal.id}`)
+        await expect(page.getByText('Shared with')).toBeVisible({ timeout: 10_000 })
+
+        await page.getByTestId('calendar-rename-button').click()
+        const input = page.getByRole('textbox').last()
+        await input.fill(renamed)
+        await page.getByRole('button', { name: 'Rename' }).click()
+
+        // Assert in the SIDEBAR, not the settings heading: both read the same
+        // live query, so the sidebar proves the write landed AND reached a
+        // screen other than the one that made it. Scoped because an unscoped
+        // match now resolves to both.
+        const sidebar = page.getByTestId('package-sidebar-mounted')
+        await expect(sidebar.getByText(renamed)).toBeVisible({ timeout: 10_000 })
+
+        // Restore the seeded name: this file runs serially and later specs
+        // (plus other files' pickPersonalCalendar) match the calendar by name.
+        await page.getByTestId('calendar-rename-button').click()
+        await page.getByRole('textbox').last().fill(cal.name)
+        await page.getByRole('button', { name: 'Rename' }).click()
+        await expect(sidebar.getByText(cal.name)).toBeVisible({ timeout: 10_000 })
     })
 })

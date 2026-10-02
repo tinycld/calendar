@@ -54,7 +54,7 @@ function EventCard({
     const calendarMap = useCalendarMap()
     const activeIndicator = useThemeColor('active-indicator')
     const cal = calendarMap.get(event.calendar)
-    const colors = getCalendarColorResolved(cal?.color ?? 'blue')
+    const colors = getCalendarColorResolved(cal?.color)
     const [isHovered, setIsHovered] = useState(false)
 
     // Event cards already carry the calendar's color stripe on the left,

@@ -1,16 +1,17 @@
 import { SuretyGuard } from '@tinycld/core/components/SuretyGuard'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
+import { ColorPickerGrid } from '@tinycld/core/ui/color-picker/ColorPickerGrid'
 import { Menu } from '@tinycld/core/ui/menu'
 import * as Clipboard from 'expo-clipboard'
-import { Check, MoreVertical } from 'lucide-react-native'
+import { MoreVertical } from 'lucide-react-native'
 import type { ReactNode } from 'react'
-import { Pressable, Text, View } from 'react-native'
-import type { CalendarColorKey, CalendarWithGroup } from '../types'
-import { CALENDAR_COLOR_GRID, getCalendarColorResolved } from './calendar-colors'
+import { Pressable, Text } from 'react-native'
+import type { CalendarWithGroup } from '../types'
+import { CALENDAR_COLOR_SWATCHES, normalizeCalendarColor } from './calendar-colors'
 
 interface CalendarMenuProps {
-    currentColor: CalendarColorKey
-    onColorChange: (color: CalendarColorKey) => void
+    currentColor: string
+    onColorChange: (color: string) => void
     onShowOnly: () => void
     calendar?: CalendarWithGroup
     onRefresh?: () => void
@@ -179,53 +180,16 @@ function ColorGrid({
     currentColor,
     onColorChange,
 }: {
-    currentColor: CalendarColorKey
-    onColorChange: (color: CalendarColorKey) => void
+    currentColor: string
+    onColorChange: (color: string) => void
 }) {
     return (
-        <>
-            {CALENDAR_COLOR_GRID.map(row => (
-                <View key={row.join('-')} className="flex-row gap-1.5">
-                    {row.map(colorKey => (
-                        <ColorSwatch
-                            key={colorKey}
-                            colorKey={colorKey}
-                            isSelected={currentColor === colorKey}
-                            onPress={() => onColorChange(colorKey)}
-                        />
-                    ))}
-                </View>
-            ))}
-        </>
+        <ColorPickerGrid
+            selected={normalizeCalendarColor(currentColor)}
+            onSelect={onColorChange}
+            palette={CALENDAR_SWATCHES}
+        />
     )
 }
 
-function ColorSwatch({
-    colorKey,
-    isSelected,
-    onPress,
-}: {
-    colorKey: CalendarColorKey
-    isSelected: boolean
-    onPress: () => void
-}) {
-    const { bg, text } = getCalendarColorResolved(colorKey)
-    return (
-        <Pressable
-            onPress={onPress}
-            className="p-0.5 rounded-full size-7 items-center justify-center"
-        >
-            <View
-                className="size-6 rounded-full items-center justify-center"
-                style={{ backgroundColor: bg }}
-            >
-                <SwatchCheck isVisible={isSelected} color={text} />
-            </View>
-        </Pressable>
-    )
-}
-
-function SwatchCheck({ isVisible, color }: { isVisible: boolean; color: string }) {
-    if (!isVisible) return null
-    return <Check size={12} color={color} />
-}
+const CALENDAR_SWATCHES = CALENDAR_COLOR_SWATCHES.map(hex => ({ hex, label: hex }))

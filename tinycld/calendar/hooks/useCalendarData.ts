@@ -4,12 +4,12 @@ import { useAuth } from '@tinycld/core/lib/auth'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useCallback, useMemo } from 'react'
-import type { CalendarColorKey, CalendarWithGroup } from '../types'
+import type { CalendarWithGroup } from '../types'
 
 export interface MembershipInfo {
     id: string
     role: 'owner' | 'editor' | 'viewer'
-    color: CalendarColorKey | ''
+    color: string
 }
 
 export function useCalendarData() {
@@ -74,7 +74,7 @@ export function useCalendarData() {
             color,
         }: {
             membershipId: string
-            color: CalendarColorKey
+            color: string
         }) {
             yield membersCollection.update(membershipId, draft => {
                 draft.color = color
@@ -83,7 +83,7 @@ export function useCalendarData() {
     })
 
     const setCalendarColor = useCallback(
-        (calendarId: string, color: CalendarColorKey) => {
+        (calendarId: string, color: string) => {
             const membership = membershipByCalendar.get(calendarId)
             if (membership) {
                 colorMutation.mutate({ membershipId: membership.id, color })
