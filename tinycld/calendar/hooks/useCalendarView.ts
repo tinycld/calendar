@@ -3,7 +3,7 @@ import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useGlobalSearchParams, useRouter } from 'expo-router'
 import { useCallback, useMemo } from 'react'
 import type { GestureResponderEvent } from 'react-native'
-import type { AnchorRect, PopoverState } from '../stores/calendar-ui-store'
+import type { PopoverState } from '../stores/calendar-ui-store'
 import { useCalendarUIStore } from '../stores/calendar-ui-store'
 import { addDays, addMonths, addWeeks, parseDate, toDateString } from './useCalendarNavigation'
 import { sourceEventHref } from './useSourceEvents'
@@ -17,7 +17,7 @@ function parseViewMode(str: string | undefined): ViewMode {
     return 'week'
 }
 
-export type { AnchorRect, PopoverState }
+export type { PopoverState }
 
 interface CalendarViewState {
     viewMode: ViewMode
@@ -99,20 +99,13 @@ export function useCalendarView(): CalendarViewState {
                 router.push(href)
                 return
             }
-            let anchorRect: AnchorRect | undefined
-            if (e?.currentTarget) {
-                const target = e.currentTarget as unknown as Element
-                if ('getBoundingClientRect' in target) {
-                    const rect = target.getBoundingClientRect()
-                    anchorRect = {
-                        x: rect.left,
-                        y: rect.top,
-                        width: rect.width,
-                        height: rect.height,
-                    }
-                }
-            }
-            storeOpenEventDetail(eventId, anchorRect)
+            // Anchor at the press point, not the block: a block can span the
+            // whole grid, and placing beside it would push the popover over
+            // the sidebar. A keyboard open has no press point and gets none.
+            const { pageX, pageY } = e?.nativeEvent ?? {}
+            const anchor =
+                pageX !== undefined && pageY !== undefined ? { x: pageX, y: pageY } : undefined
+            storeOpenEventDetail(eventId, anchor)
         },
         [storeOpenEventDetail, router]
     )
