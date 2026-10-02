@@ -33,8 +33,13 @@ import (
 // which core evaluates with app.CanAccessRecord — one definition, shared by the
 // REST API, the web UI, and this protocol path.
 var calDAVSource = caldav.Source{
-	Slug:               "calendar",
-	Prefix:             "/caldav",
+	Slug: "calendar",
+	// /calendar, not /caldav: this is the path someone types when adding the
+	// account by hand, and clients that auto-discover reach it through
+	// /.well-known/caldav either way. It shadows the SPA catch-all here — a
+	// literal route wins — which is safe because the app's own route is
+	// /a/calendar.
+	Prefix:             "/calendar",
 	CalendarCollection: "calendar_calendars",
 	EventCollection:    "calendar_events",
 	Calendar: caldav.CalendarMap{
