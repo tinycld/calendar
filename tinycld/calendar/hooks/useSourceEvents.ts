@@ -1,10 +1,10 @@
 import { packageEventSources } from '@tinycld/core/lib/event-sources/registry'
 import type { Href } from 'expo-router'
 import { useEffect, useMemo } from 'react'
-import { CALENDAR_COLOR_KEYS } from '../components/calendar-colors'
+import { normalizeCalendarColor } from '../components/calendar-colors'
 import { parseSourceEventId, sourceCalendarId, sourceEventId } from '../lib/event-source-ids'
 import { useEventSourcesStore } from '../stores/event-sources-store'
-import type { CalendarColorKey, CalendarEvents, CalendarWithGroup } from '../types'
+import type { CalendarEvents, CalendarWithGroup } from '../types'
 
 export const CALENDAR_EVENT_SOURCES = packageEventSources.calendar ?? []
 
@@ -91,10 +91,8 @@ export function sourceEventHref(eventId: string): Href | null {
     return items?.find(i => i.id === parsed.itemId)?.href ?? null
 }
 
-function sourceColor(color: string | undefined): CalendarColorKey {
-    return color && (CALENDAR_COLOR_KEYS as string[]).includes(color)
-        ? (color as CalendarColorKey)
-        : 'graphite'
+function sourceColor(color: string | undefined): string {
+    return normalizeCalendarColor(color)
 }
 
 /**

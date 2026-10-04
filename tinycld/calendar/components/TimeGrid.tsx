@@ -165,7 +165,7 @@ export function TimeGrid({
                                     const layout = layoutMap.get(event.id)
                                     if (!layout) return null
                                     const cal = calendarMap.get(event.calendar)
-                                    const colors = getCalendarColorResolved(cal?.color ?? 'blue')
+                                    const colors = getCalendarColorResolved(cal?.color)
                                     // Recurring occurrences carry a synthetic id,
                                     // subscribed calendars are read-only, and
                                     // contributed source events have no row to

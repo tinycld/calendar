@@ -7,8 +7,9 @@ import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useNavigateBack } from '@tinycld/core/lib/use-navigate-back'
+import { PromptDialog } from '@tinycld/core/ui/PromptDialog'
 import { useLocalSearchParams } from 'expo-router'
-import { ArrowLeft } from 'lucide-react-native'
+import { ArrowLeft, Pencil } from 'lucide-react-native'
 import { useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import type { CalendarMemberRowData } from '../../components/sharing/MemberRow'
@@ -86,6 +87,23 @@ export default function CalendarSettingsScreen() {
         },
     })
 
+    const [isRenaming, setIsRenaming] = useState(false)
+
+    const renameMutation = useMutation({
+        mutationFn: mutation(function* (name: string) {
+            yield calendarsCollection.update(id ?? '', draft => {
+                draft.name = name
+            })
+        }),
+        onSuccess: () => {
+            setActionError(null)
+            setIsRenaming(false)
+        },
+        onError: error => {
+            setActionError(error instanceof Error ? error.message : 'Failed to rename calendar')
+        },
+    })
+
     if (!id || !calendars) {
         // Live query still loading or no id at all — render nothing rather
         // than flashing a "not found" message that's wrong.
@@ -127,14 +145,32 @@ export default function CalendarSettingsScreen() {
                         >
                             Calendar
                         </Text>
-                        <Text
-                            className="text-foreground"
-                            style={{ fontSize: 22, fontWeight: '700' }}
-                        >
-                            {calendar.name}
-                        </Text>
+                        <View className="flex-row items-center gap-2">
+                            <Text
+                                className="text-foreground"
+                                style={{ fontSize: 22, fontWeight: '700' }}
+                            >
+                                {calendar.name}
+                            </Text>
+                            <RenameButton
+                                isVisible={currentUserRole === 'owner'}
+                                onPress={() => setIsRenaming(true)}
+                            />
+                        </View>
                     </View>
                 </View>
+
+                <PromptDialog
+                    isOpen={isRenaming}
+                    onClose={() => setIsRenaming(false)}
+                    onSubmit={name => renameMutation.mutate(name)}
+                    title="Rename calendar"
+                    confirmLabel="Rename"
+                    defaultValue={calendar.name}
+                    maxLength={100}
+                    required
+                    isSubmitting={renameMutation.isPending}
+                />
 
                 <MembersSection
                     calendarId={calendar.id}
@@ -152,5 +188,15 @@ export default function CalendarSettingsScreen() {
                 />
             </View>
         </ScrollView>
+    )
+}
+
+function RenameButton({ isVisible, onPress }: { isVisible: boolean; onPress: () => void }) {
+    const mutedColor = useThemeColor('muted-foreground')
+    if (!isVisible) return null
+    return (
+        <Pressable onPress={onPress} hitSlop={8} testID="calendar-rename-button">
+            <Pencil size={16} color={mutedColor} />
+        </Pressable>
     )
 }

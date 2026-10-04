@@ -42,7 +42,7 @@ export function AllDayBar({ events, weekStart, dayCount, onEventPress }: AllDayB
                     const event = eventMap.get(layout.id)
                     if (!event) return null
                     const cal = calendarMap.get(event.calendar)
-                    const colors = getCalendarColorResolved(cal?.color ?? 'blue')
+                    const colors = getCalendarColorResolved(cal?.color)
                     return (
                         <Pressable
                             key={event.id}

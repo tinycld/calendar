@@ -19,7 +19,7 @@ export function EventSourceToggles() {
     return (
         <View>
             {CALENDAR_EVENT_SOURCES.map(source => {
-                const colors = getCalendarColorResolved(source.color ?? 'graphite')
+                const colors = getCalendarColorResolved(source.color)
                 const isChecked = !hiddenSourceIds.includes(source.id)
                 return (
                     <View key={source.id} className="flex-row items-center pr-3 py-[5px]">

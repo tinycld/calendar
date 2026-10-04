@@ -1,24 +1,5 @@
 import type { Users } from '@tinycld/core/types/pbSchema'
 
-export type CalendarColorKey =
-    | 'blue'
-    | 'green'
-    | 'red'
-    | 'teal'
-    | 'purple'
-    | 'orange'
-    | 'tomato'
-    | 'flamingo'
-    | 'tangerine'
-    | 'banana'
-    | 'sage'
-    | 'basil'
-    | 'peacock'
-    | 'blueberry'
-    | 'lavender'
-    | 'grape'
-    | 'graphite'
-
 export type Recurrence = '' | 'daily' | 'weekly' | 'monthly' | 'yearly'
 
 export interface EventGuest {
@@ -32,7 +13,7 @@ export interface CalendarCalendars {
     id: string
     name: string
     description: string
-    color: CalendarColorKey
+    color: string
     subscription_url: string
     subscription_last_sync: string
     subscription_error: string
@@ -45,7 +26,7 @@ export interface CalendarMembers {
     calendar: string
     user: string
     role: 'owner' | 'editor' | 'viewer'
-    color: CalendarColorKey | ''
+    color: string
     created: string
     updated: string
 }

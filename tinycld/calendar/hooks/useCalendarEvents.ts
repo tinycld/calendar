@@ -4,7 +4,7 @@ import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useEffect, useMemo } from 'react'
 import { expandRecurringEvents, parseEventId } from '../lib/recurrence'
 import { useCalendarUIStore } from '../stores/calendar-ui-store'
-import type { CalendarColorKey, CalendarEvents, CalendarWithGroup } from '../types'
+import type { CalendarEvents, CalendarWithGroup } from '../types'
 import { type MembershipInfo, useCalendarData } from './useCalendarData'
 import { SOURCE_PSEUDO_CALENDARS, useSourceEvents } from './useSourceEvents'
 
@@ -16,7 +16,7 @@ interface VisibleCalendarsState {
     toggleCalendar: (id: string) => void
     calendarMap: Map<string, CalendarWithGroup>
     membershipByCalendar: Map<string, MembershipInfo>
-    setCalendarColor: (calendarId: string, color: CalendarColorKey) => void
+    setCalendarColor: (calendarId: string, color: string) => void
     showOnlyCalendar: (calendarId: string) => void
     isLoading: boolean
 }
