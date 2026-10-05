@@ -12,7 +12,7 @@ Part of [TinyCld](https://tinycld.org/) — the open-source, self-hosted Google 
 - **Guests & RSVP.** Invite attendees by email with `accepted` / `declined` / `tentative` / `pending` status. Organizer vs. attendee roles.
 - **Reminders.** Per-event reminder offsets flow through the app shell's unified notification bus (toast + drawer + Expo push).
 - **Busy / free & visibility.** Mark events busy or free; keep event details private, public, or default per calendar.
-- **Color-coded categories.** 17 named colors (`blueberry`, `sage`, `tangerine`, …) that work in light and dark themes.
+- **Calendar colors.** Each member sets their own color per calendar. Any hex value is accepted; the shared picker offers 17 preset swatches, and a color set from a CalDAV client is stored and shown as-is.
 - **Calendar subscriptions.** Subscribe to any external `.ics` URL (holidays, sports schedules, teammate calendars). The server polls and refreshes them on a schedule.
 - **CalDAV sync.** Native `/caldav/` endpoint. Apple Calendar, GNOME Calendar, DAVx5, Thunderbird — any CalDAV client just works.
 - **Real-time updates.** Edits from any client appear instantly in every other session.
