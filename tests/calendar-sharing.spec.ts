@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { type CalDAVCalendar, propfindCalendars } from '@tinycld/core/e2e-caldav-helpers'
 import { createInvitedUser, type InvitedUser, login } from '@tinycld/core/e2e-helpers'
+import { type CalDAVCalendar, propfindCalendars } from './caldav-helpers'
 
 // Pick the auto-created personal calendar, which is named after the user and
 // always exists (a users-create hook mints one per account).
