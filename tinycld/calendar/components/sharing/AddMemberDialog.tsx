@@ -4,7 +4,7 @@ import { Avatar } from '@tinycld/core/components/Avatar'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
-import { Button, ButtonText } from '@tinycld/core/ui/button'
+import { ButtonText, ServerActionButton } from '@tinycld/core/ui/button'
 import { Dialog } from '@tinycld/core/ui/dialog'
 import { Search } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
@@ -254,9 +254,9 @@ function CandidateRow({
                 </Text>
                 <SecondaryLine isVisible={!!name} text={email} />
             </View>
-            <Button size="sm" onPress={onAdd} isDisabled={isAdding}>
+            <ServerActionButton size="sm" onPress={onAdd} isDisabled={isAdding}>
                 <ButtonText>{isAdding ? 'Adding…' : 'Add'}</ButtonText>
-            </Button>
+            </ServerActionButton>
         </View>
     )
 }

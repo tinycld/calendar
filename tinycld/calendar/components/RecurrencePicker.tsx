@@ -375,7 +375,7 @@ function CustomRecurrenceDialog({
             </Dialog.Body>
             <Dialog.Footer>
                 <Dialog.CancelButton onPress={() => onOpenChange(false)} />
-                <Dialog.ActionButton label="Done" onPress={handleDone} />
+                <Dialog.ActionButton label="Done" onPress={handleDone} requiresServer={false} />
             </Dialog.Footer>
         </Dialog>
     )
