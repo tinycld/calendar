@@ -24,5 +24,8 @@
     },
     "devDependencies": {
         "@tinycld/package-scripts": "*"
+    },
+    "peerDependencies": {
+        "ical.js": "^2.2.1"
     }
 }

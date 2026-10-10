@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
+import { login, navigateToPackage } from '@tinycld/core/e2e-helpers'
 import {
     type CalDAVCalendar,
     deleteEvent,
@@ -8,8 +9,7 @@ import {
     propfindEvents,
     putEvent,
     rawCaldavRequest,
-} from '@tinycld/core/e2e-caldav-helpers'
-import { login, navigateToPackage } from '@tinycld/core/e2e-helpers'
+} from './caldav-helpers'
 
 // RN-Web mounts each time-grid block twice under the same node — one copy
 // measures 0×0 (hidden), the other carries the real layout box. Which one is
