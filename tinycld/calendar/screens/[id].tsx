@@ -9,7 +9,7 @@ import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useNavigateBack } from '@tinycld/core/lib/use-navigate-back'
-import { Button, ButtonText } from '@tinycld/core/ui/button'
+import { ButtonText, ServerActionButton } from '@tinycld/core/ui/button'
 import { useForm, z, zodResolver } from '@tinycld/core/ui/form'
 import { router, useGlobalSearchParams, useLocalSearchParams } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
@@ -378,11 +378,11 @@ export default function EventEditorScreen() {
                                 {event ? 'Edit Event' : 'New Event'}
                             </Text>
                         </View>
-                        <Button onPress={onSubmit} isDisabled={!canSubmit} size="sm">
+                        <ServerActionButton onPress={onSubmit} isDisabled={!canSubmit} size="sm">
                             <ButtonText>
                                 {activeMutation.isPending ? 'Saving...' : 'Save'}
                             </ButtonText>
-                        </Button>
+                        </ServerActionButton>
                     </View>
 
                     {isDesktop ? (
