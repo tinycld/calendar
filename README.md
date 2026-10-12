@@ -14,7 +14,7 @@ Part of [TinyCld](https://tinycld.org/) — the open-source, self-hosted Google 
 - **Busy / free & visibility.** Mark events busy or free; keep event details private, public, or default per calendar.
 - **Calendar colors.** Each member sets their own color per calendar. Any hex value is accepted; the shared picker offers 17 preset swatches, and a color set from a CalDAV client is stored and shown as-is.
 - **Calendar subscriptions.** Subscribe to any external `.ics` URL (holidays, sports schedules, teammate calendars). The server polls and refreshes them on a schedule.
-- **CalDAV sync.** Native `/caldav/` endpoint. Apple Calendar, GNOME Calendar, DAVx5, Thunderbird — any CalDAV client just works.
+- **CalDAV sync.** Native `/calendar/` endpoint. Apple Calendar, GNOME Calendar, DAVx5, Thunderbird — any CalDAV client just works.
 - **Real-time updates.** Edits from any client appear instantly in every other session.
 - **Quick create.** Tap a time slot in the Day or Week view, or press `Shift+C` in the Schedule view, to create an event in a sheet without leaving the grid.
 - **iCalendar export / import.** `GET /api/calendar/export` streams a calendar as an `.ics` file and `POST /api/calendar/import` upserts one back, matching events on `ical_uid` so a re-import updates rather than duplicates (`server/ics_endpoints.go`). Export needs membership in any role; import needs owner or editor — a viewer may export but not import.
@@ -73,7 +73,7 @@ To remove, delete the `calendar/` sibling clone and re-run `pnpm install`.
 
 ## Command line
 
-This package's command group in the `tinycld` binary. The Go source lives in `cli/`, declared by a `cli` block in `manifest.ts` naming the Go package and module. The OAuth scopes the commands need (`calendar:read`, `calendar:write`) are not in the manifest: `server/oauth_scopes.go` registers them via `oauth.RegisterPackage`, together with the collections and routes each scope governs. The server cross-compiles the binary; users download it from **Settings → Personal → About**.
+This package's command group in the `tinycld` binary. The Go source lives in `cli/`, declared by a `cli` block in `manifest.ts` naming the Go package and module. The OAuth scopes the commands need (`calendar:read`, `calendar:write`) are not in the manifest: `server/oauth_scopes.go` registers them via `oauth.RegisterPackage`, together with the collections and routes each scope governs. The server cross-compiles the binary; users download it from **Settings → About**.
 
 Nine commands, under `tinycld calendar` (alias `cal`):
 
