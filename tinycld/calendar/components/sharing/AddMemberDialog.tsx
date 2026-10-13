@@ -1,15 +1,19 @@
 import { and, eq, inArray } from '@tanstack/db'
 import { useLiveQuery } from '@tanstack/react-db'
 import { Avatar } from '@tinycld/core/components/Avatar'
+import { errorToString } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { ButtonText, ServerActionButton } from '@tinycld/core/ui/button'
 import { Dialog } from '@tinycld/core/ui/dialog'
+import { Controller, useForm, zodResolver } from '@tinycld/core/ui/form'
 import { Search } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import { useWatch } from 'react-hook-form'
 import { Pressable, Text, TextInput, View } from 'react-native'
+import { addMemberDefaults, addMemberSchema } from './add-member-schema'
 import { type CalendarRole, ROLE_OPTIONS } from './roles'
 
 interface AddMemberDialogProps {
@@ -25,19 +29,17 @@ interface Candidate {
     email: string | null | undefined
 }
 
-export function AddMemberDialog({
-    isVisible,
+function useAddMemberForm({
     calendarId,
     existingUserIds,
     onClose,
-}: AddMemberDialogProps) {
-    const mutedColor = useThemeColor('muted-foreground')
-    const fgColor = useThemeColor('foreground')
-    const [query, setQuery] = useState('')
-    const [role, setRole] = useState<CalendarRole>('viewer')
-    const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
+}: Omit<AddMemberDialogProps, 'isVisible'>) {
     const [usersCollection, membersCollection] = useStore('users', 'calendar_members')
+    const { control, handleSubmit, reset, setError, clearErrors, formState } = useForm({
+        resolver: zodResolver(addMemberSchema),
+        defaultValues: addMemberDefaults,
+    })
+    const query = useWatch({ control, name: 'query' })
 
     // Share-link guests hold no real standing and disabled accounts can't
     // sign in — neither belongs in the "add a member" picker.
@@ -69,6 +71,11 @@ export function AddMemberDialog({
             .slice(0, 20)
     }, [candidatesRaw, existingUserIds, query])
 
+    const close = () => {
+        reset(addMemberDefaults)
+        onClose()
+    }
+
     const addMember = useMutation({
         mutationFn: mutation(function* (input: { userId: string; role: CalendarRole }) {
             yield membersCollection.insert({
@@ -82,56 +89,75 @@ export function AddMemberDialog({
                 color: 'blue',
             })
         }),
-        onSuccess: () => {
-            setQuery('')
-            setRole('viewer')
-            setErrorMessage(null)
-            onClose()
-        },
+        onSuccess: close,
         onError: error => {
-            const msg = error instanceof Error ? error.message : 'Failed to add member'
-            setErrorMessage(msg)
+            setError('root', {
+                type: 'server',
+                message: errorToString(error, 'Failed to add member'),
+            })
         },
     })
 
-    const handleAdd = (userId: string) => {
-        setErrorMessage(null)
-        addMember.mutate({ userId, role })
+    const add = (userId: string) => {
+        clearErrors('root')
+        return handleSubmit(values => addMember.mutate({ userId, role: values.role }))()
     }
 
-    const handleClose = () => {
-        setQuery('')
-        setRole('viewer')
-        setErrorMessage(null)
-        onClose()
+    return {
+        control,
+        query,
+        filteredCandidates,
+        serverError: formState.errors.root?.message,
+        isAdding: addMember.isPending,
+        add,
+        close,
     }
+}
+
+export function AddMemberDialog({ isVisible, ...props }: AddMemberDialogProps) {
+    const mutedColor = useThemeColor('muted-foreground')
+    const fgColor = useThemeColor('foreground')
+    const form = useAddMemberForm(props)
 
     return (
-        <Dialog isOpen={isVisible} onClose={handleClose} title="Add people" size="lg">
+        <Dialog isOpen={isVisible} onClose={form.close} title="Add people" size="lg">
             <View className="px-5 pb-2 gap-3">
                 <View className="flex-row items-center gap-2 px-3 py-2 rounded-md border border-border bg-background">
                     <Search size={16} color={mutedColor} />
-                    <TextInput
-                        value={query}
-                        onChangeText={setQuery}
-                        placeholder="Search by name or email"
-                        className="flex-1 text-foreground"
-                        style={{ fontSize: 14, color: fgColor, outlineWidth: 0 } as object}
-                        placeholderTextColor={mutedColor}
-                        autoFocus
+                    <Controller
+                        control={form.control}
+                        name="query"
+                        render={({ field }) => (
+                            <TextInput
+                                value={field.value}
+                                onChangeText={field.onChange}
+                                onBlur={field.onBlur}
+                                placeholder="Search by name or email"
+                                className="flex-1 text-foreground"
+                                style={{ fontSize: 14, color: fgColor, outlineWidth: 0 } as object}
+                                placeholderTextColor={mutedColor}
+                                autoFocus
+                            />
+                        )}
                     />
                 </View>
 
-                <RolePicker role={role} onChange={setRole} />
-                <ErrorBanner message={errorMessage} />
+                <Controller
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                        <RolePicker role={field.value} onChange={field.onChange} />
+                    )}
+                />
+                <ErrorBanner message={form.serverError} />
             </View>
 
             <Dialog.Body contentClassName="pb-3">
                 <CandidateList
-                    candidates={filteredCandidates}
-                    hasQuery={!!query}
-                    isAdding={addMember.isPending}
-                    onAdd={handleAdd}
+                    candidates={form.filteredCandidates}
+                    hasQuery={!!form.query}
+                    isAdding={form.isAdding}
+                    onAdd={form.add}
                 />
             </Dialog.Body>
         </Dialog>
@@ -189,7 +215,7 @@ function RoleChip({
     )
 }
 
-function ErrorBanner({ message }: { message: string | null }) {
+function ErrorBanner({ message }: { message: string | undefined }) {
     if (!message) return null
     return (
         <View className="px-3 py-2 rounded-md bg-danger-soft">

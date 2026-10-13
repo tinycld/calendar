@@ -1,5 +1,5 @@
 import { useAuth } from '@tinycld/core/lib/auth'
-import { captureException } from '@tinycld/core/lib/errors'
+import { handleMutationErrorsWithForm } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
@@ -15,7 +15,7 @@ import { getTimeLabel } from '../hooks/useCalendarNavigation'
 import { eventEditorParams } from '../lib/editor-return'
 
 const quickCreateSchema = z.object({
-    title: z.string().min(1, 'Title is required'),
+    title: z.string().trim().min(1, 'Title is required'),
 })
 
 interface EventQuickCreateProps {
@@ -37,7 +37,7 @@ export function EventQuickCreate({
     onClose,
 }: EventQuickCreateProps) {
     const mutedColor = useThemeColor('muted-foreground')
-    const { control, onSave, dayLabel, timeLabel } = useQuickCreateForm(
+    const { control, onSave, canSave, hasNoCalendar, dayLabel, timeLabel } = useQuickCreateForm(
         initialDate,
         initialHour,
         onClose
@@ -48,6 +48,7 @@ export function EventQuickCreate({
         <Dialog isOpen={isVisible} onClose={onClose} title="New Event">
             <Dialog.Body>
                 <TextInput control={control} name="title" placeholder="Add title" autoFocus />
+                <NoCalendarHint isVisible={hasNoCalendar} />
 
                 <View className="gap-1">
                     <Text className="text-muted-foreground" style={{ fontSize: 12 }}>
@@ -67,7 +68,7 @@ export function EventQuickCreate({
             </Dialog.Body>
             <Dialog.Footer>
                 <Dialog.CancelButton onPress={onClose} />
-                <Dialog.ActionButton label="Save" onPress={onSave} />
+                <Dialog.ActionButton label="Save" onPress={onSave} isDisabled={!canSave} />
             </Dialog.Footer>
         </Dialog>
     )
@@ -75,20 +76,20 @@ export function EventQuickCreate({
 
 function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () => void) {
     const { user } = useAuth()
-    const { mineCalendars, calendars } = useVisibleCalendars()
+    const { mineCalendars, calendars, isLoading: isLoadingCalendars } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
+    const defaultCalendar = mineCalendars[0] ?? calendars[0]
 
-    const { control, handleSubmit, reset } = useForm({
+    const { control, handleSubmit, reset, setError, getValues } = useForm({
         mode: 'onChange',
         resolver: zodResolver(quickCreateSchema),
         defaultValues: { title: '' },
     })
 
     const createEvent = useMutation({
-        mutationFn: mutation(function* (data: z.infer<typeof quickCreateSchema>) {
-            const defaultCalendar = mineCalendars[0] ?? calendars[0]
-            if (!defaultCalendar) throw new Error('No calendar available')
-
+        mutationFn: mutation(function* (
+            data: z.infer<typeof quickCreateSchema> & { calendar: string }
+        ) {
             const startDate = new Date(initialDate)
             startDate.setHours(initialHour, 0, 0, 0)
             const endDate = new Date(initialDate)
@@ -96,7 +97,7 @@ function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () 
 
             yield eventsCollection.insert({
                 id: newRecordId(),
-                calendar: defaultCalendar.id,
+                calendar: data.calendar,
                 created_by: user.id,
                 title: data.title,
                 start: startDate.toISOString(),
@@ -117,7 +118,11 @@ function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () 
             reset()
             onClose()
         },
-        onError: error => captureException('EventQuickCreate', error),
+        onError: handleMutationErrorsWithForm({
+            setError,
+            getValues,
+            operation: 'calendar.quick-create',
+        }),
     })
 
     const dayLabel = initialDate.toLocaleDateString('en-US', {
@@ -128,9 +133,23 @@ function useQuickCreateForm(initialDate: Date, initialHour: number, onClose: () 
     const endHour = (initialHour + 1) % 24
     const timeLabel = `${getTimeLabel(initialHour)} – ${getTimeLabel(endHour)}`
 
-    const onSave = handleSubmit(data => createEvent.mutate(data))
+    // Save is disabled without a calendar, so the guard only narrows the type.
+    const onSave = handleSubmit(data => {
+        if (defaultCalendar) createEvent.mutate({ ...data, calendar: defaultCalendar.id })
+    })
+    const hasNoCalendar = !isLoadingCalendars && !defaultCalendar
+    const canSave = !!defaultCalendar && !createEvent.isPending
 
-    return { control, onSave, dayLabel, timeLabel }
+    return { control, onSave, canSave, hasNoCalendar, dayLabel, timeLabel }
+}
+
+function NoCalendarHint({ isVisible }: { isVisible: boolean }) {
+    if (!isVisible) return null
+    return (
+        <Text className="text-danger" style={{ fontSize: 12 }}>
+            Create a calendar before adding events.
+        </Text>
+    )
 }
 
 /**
