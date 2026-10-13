@@ -1,19 +1,21 @@
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { Dialog } from '@tinycld/core/ui/dialog'
+import { Controller, useForm, zodResolver } from '@tinycld/core/ui/form'
 import { PlainInput } from '@tinycld/core/ui/PlainInput'
 import { useState } from 'react'
+import { type Control, useController, useWatch } from 'react-hook-form'
 import { Pressable, Text, View } from 'react-native'
 import {
-    buildRRule,
-    describeRRule,
-    getContextualPresets,
-    getWeekdayPosition,
-    parseRRule,
-    type RRuleOptions,
-} from '../lib/recurrence'
+    buildCustomRRule,
+    type CustomRecurrence,
+    type CustomRecurrenceFormValues,
+    customRecurrenceDefaults,
+    customRecurrenceSchema,
+    DAY_CODES,
+} from '../lib/custom-recurrence'
+import { describeRRule, getContextualPresets, getWeekdayPosition } from '../lib/recurrence'
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-const DAY_CODES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
 const FREQ_OPTIONS = [
     { label: 'day', value: 'DAILY' as const },
     { label: 'week', value: 'WEEKLY' as const },
@@ -136,58 +138,66 @@ function PresetRow({
     )
 }
 
-interface CustomState {
-    freq: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'
-    interval: number
-    byDay: string[]
-    endType: 'never' | 'on' | 'after'
-    untilDate: string
-    count: number
-    monthlyMode: 'dayOfMonth' | 'dayOfWeek'
-}
+function useCustomRecurrenceForm({
+    eventStartDate,
+    initialValue,
+    onSave,
+    onOpenChange,
+}: {
+    eventStartDate: Date
+    initialValue?: string
+    onSave: (rrule: string) => void
+    onOpenChange: (open: boolean) => void
+}) {
+    const form = useForm<CustomRecurrenceFormValues, unknown, CustomRecurrence>({
+        mode: 'onChange',
+        resolver: zodResolver(customRecurrenceSchema),
+        defaultValues: customRecurrenceDefaults(eventStartDate, initialValue),
+    })
+    const { control, setValue, getValues, handleSubmit, formState } = form
+    const [freq, interval, byDay, endType] = useWatch({
+        control,
+        name: ['freq', 'interval', 'byDay', 'endType'],
+    })
 
-function initCustomState(eventStartDate: Date, initialValue?: string): CustomState {
-    const defaults: CustomState = {
-        freq: 'WEEKLY',
-        interval: 1,
-        byDay: [DAY_CODES[eventStartDate.getDay()]],
-        endType: 'never',
-        untilDate: '',
-        count: 13,
-        monthlyMode: 'dayOfMonth',
+    const touch = { shouldValidate: true, shouldDirty: true }
+
+    // The steppers only offer values inside the schema's range; the schema
+    // stays the rule.
+    const stepInterval = (delta: number) =>
+        setValue('interval', Math.min(Math.max(getValues('interval') + delta, 1), 99), touch)
+    const stepCount = (delta: number) =>
+        setValue('count', Math.min(Math.max(getValues('count') + delta, 1), 999), touch)
+
+    const toggleDay = (day: string) => {
+        const current = getValues('byDay')
+        const next = current.includes(day) ? current.filter(d => d !== day) : [...current, day]
+        setValue('byDay', next, touch)
     }
 
-    if (!initialValue) return defaults
+    const setFreq = (value: CustomRecurrenceFormValues['freq']) => setValue('freq', value, touch)
+    const setEndType = (value: CustomRecurrenceFormValues['endType']) =>
+        setValue('endType', value, touch)
 
-    const parsed = parseRRule(initialValue)
-    if (!parsed) return defaults
+    const onDone = handleSubmit(values => {
+        onSave(buildCustomRRule(values, eventStartDate))
+        onOpenChange(false)
+    })
 
-    const state: CustomState = {
-        ...defaults,
-        freq: parsed.freq,
-        interval: parsed.interval || 1,
+    return {
+        control,
+        errors: formState.errors,
+        freq,
+        interval,
+        byDay,
+        endType,
+        setFreq,
+        setEndType,
+        stepInterval,
+        stepCount,
+        toggleDay,
+        onDone,
     }
-
-    if (parsed.byDay && parsed.byDay.length > 0) {
-        if (parsed.freq === 'MONTHLY') {
-            state.monthlyMode = 'dayOfWeek'
-        } else {
-            state.byDay = parsed.byDay
-        }
-    }
-
-    if (parsed.count) {
-        state.endType = 'after'
-        state.count = parsed.count
-    } else if (parsed.until) {
-        state.endType = 'on'
-        const y = parsed.until.getFullYear()
-        const m = String(parsed.until.getMonth() + 1).padStart(2, '0')
-        const d = String(parsed.until.getDate()).padStart(2, '0')
-        state.untilDate = `${y}-${m}-${d}`
-    }
-
-    return state
 }
 
 function CustomRecurrenceDialog({
@@ -205,46 +215,7 @@ function CustomRecurrenceDialog({
 }) {
     const borderColor = useThemeColor('border')
     const primaryColor = useThemeColor('primary')
-    const [state, setState] = useState<CustomState>(() =>
-        initCustomState(eventStartDate, initialValue)
-    )
-
-    const updateState = (partial: Partial<CustomState>) => {
-        setState(prev => ({ ...prev, ...partial }))
-    }
-
-    const handleDone = () => {
-        const options: RRuleOptions = {
-            freq: state.freq,
-            interval: state.interval,
-        }
-
-        if (state.freq === 'WEEKLY' && state.byDay.length > 0) {
-            options.byDay = state.byDay
-        }
-
-        if (state.freq === 'DAILY' && state.byDay.length > 0 && state.byDay.length < 7) {
-            options.byDay = state.byDay
-        }
-
-        if (state.freq === 'MONTHLY') {
-            if (state.monthlyMode === 'dayOfWeek') {
-                const { position, day } = getWeekdayPosition(eventStartDate)
-                options.byDay = [`${position}${day}`]
-            } else {
-                options.byMonthDay = [eventStartDate.getDate()]
-            }
-        }
-
-        if (state.endType === 'after' && state.count > 0) {
-            options.count = state.count
-        } else if (state.endType === 'on' && state.untilDate) {
-            options.until = new Date(`${state.untilDate}T23:59:59`)
-        }
-
-        onSave(buildRRule(options))
-        onOpenChange(false)
-    }
+    const form = useCustomRecurrenceForm({ eventStartDate, initialValue, onSave, onOpenChange })
 
     return (
         <Dialog
@@ -259,28 +230,24 @@ function CustomRecurrenceDialog({
                         Repeat every
                     </Text>
                     <Pressable
-                        onPress={() => {
-                            updateState({ interval: Math.min(state.interval + 1, 99) })
-                        }}
-                        onLongPress={() => {
-                            updateState({ interval: Math.max(state.interval - 1, 1) })
-                        }}
+                        onPress={() => form.stepInterval(1)}
+                        onLongPress={() => form.stepInterval(-1)}
                         className="border border-border rounded-md w-[44px] h-[36px] items-center justify-center"
                     >
                         <Text
                             className="text-foreground"
                             style={{ fontSize: 14, textAlign: 'center' }}
                         >
-                            {state.interval}
+                            {form.interval}
                         </Text>
                     </Pressable>
                     <View className="flex-row gap-1 flex-wrap flex-1">
                         {FREQ_OPTIONS.map(opt => {
-                            const isSelected = state.freq === opt.value
+                            const isSelected = form.freq === opt.value
                             return (
                                 <Pressable
                                     key={opt.value}
-                                    onPress={() => updateState({ freq: opt.value })}
+                                    onPress={() => form.setFreq(opt.value)}
                                     className={`px-2.5 py-1 rounded-md border ${isSelected ? 'bg-primary' : ''}`}
                                     style={{
                                         borderColor: isSelected ? primaryColor : borderColor,
@@ -294,36 +261,33 @@ function CustomRecurrenceDialog({
                                         }
                                         style={{ fontSize: 12 }}
                                     >
-                                        {state.interval > 1 ? `${opt.label}s` : opt.label}
+                                        {form.interval > 1 ? `${opt.label}s` : opt.label}
                                     </Text>
                                 </Pressable>
                             )
                         })}
                     </View>
                 </View>
+                <FieldError message={form.errors.interval?.message} />
 
                 <WeekDaySelector
-                    isVisible={state.freq === 'WEEKLY'}
-                    selectedDays={state.byDay}
-                    onToggle={day => {
-                        const has = state.byDay.includes(day)
-                        if (has) {
-                            if (state.byDay.length > 1) {
-                                updateState({
-                                    byDay: state.byDay.filter(d => d !== day),
-                                })
-                            }
-                        } else {
-                            updateState({ byDay: [...state.byDay, day] })
-                        }
-                    }}
+                    isVisible={form.freq === 'WEEKLY'}
+                    selectedDays={form.byDay}
+                    onToggle={form.toggleDay}
+                    error={form.errors.byDay?.message}
                 />
 
-                <MonthlyModeSelector
-                    isVisible={state.freq === 'MONTHLY'}
-                    monthlyMode={state.monthlyMode}
-                    eventStartDate={eventStartDate}
-                    onChange={mode => updateState({ monthlyMode: mode })}
+                <Controller
+                    control={form.control}
+                    name="monthlyMode"
+                    render={({ field }) => (
+                        <MonthlyModeSelector
+                            isVisible={form.freq === 'MONTHLY'}
+                            monthlyMode={field.value}
+                            eventStartDate={eventStartDate}
+                            onChange={field.onChange}
+                        />
+                    )}
                 />
 
                 <View className="gap-2">
@@ -332,13 +296,13 @@ function CustomRecurrenceDialog({
                     </Text>
                     <View className="flex-row gap-2 flex-wrap">
                         {(['never', 'on', 'after'] as const).map(type => {
-                            const isSelected = state.endType === type
+                            const isSelected = form.endType === type
                             const label =
                                 type === 'never' ? 'Never' : type === 'on' ? 'On date' : 'After'
                             return (
                                 <Pressable
                                     key={type}
-                                    onPress={() => updateState({ endType: type })}
+                                    onPress={() => form.setEndType(type)}
                                     className={`px-2.5 py-1 rounded-md border ${isSelected ? 'bg-primary' : ''}`}
                                     style={{
                                         borderColor: isSelected ? primaryColor : borderColor,
@@ -359,36 +323,46 @@ function CustomRecurrenceDialog({
                         })}
                     </View>
 
-                    <EndDateInput
-                        isVisible={state.endType === 'on'}
-                        value={state.untilDate}
-                        onChange={val => updateState({ untilDate: val })}
-                    />
+                    <EndDateInput isVisible={form.endType === 'on'} control={form.control} />
 
-                    <EndCountInput
-                        isVisible={state.endType === 'after'}
-                        value={state.count}
-                        onIncrement={() => updateState({ count: Math.min(state.count + 1, 999) })}
-                        onDecrement={() => updateState({ count: Math.max(state.count - 1, 1) })}
+                    <Controller
+                        control={form.control}
+                        name="count"
+                        render={({ field, fieldState }) => (
+                            <EndCountInput
+                                isVisible={form.endType === 'after'}
+                                value={field.value}
+                                onIncrement={() => form.stepCount(1)}
+                                onDecrement={() => form.stepCount(-1)}
+                                error={fieldState.error?.message}
+                            />
+                        )}
                     />
                 </View>
             </Dialog.Body>
             <Dialog.Footer>
                 <Dialog.CancelButton onPress={() => onOpenChange(false)} />
-                <Dialog.ActionButton label="Done" onPress={handleDone} requiresServer={false} />
+                <Dialog.ActionButton label="Done" onPress={form.onDone} requiresServer={false} />
             </Dialog.Footer>
         </Dialog>
     )
+}
+
+function FieldError({ message }: { message?: string }) {
+    if (!message) return null
+    return <Text className="text-xs text-danger">{message}</Text>
 }
 
 function WeekDaySelector({
     isVisible,
     selectedDays,
     onToggle,
+    error,
 }: {
     isVisible: boolean
     selectedDays: string[]
     onToggle: (day: string) => void
+    error?: string
 }) {
     const borderColor = useThemeColor('border')
     const primaryColor = useThemeColor('primary')
@@ -422,6 +396,7 @@ function WeekDaySelector({
                     )
                 })}
             </View>
+            <FieldError message={error} />
         </View>
     )
 }
@@ -498,30 +473,33 @@ function MonthlyModeSelector({
 
 function EndDateInput({
     isVisible,
-    value,
-    onChange,
+    control,
 }: {
     isVisible: boolean
-    value: string
-    onChange: (val: string) => void
+    control: Control<CustomRecurrenceFormValues, unknown, CustomRecurrence>
 }) {
     const mutedColor = useThemeColor('field-placeholder')
+    const { field, fieldState } = useController({ control, name: 'untilDate' })
 
     if (!isVisible) return null
 
     return (
-        <View className="flex-row items-center gap-2">
-            <Text className="text-foreground" style={{ fontSize: 14 }}>
-                End date:
-            </Text>
-            <PlainInput
-                value={value}
-                onChangeText={onChange}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={mutedColor}
-                className="border border-border text-foreground rounded-md px-2.5 py-1.5 flex-1"
-                style={{ fontSize: 14 }}
-            />
+        <View className="gap-1">
+            <View className="flex-row items-center gap-2">
+                <Text className="text-foreground" style={{ fontSize: 14 }}>
+                    End date:
+                </Text>
+                <PlainInput
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={mutedColor}
+                    className="border border-border text-foreground rounded-md px-2.5 py-1.5 flex-1"
+                    style={{ fontSize: 14 }}
+                />
+            </View>
+            <FieldError message={fieldState.error?.message} />
         </View>
     )
 }
@@ -531,46 +509,51 @@ function EndCountInput({
     value,
     onIncrement,
     onDecrement,
+    error,
 }: {
     isVisible: boolean
     value: number
     onIncrement: () => void
     onDecrement: () => void
+    error?: string
 }) {
     if (!isVisible) return null
 
     return (
-        <View className="flex-row items-center gap-2">
-            <Text className="text-foreground" style={{ fontSize: 14 }}>
-                After
-            </Text>
-            <View className="flex-row items-center gap-1">
-                <Pressable
-                    onPress={onDecrement}
-                    className="px-2.5 py-1 rounded-md border border-border"
-                >
-                    <Text className="text-foreground" style={{ fontSize: 12 }}>
-                        -
-                    </Text>
-                </Pressable>
-                <Text
-                    className="text-foreground"
-                    style={{ fontSize: 14, textAlign: 'center', width: 40 }}
-                >
-                    {value}
+        <View className="gap-1">
+            <View className="flex-row items-center gap-2">
+                <Text className="text-foreground" style={{ fontSize: 14 }}>
+                    After
                 </Text>
-                <Pressable
-                    onPress={onIncrement}
-                    className="px-2.5 py-1 rounded-md border border-border"
-                >
-                    <Text className="text-foreground" style={{ fontSize: 12 }}>
-                        +
+                <View className="flex-row items-center gap-1">
+                    <Pressable
+                        onPress={onDecrement}
+                        className="px-2.5 py-1 rounded-md border border-border"
+                    >
+                        <Text className="text-foreground" style={{ fontSize: 12 }}>
+                            -
+                        </Text>
+                    </Pressable>
+                    <Text
+                        className="text-foreground"
+                        style={{ fontSize: 14, textAlign: 'center', width: 40 }}
+                    >
+                        {value}
                     </Text>
-                </Pressable>
+                    <Pressable
+                        onPress={onIncrement}
+                        className="px-2.5 py-1 rounded-md border border-border"
+                    >
+                        <Text className="text-foreground" style={{ fontSize: 12 }}>
+                            +
+                        </Text>
+                    </Pressable>
+                </View>
+                <Text className="text-foreground" style={{ fontSize: 14 }}>
+                    occurrences
+                </Text>
             </View>
-            <Text className="text-foreground" style={{ fontSize: 14 }}>
-                occurrences
-            </Text>
+            <FieldError message={error} />
         </View>
     )
 }

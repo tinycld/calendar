@@ -2,6 +2,7 @@ import { eq } from '@tanstack/db'
 import { useLiveQuery } from '@tanstack/react-db'
 import { DocumentTitle } from '@tinycld/core/components/DocumentTitle'
 import { useAuth } from '@tinycld/core/lib/auth'
+import { errorToString } from '@tinycld/core/lib/errors'
 import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
@@ -95,14 +96,15 @@ export default function CalendarSettingsScreen() {
                 draft.name = name
             })
         }),
-        onSuccess: () => {
-            setActionError(null)
-            setIsRenaming(false)
-        },
-        onError: error => {
-            setActionError(error instanceof Error ? error.message : 'Failed to rename calendar')
-        },
+        onSuccess: () => setIsRenaming(false),
     })
+    const renameError = renameMutation.error
+        ? errorToString(renameMutation.error, 'Failed to rename calendar')
+        : null
+    const openRename = () => {
+        renameMutation.reset()
+        setIsRenaming(true)
+    }
 
     if (!id || !calendars) {
         // Live query still loading or no id at all — render nothing rather
@@ -154,7 +156,7 @@ export default function CalendarSettingsScreen() {
                             </Text>
                             <RenameButton
                                 isVisible={currentUserRole === 'owner'}
-                                onPress={() => setIsRenaming(true)}
+                                onPress={openRename}
                             />
                         </View>
                     </View>
@@ -170,6 +172,7 @@ export default function CalendarSettingsScreen() {
                     maxLength={100}
                     required
                     isSubmitting={renameMutation.isPending}
+                    errorMessage={renameError}
                 />
 
                 <MembersSection

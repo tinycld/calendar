@@ -10,7 +10,7 @@ import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useNavigateBack } from '@tinycld/core/lib/use-navigate-back'
 import { ButtonText, ServerActionButton } from '@tinycld/core/ui/button'
-import { useForm, z, zodResolver } from '@tinycld/core/ui/form'
+import { useForm, zodResolver } from '@tinycld/core/ui/form'
 import { router, useGlobalSearchParams, useLocalSearchParams } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
@@ -20,23 +20,9 @@ import { EventForm } from '../components/EventForm'
 import { EventGuestList } from '../components/EventGuestList'
 import { useVisibleCalendars } from '../hooks/useCalendarEvents'
 import { calendarReturnParams } from '../lib/editor-return'
+import { buildFormSeed } from '../lib/event-form-seed'
+import { type EventFormValues, eventSchema } from '../lib/event-schema'
 import { parseEventId } from '../lib/recurrence'
-
-const eventSchema = z.object({
-    title: z.string().min(1, 'Title is required'),
-    description: z.string(),
-    location: z.string(),
-    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD format'),
-    startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:MM format'),
-    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD format'),
-    endTime: z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:MM format'),
-    all_day: z.boolean(),
-    recurrence: z.string(),
-    calendar: z.string(),
-    busy_status: z.enum(['busy', 'free']),
-    visibility: z.enum(['default', 'public', 'private']),
-    reminderMinutes: z.number(),
-})
 
 function combineDateAndTime(dateStr: string, timeStr: string): string {
     return new Date(`${dateStr}T${timeStr}:00`).toISOString()
@@ -53,70 +39,6 @@ function nextHalfHour(d: Date): Date {
     return out
 }
 
-type EventFormValues = z.infer<typeof eventSchema>
-
-interface FormSeedSource {
-    event:
-        | {
-              title: string
-              description: string
-              location: string
-              all_day: boolean
-              recurrence: string
-              calendar: string
-              busy_status: EventFormValues['busy_status']
-              visibility: EventFormValues['visibility']
-              reminder: number
-          }
-        | undefined
-    startDate: Date
-    endDate: Date
-    defaultCalendar: string
-}
-
-// The form's initial field values, for an edit (from the row) or a create
-// (empty, in the resolved default calendar). Pure, so the caller can rebuild
-// it only when something it reads has actually changed.
-function buildFormSeed({
-    event,
-    startDate,
-    endDate,
-    defaultCalendar,
-}: FormSeedSource): EventFormValues {
-    const dates = {
-        startDate: startDate.toISOString().split('T')[0],
-        startTime: startDate.toTimeString().slice(0, 5),
-        endDate: endDate.toISOString().split('T')[0],
-        endTime: endDate.toTimeString().slice(0, 5),
-    }
-    if (!event) {
-        return {
-            title: '',
-            description: '',
-            location: '',
-            ...dates,
-            all_day: false,
-            recurrence: '',
-            calendar: defaultCalendar,
-            busy_status: 'busy',
-            visibility: 'default',
-            reminderMinutes: 30,
-        }
-    }
-    return {
-        title: event.title,
-        description: event.description,
-        location: event.location,
-        ...dates,
-        all_day: event.all_day,
-        recurrence: event.recurrence,
-        calendar: event.calendar,
-        busy_status: event.busy_status,
-        visibility: event.visibility,
-        reminderMinutes: event.reminder,
-    }
-}
-
 export default function EventEditorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>()
     const orgHref = useOrgHref()
@@ -124,7 +46,12 @@ export default function EventEditorScreen() {
     const mutedColor = useThemeColor('muted-foreground')
     const breakpoint = useBreakpoint()
     const { user } = useAuth()
-    const { calendars, mineCalendars, calendarMap } = useVisibleCalendars()
+    const {
+        calendars,
+        mineCalendars,
+        calendarMap,
+        isLoading: isLoadingCalendars,
+    } = useVisibleCalendars()
     const [eventsCollection] = useStore('calendar_events')
     const navigateBack = useNavigateBack(() => orgHref('calendar'))
     // The calendar's view mode and focused date live in the URL, and every
@@ -244,12 +171,12 @@ export default function EventEditorScreen() {
     const startDateValue = watch('startDate')
 
     const createEvent = useMutation({
-        mutationFn: mutation(function* (data: z.infer<typeof eventSchema>) {
+        mutationFn: mutation(function* (data: EventFormValues) {
             yield eventsCollection.insert({
                 id: newRecordId(),
                 calendar: data.calendar,
                 created_by: user.id,
-                title: data.title.trim(),
+                title: data.title,
                 description: data.description,
                 location: data.location,
                 start: combineDateAndTime(data.startDate, data.startTime),
@@ -269,9 +196,9 @@ export default function EventEditorScreen() {
     })
 
     const updateEvent = useMutation({
-        mutationFn: mutation(function* (data: z.infer<typeof eventSchema>) {
+        mutationFn: mutation(function* (data: EventFormValues) {
             yield eventsCollection.update(baseId, draft => {
-                draft.title = data.title.trim()
+                draft.title = data.title
                 draft.description = data.description
                 draft.location = data.location
                 draft.start = combineDateAndTime(data.startDate, data.startTime)
@@ -337,11 +264,10 @@ export default function EventEditorScreen() {
 
     const activeMutation = isNew ? createEvent : updateEvent
     const onSubmit = handleSubmit(data => activeMutation.mutate(data))
-    const calendarValue = watch('calendar')
-    // For new events, the calendar field is populated from defaultCalendar
-    // once the live query resolves. Submitting before that yields a 400
-    // because `calendar` is a required relation in the PB schema.
-    const canSubmit = !activeMutation.isPending && !isLoadingEvent && !!calendarValue
+    // For new events, the calendar field is seeded from defaultCalendar once
+    // the calendars load; a save before then would report "Choose a
+    // calendar" for a field that is about to fill in by itself.
+    const canSubmit = !activeMutation.isPending && !isLoadingEvent && !isLoadingCalendars
 
     const isDesktop = breakpoint === 'desktop'
     const guests = event?.guests ?? []
