@@ -21,7 +21,7 @@ CalDAV is a standard for syncing calendars. Once you connect a CalDAV client to 
 | **Server** | `{{server-host}}` |
 | **Endpoint URL** (clients that ask for one) | `https://{{server-host}}/calendar/` |
 | **Username** | your TinyCld username or email |
-| **Password** | your TinyCld password |
+| **Password** | your TinyCld password, or an [app password](help://core:security-app-passwords) if two-step verification is on |
 
 The server is your TinyCld web address — the hostname in your browser's address bar, shown above. Most clients auto-discover the rest via `/.well-known/caldav`; your calendars live under `/calendar/u/cal/`.
 
@@ -87,7 +87,7 @@ Membership and roles are **not** manageable over CalDAV — invite people and ch
 
 ## Troubleshooting
 
-- **Auth failed** — use your TinyCld sign-in credentials (username or email, and your regular password). There is no separate "CalDAV password".
+- **Auth failed** — use your TinyCld sign-in credentials (username or email, and your regular password). There is no separate "CalDAV password". With two-step verification on, use an [app password](help://core:security-app-passwords).
 - **Client can't find the account** — enter the server as `{{server-host}}` with no path and let the client auto-discover, or give the full endpoint `https://{{server-host}}/calendar/` in clients that want a URL.
 - **Edits are refused on one calendar** — check your role there: viewers can read but not write. A deployment can also [restrict CalDAV writes with a server-side hook](help://calendar:caldav-hooks).
 
