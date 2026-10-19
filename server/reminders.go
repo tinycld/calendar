@@ -1,48 +1,95 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/teambition/rrule-go"
 	"tinycld.org/core/caldav"
 	"tinycld.org/core/notify"
+	"tinycld.org/core/readonly"
 )
 
 // sentReminders dedups reminders so the same event-fire-minute isn't
 // notified twice across overlapping ticker windows.
 var sentReminders sync.Map // key: "eventID-fireMinute" → time.Time
 
-func startReminderScheduler(app *pocketbase.PocketBase) {
+// reminderWindow is how far past each check a reminder may fire and still be
+// sent by it: wider than the ticker's interval, so consecutive windows
+// overlap (sentReminders removes the duplicates).
+const reminderWindow = 90 * time.Second
+
+// reminderMaxCatchUp bounds how late a reminder that fell due while the
+// server was read-only is still sent: the same bound a tail write waits for
+// the mode to end. Past it, "starts in 10 minutes" would be wrong.
+const reminderMaxCatchUp = readonly.TailWait
+
+// startReminderScheduler sends due reminders every minute until ctx ends
+// (the app's terminate).
+func startReminderScheduler(ctx context.Context, app core.App) {
 	ticker := time.NewTicker(60 * time.Second)
 	defer ticker.Stop()
 
-	checkReminders(app)
+	s := newReminderScheduler(time.Now().UTC())
+	s.tick(app, time.Now().UTC())
 
-	for range ticker.C {
-		checkReminders(app)
-		cleanExpiredReminderEntries()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			s.tick(app, time.Now().UTC())
+			cleanExpiredReminderEntries()
+		}
 	}
 }
 
-func checkReminders(app *pocketbase.PocketBase) {
-	if !appIsLive(app) {
+// reminderScheduler skips a tick while the server is read-only, as core's
+// cron guard skips a due cron job, rather than wait: a waiting tick would
+// send nothing sooner. Skipping alone would lose every reminder that falls
+// due in the pause, so the first tick after it also checks from where the
+// last full check stopped, at most reminderMaxCatchUp back.
+type reminderScheduler struct {
+	// coveredUntil is the end of the last window checked in full.
+	coveredUntil time.Time
+}
+
+func newReminderScheduler(start time.Time) *reminderScheduler {
+	return &reminderScheduler{coveredUntil: start}
+}
+
+func (s *reminderScheduler) tick(app core.App, now time.Time) {
+	if readonly.Active() {
 		return
 	}
+	from := now
+	if s.coveredUntil.Before(now) {
+		from = s.coveredUntil
+		if oldest := now.Add(-reminderMaxCatchUp); from.Before(oldest) {
+			from = oldest
+		}
+	}
+	if windowEnd, done := checkReminders(app, from, now); done {
+		s.coveredUntil = windowEnd
+	}
+}
 
-	now := time.Now().UTC()
-	windowEnd := now.Add(90 * time.Second)
+// checkReminders sends the reminders that fire in [from, now+reminderWindow].
+// It returns the window's end, and whether it checked the whole window: it
+// stops when the server turns read-only, before the next reminder's write.
+func checkReminders(app core.App, from, now time.Time) (time.Time, bool) {
+	windowEnd := now.Add(reminderWindow)
 	lookahead := now.Add(24 * time.Hour)
 
-	nowStr := now.Format(reminderTimeFormat)
+	fromStr := from.Format(reminderTimeFormat)
 	lookaheadStr := lookahead.Format(reminderTimeFormat)
 
 	// Two kinds of events can have a reminder fire in the next window:
-	//   - a non-recurring event whose single start lands in [now, lookahead];
+	//   - a non-recurring event whose single start lands in [from, lookahead];
 	//   - a recurring event whose base start is already at/before lookahead and
 	//     whose series hasn't ended — one of its EXPANDED occurrences may fall
 	//     in the window even though the base start is far in the past. Windowing
@@ -51,21 +98,21 @@ func checkReminders(app *pocketbase.PocketBase) {
 	records, err := app.FindRecordsByFilter(
 		"calendar_events",
 		"reminder > 0 && ("+
-			"(recurrence = '' && start >= {:now} && start <= {:lookahead}) || "+
+			"(recurrence = '' && start >= {:from} && start <= {:lookahead}) || "+
 			"(recurrence != '' && start <= {:lookahead} && "+
-			"(recurrence_until = '' || recurrence_until >= {:now}))"+
+			"(recurrence_until = '' || recurrence_until >= {:from}))"+
 			")",
 		"",
 		0,
 		0,
 		map[string]any{
-			"now":       nowStr,
+			"from":      fromStr,
 			"lookahead": lookaheadStr,
 		},
 	)
 	if err != nil {
 		app.Logger().Warn("calendar/reminders: failed to query events", "error", err)
-		return
+		return windowEnd, false
 	}
 
 	for _, event := range records {
@@ -74,12 +121,17 @@ func checkReminders(app *pocketbase.PocketBase) {
 			continue
 		}
 
-		for _, occStart := range occurrenceStartsInWindow(app, event, now, lookahead) {
+		for _, occStart := range occurrenceStartsInWindow(app, event, from, lookahead) {
 			fireTime := occStart.Add(-time.Duration(reminderMinutes) * time.Minute)
-			if fireTime.Before(now) || fireTime.After(windowEnd) {
+			if fireTime.Before(from) || fireTime.After(windowEnd) {
 				continue
 			}
 
+			// Before the dedup mark: a reminder skipped here must still be
+			// sent by the catch-up after the pause.
+			if readonly.Active() {
+				return windowEnd, false
+			}
 			dedup := fmt.Sprintf("%s-%d", event.Id, fireTime.Unix()/60)
 			if _, loaded := sentReminders.LoadOrStore(dedup, time.Now()); loaded {
 				continue
@@ -88,6 +140,7 @@ func checkReminders(app *pocketbase.PocketBase) {
 			notifyReminderMembers(app, event, reminderMinutes)
 		}
 	}
+	return windowEnd, true
 }
 
 // reminderTimeFormat matches how PocketBase stores calendar_events datetimes

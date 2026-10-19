@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/emersion/go-webdav"
 	"github.com/getsentry/sentry-go"
@@ -14,12 +13,17 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"tinycld.org/core/audit"
+	"tinycld.org/core/background"
 	"tinycld.org/core/caldav"
 	"tinycld.org/core/coreserver"
+	"tinycld.org/core/logging"
 	"tinycld.org/core/notify"
 	"tinycld.org/core/oauth"
 	"tinycld.org/core/offboard"
+	"tinycld.org/core/readonly"
 )
+
+var log = logging.ForPackage("calendar")
 
 // calDAVSource maps the calendar collections onto core's CalDAV server.
 //
@@ -94,17 +98,6 @@ var calDAVSource = caldav.Source{
 	},
 }
 
-// appIsLive reports whether the app still has an open database connection.
-// The invite notifier and the reminder/subscription schedulers run in
-// background goroutines that can outlive the app instance — e.g. the test
-// harness resets the dev DB while a job is in flight. Once the app is torn
-// down, ConcurrentDB() is nil and any record query (PocketBase v0.38
-// RecordQuery) panics on the nil DB instead of returning an error. Bail out
-// instead of touching the DB in that window.
-func appIsLive(app core.App) bool {
-	return app != nil && app.ConcurrentDB() != nil
-}
-
 // Register composes the calendar server — the package's single entry point,
 // called by the generator's package_extensions.go in BOTH the single-org app
 // and a hosting tenant. The CalDAV mount runs in both: a per-org tenant
@@ -127,6 +120,10 @@ func Register(app *pocketbase.PocketBase) {
 // record hooks, request-scoped authorization, endpoints, audit/quota/notify
 // registrations, and the per-org background schedulers.
 func registerShared(app *pocketbase.PocketBase) {
+	// Work the hooks and the schedulers move off the request goroutine; the
+	// app's terminate waits for it.
+	jobs := background.For(app, "calendar")
+
 	// What an OAuth token may reach in this package. Core knows nothing about
 	// it until this runs; see oauth.Package for the shape.
 	oauth.RegisterPackage(oauthPackage())
@@ -193,27 +190,7 @@ func registerShared(app *pocketbase.PocketBase) {
 		urlChanged := newURL != oldURL
 		refreshRequested := oldSync != "" && newSync == ""
 		if urlChanged || refreshRequested {
-			calId := e.Record.Id
-			go func() {
-				rec, err := app.FindRecordById("calendar_calendars", calId)
-				if err != nil {
-					return
-				}
-				if err := syncSubscription(app, rec); err != nil {
-					app.Logger().Warn("subscription: immediate sync failed",
-						"calendar", calId,
-						"url", rec.GetString("subscription_url"),
-						"error", err)
-					errMsg := err.Error()
-					if len(errMsg) > 500 {
-						errMsg = errMsg[:500]
-					}
-					rec.Set("subscription_error", errMsg)
-					rec.Set("subscription_last_sync", time.Now().UTC().Format(pbTimeFormat))
-					_ = app.Save(rec)
-					notifySubscriptionError(app, rec, errMsg)
-				}
-			}()
+			syncSubscriptionNow(jobs, app, e.Record.Id)
 		}
 		return e.Next()
 	})
@@ -221,44 +198,24 @@ func registerShared(app *pocketbase.PocketBase) {
 	// Trigger immediate sync when a new subscription is created
 	app.OnRecordAfterCreateSuccess("calendar_calendars").BindFunc(func(e *core.RecordEvent) error {
 		if url := e.Record.GetString("subscription_url"); url != "" {
-			calId := e.Record.Id
-			go func() {
-				rec, err := app.FindRecordById("calendar_calendars", calId)
-				if err != nil {
-					return
-				}
-				if err := syncSubscription(app, rec); err != nil {
-					app.Logger().Warn("subscription: immediate sync failed",
-						"calendar", calId,
-						"url", rec.GetString("subscription_url"),
-						"error", err)
-					errMsg := err.Error()
-					if len(errMsg) > 500 {
-						errMsg = errMsg[:500]
-					}
-					rec.Set("subscription_error", errMsg)
-					rec.Set("subscription_last_sync", time.Now().UTC().Format(pbTimeFormat))
-					_ = app.Save(rec)
-					notifySubscriptionError(app, rec, errMsg)
-				}
-			}()
+			syncSubscriptionNow(jobs, app, e.Record.Id)
 		}
 		return e.Next()
 	})
 
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
-		go startSubscriptionSync(app)
-		go startReminderScheduler(app)
+		jobs.Run("calendar subscription sync", func(ctx context.Context) {
+			startSubscriptionSync(ctx, app)
+		})
+		jobs.Run("calendar reminder scheduler", func(ctx context.Context) {
+			startReminderScheduler(ctx, app)
+		})
 		return e.Next()
 	})
 
 	registerOwnerMembershipBootstrap(app)
 
-	// Notify invited user when a new calendar membership is created
-	app.OnRecordAfterCreateSuccess("calendar_members").BindFunc(func(e *core.RecordEvent) error {
-		go notifyCalendarInvite(app, e.Record)
-		return e.Next()
-	})
+	registerInviteNotification(app)
 
 	// Authorize calendar_members create at the Go layer. An owner-check PB rule
 	// has to traverse the calendar_members back-relation, which PocketBase
@@ -354,9 +311,8 @@ func registerOwnerMembershipBootstrap(app core.App) {
 // calendar_members: the last-owner protection (delete + demotion) and the
 // field-scoped role/calendar guard that blocks privilege escalation on a
 // self-update. It's split out from Register so it can be exercised in isolation
-// by unit tests without also binding the audit/notify/scheduler hooks (whose
-// fire-and-forget goroutines race a test app's teardown). Takes core.App so a
-// tests.TestApp can bind it directly.
+// by unit tests without also binding the audit/notify/scheduler hooks. Takes
+// core.App so a tests.TestApp can bind it directly.
 func registerCalendarMemberAuthz(app core.App) {
 	// Refuse to remove the last owner of a calendar — otherwise no one can
 	// manage members or change subscriptions, and the calendar becomes
@@ -420,11 +376,40 @@ func registerCalendarMemberAuthz(app core.App) {
 	})
 }
 
-func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record) {
-	if !appIsLive(app) {
-		return
-	}
+// registerInviteNotification tells a user they were added to a calendar. The
+// notification runs as a background job: a push dispatch can stall, and it
+// must not delay the membership write's response. Takes core.App so a
+// tests.TestApp can bind it directly.
+func registerInviteNotification(app core.App) {
+	jobs := background.For(app, "calendar")
+	app.OnRecordAfterCreateSuccess("calendar_members").BindFunc(func(e *core.RecordEvent) error {
+		member := e.Record
+		jobs.Run("calendar invite notification", func(ctx context.Context) {
+			notifyCalendarInviteWhenWritable(ctx, app, member)
+		})
+		return e.Next()
+	})
+}
 
+const inviteNotifyDroppedMsg = "calendar invite notification dropped: the server stayed read-only past the wait"
+
+// notifyCalendarInviteWhenWritable notifies for a membership whose row a
+// request already wrote, possibly just before the server went read-only. The
+// notification is a write, so it waits for the mode to end, bounded by
+// readonly.TailWait and by ctx, which ends when the app terminates.
+func notifyCalendarInviteWhenWritable(ctx context.Context, app core.App, member *core.Record) {
+	waitCtx, cancel := context.WithTimeout(ctx, readonly.TailWait)
+	defer cancel()
+	err := readonly.WhenWritable(waitCtx, func() error {
+		notifyCalendarInvite(app, member)
+		return nil
+	})
+	if err != nil {
+		log.Warn(inviteNotifyDroppedMsg, "memberID", member.Id, "err", err)
+	}
+}
+
+func notifyCalendarInvite(app core.App, memberRecord *core.Record) {
 	role := memberRecord.GetString("role")
 
 	// Skip notifications for owner memberships (auto-created)
@@ -450,6 +435,37 @@ func notifyCalendarInvite(app *pocketbase.PocketBase, memberRecord *core.Record)
 		Body:    fmt.Sprintf("You now have %s access", role),
 		URL:     "/calendar",
 	})
+}
+
+// syncSubscriptionNow syncs one subscribed calendar in a background job,
+// outside the ticker, after its URL changed or a refresh was asked for. A
+// failure is stored on the calendar and its owner is told.
+func syncSubscriptionNow(jobs *background.Jobs, app core.App, calID string) {
+	jobs.Run("calendar subscription immediate sync", func(ctx context.Context) {
+		syncSubscriptionNowWhenWritable(ctx, app, calID)
+	})
+}
+
+const immediateSyncDroppedMsg = "calendar subscription sync dropped: the server is read-only"
+
+// syncSubscriptionNowWhenWritable follows a request already accepted, so,
+// unlike the ticker, it waits for read-only mode to end rather than skip:
+// the person who changed the URL or asked for a refresh expects the sync.
+// The wait is bounded by readonly.TailWait and by ctx, which ends when the
+// app terminates. A sync dropped here is picked up by the next tick.
+func syncSubscriptionNowWhenWritable(ctx context.Context, app core.App, calID string) {
+	waitCtx, cancel := context.WithTimeout(ctx, readonly.TailWait)
+	defer cancel()
+	err := readonly.WhenWritable(waitCtx, func() error {
+		rec, err := app.FindRecordById("calendar_calendars", calID)
+		if err != nil {
+			return nil
+		}
+		return syncAndRecord(ctx, app, rec)
+	})
+	if err != nil {
+		log.Warn(immediateSyncDroppedMsg, "calendar", calID, "err", err)
+	}
 }
 
 // userIsOwner reports whether the given user holds an "owner" calendar_members
