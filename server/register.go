@@ -16,10 +16,14 @@ import (
 	"tinycld.org/core/background"
 	"tinycld.org/core/caldav"
 	"tinycld.org/core/coreserver"
+	"tinycld.org/core/logging"
 	"tinycld.org/core/notify"
 	"tinycld.org/core/oauth"
 	"tinycld.org/core/offboard"
+	"tinycld.org/core/readonly"
 )
+
+var log = logging.ForPackage("calendar")
 
 // calDAVSource maps the calendar collections onto core's CalDAV server.
 //
@@ -380,11 +384,29 @@ func registerInviteNotification(app core.App) {
 	jobs := background.For(app, "calendar")
 	app.OnRecordAfterCreateSuccess("calendar_members").BindFunc(func(e *core.RecordEvent) error {
 		member := e.Record
-		jobs.Run("calendar invite notification", func(context.Context) {
-			notifyCalendarInvite(app, member)
+		jobs.Run("calendar invite notification", func(ctx context.Context) {
+			notifyCalendarInviteWhenWritable(ctx, app, member)
 		})
 		return e.Next()
 	})
+}
+
+const inviteNotifyDroppedMsg = "calendar invite notification dropped: the server stayed read-only past the wait"
+
+// notifyCalendarInviteWhenWritable notifies for a membership whose row a
+// request already wrote, possibly just before the server went read-only. The
+// notification is a write, so it waits for the mode to end, bounded by
+// readonly.TailWait and by ctx, which ends when the app terminates.
+func notifyCalendarInviteWhenWritable(ctx context.Context, app core.App, member *core.Record) {
+	waitCtx, cancel := context.WithTimeout(ctx, readonly.TailWait)
+	defer cancel()
+	err := readonly.WhenWritable(waitCtx, func() error {
+		notifyCalendarInvite(app, member)
+		return nil
+	})
+	if err != nil {
+		log.Warn(inviteNotifyDroppedMsg, "memberID", member.Id, "err", err)
+	}
 }
 
 func notifyCalendarInvite(app core.App, memberRecord *core.Record) {
@@ -420,14 +442,30 @@ func notifyCalendarInvite(app core.App, memberRecord *core.Record) {
 // failure is stored on the calendar and its owner is told.
 func syncSubscriptionNow(jobs *background.Jobs, app core.App, calID string) {
 	jobs.Run("calendar subscription immediate sync", func(ctx context.Context) {
+		syncSubscriptionNowWhenWritable(ctx, app, calID)
+	})
+}
+
+const immediateSyncDroppedMsg = "calendar subscription sync dropped: the server is read-only"
+
+// syncSubscriptionNowWhenWritable follows a request already accepted, so,
+// unlike the ticker, it waits for read-only mode to end rather than skip:
+// the person who changed the URL or asked for a refresh expects the sync.
+// The wait is bounded by readonly.TailWait and by ctx, which ends when the
+// app terminates. A sync dropped here is picked up by the next tick.
+func syncSubscriptionNowWhenWritable(ctx context.Context, app core.App, calID string) {
+	waitCtx, cancel := context.WithTimeout(ctx, readonly.TailWait)
+	defer cancel()
+	err := readonly.WhenWritable(waitCtx, func() error {
 		rec, err := app.FindRecordById("calendar_calendars", calID)
 		if err != nil {
-			return
+			return nil
 		}
-		if err := syncSubscription(ctx, app, rec); err != nil {
-			recordSyncFailure(ctx, app, rec, err)
-		}
+		return syncAndRecord(ctx, app, rec)
 	})
+	if err != nil {
+		log.Warn(immediateSyncDroppedMsg, "calendar", calID, "err", err)
+	}
 }
 
 // userIsOwner reports whether the given user holds an "owner" calendar_members

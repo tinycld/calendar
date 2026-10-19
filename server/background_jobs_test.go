@@ -30,23 +30,12 @@ func TestInviteNotification_PanicRecoveredAndTerminateWaits(t *testing.T) {
 		&core.TextField{Name: "user"},
 		&core.TextField{Name: "role"},
 	)
-	notifications := core.NewBaseCollection("notifications")
-	notifications.Fields.Add(
-		&core.TextField{Name: "user"},
-		&core.TextField{Name: "type"},
-		&core.TextField{Name: "package"},
-		&core.TextField{Name: "title"},
-		&core.TextField{Name: "body"},
-		&core.TextField{Name: "url"},
-		&core.JSONField{Name: "metadata"},
-		&core.BoolField{Name: "read"},
-		&core.BoolField{Name: "dismissed"},
-	)
-	for _, c := range []*core.Collection{calendars, members, notifications} {
+	for _, c := range []*core.Collection{calendars, members} {
 		if err := app.Save(c); err != nil {
 			t.Fatalf("create %s: %v", c.Name, err)
 		}
 	}
+	addNotificationsCollection(t, app)
 
 	entered := make(chan struct{})
 	release := make(chan struct{})

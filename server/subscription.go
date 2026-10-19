@@ -3,6 +3,7 @@ package calendar
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -16,6 +17,7 @@ import (
 	"github.com/teambition/rrule-go"
 	"tinycld.org/core/caldav"
 	"tinycld.org/core/notify"
+	"tinycld.org/core/readonly"
 )
 
 const (
@@ -52,7 +54,20 @@ func startSubscriptionSync(ctx context.Context, app core.App) {
 	}
 }
 
+// errSyncSkippedReadOnly reports a sync that wrote nothing because the server
+// was read-only when it came to write: rows written now are lost if the next
+// build rolls back. It is not a feed failure, so it is never stored on the
+// calendar.
+var errSyncSkippedReadOnly = errors.New("calendar subscription sync skipped: the server is read-only")
+
+// syncAllSubscriptions skips its run while the server is read-only, as core's
+// cron guard skips a due cron job, rather than wait like an immediate sync: no
+// request is waiting on it, and the next run re-syncs every calendar, so a
+// skipped run loses nothing.
 func syncAllSubscriptions(ctx context.Context, app core.App) {
+	if readonly.Active() {
+		return
+	}
 	now := time.Now().UTC()
 	staleCutoff := now.AddDate(0, 0, -staleErrorDays).Format(pbTimeFormat)
 
@@ -70,21 +85,36 @@ func syncAllSubscriptions(ctx context.Context, app core.App) {
 	}
 
 	for _, record := range records {
-		if ctx.Err() != nil {
+		if ctx.Err() != nil || readonly.Active() {
 			return
 		}
-		if err := syncSubscription(ctx, app, record); err != nil {
-			recordSyncFailure(ctx, app, record, err)
+		if err := syncAndRecord(ctx, app, record); errors.Is(err, errSyncSkippedReadOnly) {
+			return
 		}
 	}
 }
 
+// syncAndRecord syncs one subscription and stores a failure on the calendar.
+// It returns errSyncSkippedReadOnly when the server was read-only at the
+// write, and nil otherwise: the caller decides whether a skip is a drop.
+func syncAndRecord(ctx context.Context, app core.App, calRecord *core.Record) error {
+	err := syncSubscription(ctx, app, calRecord)
+	if err == nil || errors.Is(err, errSyncSkippedReadOnly) {
+		return err
+	}
+	return recordSyncFailure(ctx, app, calRecord, err)
+}
+
 // recordSyncFailure stores a failed sync on the calendar and tells its owner.
 // A sync cut off by the app's terminate is not the feed's fault, so it is
-// not recorded.
-func recordSyncFailure(ctx context.Context, app core.App, calRecord *core.Record, err error) {
+// not recorded. Nor is one that failed while the server is read-only: the
+// write is refused, and errSyncSkippedReadOnly says so.
+func recordSyncFailure(ctx context.Context, app core.App, calRecord *core.Record, err error) error {
 	if ctx.Err() != nil {
-		return
+		return nil
+	}
+	if readonly.Active() {
+		return errSyncSkippedReadOnly
 	}
 	app.Logger().Warn("subscription: sync failed",
 		"calendar", calRecord.Id,
@@ -100,6 +130,7 @@ func recordSyncFailure(ctx context.Context, app core.App, calRecord *core.Record
 	_ = app.Save(calRecord)
 
 	notifySubscriptionError(app, calRecord, errMsg)
+	return nil
 }
 
 func syncSubscription(ctx context.Context, app core.App, calRecord *core.Record) error {
@@ -165,7 +196,13 @@ func syncSubscription(ctx context.Context, app core.App, calRecord *core.Record)
 // The network fetch deliberately stays outside (syncSubscription): holding a
 // write transaction open across an HTTP round-trip would serialize every
 // other writer behind a slow feed.
+//
+// The read-only check is here, at the write, not at the start of the sync:
+// the fetch can take up to fetchTimeout, and the mode can begin during it.
 func applyFeed(app core.App, calRecord *core.Record, filteredEvents []ical.Event) error {
+	if readonly.Active() {
+		return errSyncSkippedReadOnly
+	}
 	return app.RunInTransaction(func(txApp core.App) error {
 		return applyFeedTx(txApp, calRecord, filteredEvents)
 	})
