@@ -1,12 +1,12 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/teambition/rrule-go"
 	"tinycld.org/core/caldav"
@@ -17,23 +17,26 @@ import (
 // notified twice across overlapping ticker windows.
 var sentReminders sync.Map // key: "eventID-fireMinute" → time.Time
 
-func startReminderScheduler(app *pocketbase.PocketBase) {
+// startReminderScheduler sends due reminders every minute until ctx ends
+// (the app's terminate).
+func startReminderScheduler(ctx context.Context, app core.App) {
 	ticker := time.NewTicker(60 * time.Second)
 	defer ticker.Stop()
 
 	checkReminders(app)
 
-	for range ticker.C {
-		checkReminders(app)
-		cleanExpiredReminderEntries()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			checkReminders(app)
+			cleanExpiredReminderEntries()
+		}
 	}
 }
 
-func checkReminders(app *pocketbase.PocketBase) {
-	if !appIsLive(app) {
-		return
-	}
-
+func checkReminders(app core.App) {
 	now := time.Now().UTC()
 	windowEnd := now.Add(90 * time.Second)
 	lookahead := now.Add(24 * time.Hour)

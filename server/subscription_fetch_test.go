@@ -68,7 +68,7 @@ func TestFetchICS_RejectsLoopbackServer(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	if _, err := fetchICS(srv.URL); err == nil {
+	if _, err := fetchICS(context.Background(), srv.URL); err == nil {
 		t.Fatal("fetchICS reached a loopback server; SSRF guard bypassed")
 	}
 }
@@ -77,7 +77,7 @@ func TestFetchICS_RejectsLoopbackServer(t *testing.T) {
 // the fetch entry point, not just in the predicate.
 func TestFetchICS_RejectsNonHTTPSchemes(t *testing.T) {
 	for _, raw := range []string{"file:///etc/passwd", "ftp://example.com/c.ics", "gopher://example.com/"} {
-		if _, err := fetchICS(raw); err == nil {
+		if _, err := fetchICS(context.Background(), raw); err == nil {
 			t.Errorf("fetchICS(%q) = nil error, want rejection", raw)
 		}
 	}
@@ -88,7 +88,7 @@ func TestFetchICS_RejectsNonHTTPSchemes(t *testing.T) {
 // cannot resolve through to the dialer.
 func TestFetchICS_RejectsUnresolvableHost(t *testing.T) {
 	// .invalid is reserved by RFC 2606 and must never resolve.
-	_, err := fetchICS("https://this-host-does-not-exist.invalid/cal.ics")
+	_, err := fetchICS(context.Background(), "https://this-host-does-not-exist.invalid/cal.ics")
 	if err == nil {
 		t.Fatal("fetchICS accepted an unresolvable host; resolution must fail closed")
 	}
@@ -97,7 +97,7 @@ func TestFetchICS_RejectsUnresolvableHost(t *testing.T) {
 // TestFetchICS_RejectsEmptyHost covers the degenerate URL that parses cleanly
 // but has nothing to verify.
 func TestFetchICS_RejectsEmptyHost(t *testing.T) {
-	if _, err := fetchICS("http:///cal.ics"); err == nil {
+	if _, err := fetchICS(context.Background(), "http:///cal.ics"); err == nil {
 		t.Fatal("fetchICS accepted a URL with an empty host")
 	}
 }
@@ -135,7 +135,7 @@ func TestFetchICS_RedirectToInternalIsBlocked(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	body, err := fetchICS(srv.URL)
+	body, err := fetchICS(context.Background(), srv.URL)
 	if err == nil {
 		body.Close()
 		t.Fatal("fetchICS followed a redirect toward cloud metadata")

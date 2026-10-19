@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/emersion/go-ical"
-	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/teambition/rrule-go"
 	"tinycld.org/core/caldav"
@@ -31,24 +30,29 @@ const (
 	unboundedRuleYears = 100
 )
 
-func startSubscriptionSync(app *pocketbase.PocketBase) {
+// startSubscriptionSync syncs every subscribed calendar shortly after boot
+// and then every syncInterval, until ctx ends (the app's terminate).
+func startSubscriptionSync(ctx context.Context, app core.App) {
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(10 * time.Second):
+	}
+	syncAllSubscriptions(ctx, app)
+
 	ticker := time.NewTicker(syncInterval)
 	defer ticker.Stop()
-
-	// Run once on startup after a short delay
-	time.Sleep(10 * time.Second)
-	syncAllSubscriptions(app)
-
-	for range ticker.C {
-		syncAllSubscriptions(app)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			syncAllSubscriptions(ctx, app)
+		}
 	}
 }
 
-func syncAllSubscriptions(app core.App) {
-	if !appIsLive(app) {
-		return
-	}
-
+func syncAllSubscriptions(ctx context.Context, app core.App) {
 	now := time.Now().UTC()
 	staleCutoff := now.AddDate(0, 0, -staleErrorDays).Format(pbTimeFormat)
 
@@ -66,32 +70,45 @@ func syncAllSubscriptions(app core.App) {
 	}
 
 	for _, record := range records {
-		if err := syncSubscription(app, record); err != nil {
-			app.Logger().Warn("subscription: sync failed",
-				"calendar", record.Id,
-				"url", record.GetString("subscription_url"),
-				"error", err,
-			)
-			errMsg := err.Error()
-			if len(errMsg) > 500 {
-				errMsg = errMsg[:500]
-			}
-			record.Set("subscription_error", errMsg)
-			record.Set("subscription_last_sync", now.Format(pbTimeFormat))
-			_ = app.Save(record)
-
-			notifySubscriptionError(app, record, errMsg)
+		if ctx.Err() != nil {
+			return
+		}
+		if err := syncSubscription(ctx, app, record); err != nil {
+			recordSyncFailure(ctx, app, record, err)
 		}
 	}
 }
 
-func syncSubscription(app core.App, calRecord *core.Record) error {
+// recordSyncFailure stores a failed sync on the calendar and tells its owner.
+// A sync cut off by the app's terminate is not the feed's fault, so it is
+// not recorded.
+func recordSyncFailure(ctx context.Context, app core.App, calRecord *core.Record, err error) {
+	if ctx.Err() != nil {
+		return
+	}
+	app.Logger().Warn("subscription: sync failed",
+		"calendar", calRecord.Id,
+		"url", calRecord.GetString("subscription_url"),
+		"error", err,
+	)
+	errMsg := err.Error()
+	if len(errMsg) > 500 {
+		errMsg = errMsg[:500]
+	}
+	calRecord.Set("subscription_error", errMsg)
+	calRecord.Set("subscription_last_sync", time.Now().UTC().Format(pbTimeFormat))
+	_ = app.Save(calRecord)
+
+	notifySubscriptionError(app, calRecord, errMsg)
+}
+
+func syncSubscription(ctx context.Context, app core.App, calRecord *core.Record) error {
 	url := calRecord.GetString("subscription_url")
 	if url == "" {
 		return fmt.Errorf("no subscription URL")
 	}
 
-	body, err := fetchICS(url)
+	body, err := fetchICS(ctx, url)
 	if err != nil {
 		return fmt.Errorf("fetch: %w", err)
 	}
@@ -378,7 +395,7 @@ const dialTimeout = 10 * time.Second
 //     dials the verified IP itself, so a DNS rebind between the pre-check and
 //     the connect cannot reach an internal address;
 //   - every redirect hop is re-validated through the same host check.
-func fetchICS(rawURL string) (io.ReadCloser, error) {
+func fetchICS(ctx context.Context, rawURL string) (io.ReadCloser, error) {
 	parsed, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid URL: %w", err)
@@ -387,7 +404,7 @@ func fetchICS(rawURL string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", rawURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("invalid URL: %w", err)
 	}
