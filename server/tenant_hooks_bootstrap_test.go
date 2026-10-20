@@ -23,29 +23,9 @@ import (
 // Go hook bound below, in the single-org app and a tenant alike.
 func setupCalTenantWithHooks(t *testing.T) (*tests.TestApp, *core.Record, string) {
 	t.Helper()
-	app, err := tests.NewTestApp()
-	if err != nil {
-		t.Fatalf("NewTestApp: %v", err)
-	}
-	t.Cleanup(func() { app.Cleanup() })
-
-	users, err := app.FindCollectionByNameOrId("users")
-	if err != nil {
-		t.Fatal(err)
-	}
-	users.Fields.Add(&core.SelectField{
-		Name: "role", MaxSelect: 1,
-		Values: []string{"owner", "admin", "member", "guest"},
-	})
-	users.Fields.Add(&core.BoolField{Name: "disabled"})
-	if err := app.Save(users); err != nil {
-		t.Fatal(err)
-	}
-
-	rlstest.ApplyWithHooks(t, app,
-		rlstest.MigrationsDir(t, "../pb-hooks"),
-		rlstest.MigrationsDir(t, "../pb-migrations"),
-	)
+	app := calMigrated.NewApp(t)
+	// The migrations are already in the template; only the hooks remain.
+	rlstest.ApplyWithHooks(t, app, rlstest.MigrationsDir(t, "../pb-hooks"))
 
 	// The tenant links calendar's Go; this is the hook the bootstrap rides on.
 	registerOwnerMembershipBootstrap(app)

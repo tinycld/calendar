@@ -14,8 +14,6 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
-
-	"tinycld.org/core/rlstest"
 )
 
 // ics_endpoints_test.go covers GET /api/calendar/export and
@@ -63,28 +61,7 @@ type icsEnv struct {
 
 func setupICSApp(t *testing.T) *icsEnv {
 	t.Helper()
-	app, err := tests.NewTestApp()
-	if err != nil {
-		t.Fatalf("NewTestApp: %v", err)
-	}
-	t.Cleanup(func() { app.Cleanup() })
-
-	users, err := app.FindCollectionByNameOrId("users")
-	if err != nil {
-		t.Fatal(err)
-	}
-	// `role` and `disabled` belong to core's users schema, which this module
-	// does not carry; the shipped rules and the endpoints read both.
-	users.Fields.Add(&core.SelectField{
-		Name: "role", MaxSelect: 1,
-		Values: []string{"owner", "admin", "member", "guest"},
-	})
-	users.Fields.Add(&core.BoolField{Name: "disabled"})
-	if err := app.Save(users); err != nil {
-		t.Fatalf("add users fields: %v", err)
-	}
-
-	rlstest.Apply(t, app, rlstest.MigrationsDir(t, "../pb-migrations"))
+	app := calMigrated.NewApp(t)
 
 	env := &icsEnv{app: app}
 	env.calendar = calAuthzCalendar(t, app, "Team Cal")

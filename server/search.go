@@ -70,6 +70,7 @@ func searchEvents(app core.App, userID string, q search.Query) (search.Result, e
 		Exclude: joinTerms(q.Exclude),
 		Limit:   q.Limit,
 		Offset:  q.Offset,
+		Ctx:     q.Context(),
 	})
 	if err != nil {
 		return search.Result{}, err

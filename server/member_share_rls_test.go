@@ -34,28 +34,7 @@ type calShareEnv struct {
 
 func setupCalShareApp(t *testing.T) *calShareEnv {
 	t.Helper()
-	app, err := tests.NewTestApp()
-	if err != nil {
-		t.Fatalf("NewTestApp: %v", err)
-	}
-	t.Cleanup(func() { app.Cleanup() })
-
-	// `role` and `disabled` belong to core's users schema, which this module
-	// does not carry; the shipped rules read both.
-	users, err := app.FindCollectionByNameOrId("users")
-	if err != nil {
-		t.Fatal(err)
-	}
-	users.Fields.Add(&core.SelectField{
-		Name: "role", MaxSelect: 1,
-		Values: []string{"owner", "admin", "member", "guest"},
-	})
-	users.Fields.Add(&core.BoolField{Name: "disabled"})
-	if err := app.Save(users); err != nil {
-		t.Fatalf("add users fields: %v", err)
-	}
-
-	rlstest.Apply(t, app, rlstest.MigrationsDir(t, "../pb-migrations"))
+	app := calMigrated.NewApp(t)
 
 	owner := calGuestUser(t, app, "share-owner@test.local", "member")
 	invitee := calGuestUser(t, app, "share-invitee@test.local", "member")
