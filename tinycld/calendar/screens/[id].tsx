@@ -9,9 +9,10 @@ import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
 import { useNavigateBack } from '@tinycld/core/lib/use-navigate-back'
+import { useUrl } from '@tinycld/core/lib/use-url'
 import { ButtonText, ServerActionButton } from '@tinycld/core/ui/button'
 import { useForm, zodResolver } from '@tinycld/core/ui/form'
-import { router, useGlobalSearchParams, useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
 import { useMemo, useRef } from 'react'
@@ -58,7 +59,7 @@ export default function EventEditorScreen() {
     // create entry point passes them into this route's push (see
     // lib/editor-return.ts). Read them globally rather than locally so they
     // resolve from any depth, and reflect them back on the return below.
-    const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
+    const { view, date } = useUrl<{ view?: string; date?: string }>().params
 
     // After a create, go to the calendar explicitly rather than popping.
     //

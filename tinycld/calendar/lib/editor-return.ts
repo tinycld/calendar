@@ -1,7 +1,7 @@
 /**
  * The calendar keeps its view mode and focused date in the URL query
  * (`?view=month&date=2026-08-04`). The event editor is a separate route, so
- * those params do not follow it: `useGlobalSearchParams` on the editor reads
+ * those params do not follow it: `useUrl` on the editor reads
  * the editor's own URL, where they are absent, and a return href built from
  * them lands on the calendar's defaults — Week view at today, nowhere near the
  * event the user just made.

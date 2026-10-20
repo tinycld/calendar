@@ -11,7 +11,8 @@ import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useWorkspaceStore } from '@tinycld/core/lib/stores/workspace-store'
-import { useGlobalSearchParams, useRouter } from 'expo-router'
+import { useUrl } from '@tinycld/core/lib/use-url'
+import { useRouter } from 'expo-router'
 import { CalendarDays, Columns3, Grid3X3, Laptop, Link2, List } from 'lucide-react-native'
 import { useCallback, useMemo, useState } from 'react'
 import { View } from 'react-native'
@@ -44,7 +45,7 @@ function CalendarSidebarInner(_props: CalendarSidebarProps) {
     const orgHref = useOrgHref()
     const { calendars, visibleIds, toggleCalendar, setCalendarColor, showOnlyCalendar } =
         useVisibleCalendars()
-    const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
+    const { view, date } = useUrl<{ view?: string; date?: string }>().params
     const isMobile = useBreakpoint() === 'mobile'
     const setDrawerOpen = useWorkspaceStore(s => s.setDrawerOpen)
     const [subscribeOpen, setSubscribeOpen] = useState(false)
