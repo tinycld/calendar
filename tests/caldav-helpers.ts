@@ -1,4 +1,4 @@
-import { TEST_USER_EMAIL, TEST_USER_PASSWORD } from '@tinycld/core/e2e-helpers'
+import { TEST_USER_PASSWORD, TEST_USER_USERNAME } from '@tinycld/core/e2e-helpers'
 import ICAL from 'ical.js'
 
 // Tests now go through the dev.ts proxy on TEST_EXPO_PORT (see
@@ -26,7 +26,7 @@ export interface PutEventProps {
     description?: string
 }
 
-function authHeader(user = TEST_USER_EMAIL, pass = TEST_USER_PASSWORD): string {
+function authHeader(user = TEST_USER_USERNAME, pass = TEST_USER_PASSWORD): string {
     return `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`
 }
 

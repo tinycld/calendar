@@ -28,7 +28,7 @@ const PB_URL = 'http://127.0.0.1:7200'
  * driving CalDAV IS what this asserts.
  */
 async function propfindCalendarsAs(user: InvitedUser): Promise<{ id: string; name: string }[]> {
-    const auth = `Basic ${Buffer.from(`${user.email}:${user.password}`).toString('base64')}`
+    const auth = `Basic ${Buffer.from(`${user.username}:${user.password}`).toString('base64')}`
     const res = await fetch(`${PB_URL}/calendar/u/cal/`, {
         method: 'PROPFIND',
         headers: {
@@ -45,7 +45,7 @@ async function propfindCalendarsAs(user: InvitedUser): Promise<{ id: string; nam
 </propfind>`,
     })
     if (res.status !== 207) {
-        throw new Error(`PROPFIND as ${user.email} expected 207, got ${res.status}`)
+        throw new Error(`PROPFIND as ${user.username} expected 207, got ${res.status}`)
     }
     const xml = await res.text()
     const out: { id: string; name: string }[] = []
