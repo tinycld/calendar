@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -38,33 +39,40 @@ type calTenantEnv struct {
 	outsiderToken string
 }
 
-// setupCalTenantApp installs calendar's SHIPPED rules by running its real
-// pb-migrations, then seeds one calendar with an owner and a viewer, plus an
-// unrelated signed-in user.
-func setupCalTenantApp(t *testing.T) *calTenantEnv {
-	t.Helper()
-	app, err := tests.NewTestApp()
-	if err != nil {
-		t.Fatalf("NewTestApp: %v", err)
-	}
-	t.Cleanup(func() { app.Cleanup() })
+// calMigrated is calendar's SHIPPED pb-migrations on PocketBase's bundled
+// test data. Replaying them per test is the slow part of every rule suite
+// here, so the binary builds the result once and each test gets a copy.
+var calMigrated = rlstest.Fixture{
+	Base:           rlstest.BundledData,
+	Prepare:        addCoreUserFields,
+	MigrationsDirs: []string{"../pb-migrations"},
+}
 
+// addCoreUserFields adds `role` and `disabled`, which belong to core's users
+// schema; this module does not carry it, and the shipped rules and the ICS
+// endpoints read both.
+func addCoreUserFields(app core.App) error {
 	users, err := app.FindCollectionByNameOrId("users")
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
-	// `role` and `disabled` belong to core's users schema, which this module
-	// does not carry; the rules read both.
 	users.Fields.Add(&core.SelectField{
 		Name: "role", MaxSelect: 1,
 		Values: []string{"owner", "admin", "member", "guest"},
 	})
 	users.Fields.Add(&core.BoolField{Name: "disabled"})
 	if err := app.Save(users); err != nil {
-		t.Fatalf("add users fields: %v", err)
+		return fmt.Errorf("add users fields: %w", err)
 	}
+	return nil
+}
 
-	rlstest.Apply(t, app, rlstest.MigrationsDir(t, "../pb-migrations"))
+// setupCalTenantApp installs calendar's SHIPPED rules from its real
+// pb-migrations (calMigrated), then seeds one calendar with an owner and a
+// viewer, plus an unrelated signed-in user.
+func setupCalTenantApp(t *testing.T) *calTenantEnv {
+	t.Helper()
+	app := calMigrated.NewApp(t)
 
 	cal := calAuthzCalendar(t, app, "Team Cal")
 	owner := calGuestUser(t, app, "t-owner@test.local", "member")
