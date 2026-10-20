@@ -272,7 +272,9 @@ func actionCreateEvent(app core.App, req automation.ActionRequest) error {
 	// very trigger that can invoke this action. Stamping provenance carries the
 	// firing's depth onto the new row, which is what makes such a rule stop at
 	// the chain-depth cap instead of creating events forever.
-	if err := automation.MarkEngineWrite(req, record.Id, func() error { return app.Save(record) }); err != nil {
+	if err := automation.MarkEngineWrite(req, record.Id, func() error {
+		return app.SaveWithContext(req.Context(), record)
+	}); err != nil {
 		return fmt.Errorf("calendar:create-event: %w", err)
 	}
 	return nil

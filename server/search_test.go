@@ -1,6 +1,8 @@
 package calendar
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/pocketbase/pocketbase/core"
@@ -167,6 +169,23 @@ func TestSearchEventsMapsHitsToRows(t *testing.T) {
 	}
 	if result.Total != 1 {
 		t.Errorf("total = %d", result.Total)
+	}
+}
+
+// The aggregator cancels a source's context when its time is up or the app
+// terminates; the source must not run its query after that.
+func TestSearchEventsStopsWhenTheContextEnded(t *testing.T) {
+	app := setupEventSearchApp(t)
+	member, _, _ := seedEvent(t, app, "Quarterly review", "budget walkthrough", "Room 4")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	result, err := searchEvents(app, member, search.Query{Include: []string{"quarterly"}, Limit: 25, Ctx: ctx})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want context.Canceled", err)
+	}
+	if len(result.Rows) != 0 {
+		t.Fatalf("rows = %+v, want none", result.Rows)
 	}
 }
 
