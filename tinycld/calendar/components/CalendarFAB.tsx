@@ -1,6 +1,7 @@
 import { FAB } from '@tinycld/core/components/FAB'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
-import { useGlobalSearchParams, useRouter } from 'expo-router'
+import { useUrl } from '@tinycld/core/lib/use-url'
+import { useRouter } from 'expo-router'
 import { Plus } from 'lucide-react-native'
 import { eventEditorParams } from '../lib/editor-return'
 
@@ -13,7 +14,7 @@ export function CalendarFAB({ isVisible }: CalendarFABProps) {
     const orgHref = useOrgHref()
     // The calendar's view/date live in the URL; read them globally so they
     // resolve from any depth and carry them into the editor push.
-    const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
+    const { view, date } = useUrl<{ view?: string; date?: string }>().params
 
     return (
         <FAB

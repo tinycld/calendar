@@ -4,9 +4,10 @@ import { mutation, useMutation } from '@tinycld/core/lib/mutations'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
 import { useStore } from '@tinycld/core/lib/pocketbase'
 import { useThemeColor } from '@tinycld/core/lib/use-app-theme'
+import { useUrl } from '@tinycld/core/lib/use-url'
 import { Dialog } from '@tinycld/core/ui/dialog'
 import { TextInput, useForm, z, zodResolver } from '@tinycld/core/ui/form'
-import { useGlobalSearchParams, useRouter } from 'expo-router'
+import { useRouter } from 'expo-router'
 import { Users } from 'lucide-react-native'
 import { newRecordId } from 'pbtsdb/core'
 import { Pressable, Text, View } from 'react-native'
@@ -161,7 +162,7 @@ function NoCalendarHint({ isVisible }: { isVisible: boolean }) {
 function useMoreOptions(onClose: () => void) {
     const router = useRouter()
     const orgHref = useOrgHref()
-    const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
+    const { view, date } = useUrl<{ view?: string; date?: string }>().params
 
     return () => {
         onClose()

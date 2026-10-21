@@ -1,6 +1,7 @@
 import { useBreakpoint } from '@tinycld/core/components/workspace/useBreakpoint'
 import { useOrgHref } from '@tinycld/core/lib/org-routes'
-import { useGlobalSearchParams, useRouter } from 'expo-router'
+import { useUrl } from '@tinycld/core/lib/use-url'
+import { useRouter } from 'expo-router'
 import { useCallback, useMemo } from 'react'
 import type { GestureResponderEvent } from 'react-native'
 import type { PopoverState } from '../stores/calendar-ui-store'
@@ -36,11 +37,11 @@ interface CalendarViewState {
 export function useCalendarView(): CalendarViewState {
     const router = useRouter()
     const orgHref = useOrgHref()
-    // useGlobalSearchParams (rather than useLocalSearchParams) so the view
-    // mode reads consistently from any depth — CalendarHeader lives in the
-    // layout, where useLocalSearchParams scopes to layout params and misses
-    // ?view= / ?date= query params owned by the child screen.
-    const { view, date } = useGlobalSearchParams<{ view?: string; date?: string }>()
+    // The URL (rather than useLocalSearchParams) so the view mode reads
+    // consistently from any depth — CalendarHeader lives in the layout, where
+    // useLocalSearchParams scopes to layout params and misses ?view= / ?date=
+    // query params owned by the child screen.
+    const { view, date } = useUrl<{ view?: string; date?: string }>().params
     const breakpoint = useBreakpoint()
     const isMobile = breakpoint === 'mobile'
 
