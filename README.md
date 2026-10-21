@@ -48,7 +48,7 @@ Rules are declared with `automation: { definitions: 'automation' }` in `manifest
 This package contributes:
 
 - **Screens** — routes at `/a/calendar`.
-- **Provider** — a wrapping context that loads calendar memberships and visible-calendar state.
+- **Provider** — mounts client-side reminder scheduling (`EventReminders` → `useEventReminders`): OS notifications for upcoming events in visible calendars. Memberships load in `hooks/useCalendarData.ts`; visible-calendar state is the `calendar-ui-store` Zustand store.
 - **Nav entry** — sidebar icon with keyboard shortcut `c`.
 - **Sidebar slot** — `sidebar.after-calendars`, exposed for other packages to inject sections (e.g. "My Booking Pages") below the calendar list. See [Sidebar slots](https://tinycld.org/docs/anatomy/sidebar-slots).
 - **Collections** — `calendar_calendars`, `calendar_members`, `calendar_events` (pbtsdb, live-queried).
