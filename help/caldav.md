@@ -20,7 +20,7 @@ CalDAV is a standard for syncing calendars. Once you connect a CalDAV client to 
 |---|---|
 | **Server** | `{{server-host}}` |
 | **Endpoint URL** (clients that ask for one) | `https://{{server-host}}/calendar/` |
-| **Username** | your TinyCld username or email |
+| **Username** | your TinyCld username |
 | **Password** | your TinyCld password, or an [app password](help://core:security-app-passwords) if two-step verification is on |
 
 The server is your TinyCld web address — the hostname in your browser's address bar, shown above. Most clients auto-discover the rest via `/.well-known/caldav`; your calendars live under `/calendar/u/cal/`.
@@ -31,7 +31,7 @@ The server is your TinyCld web address — the hostname in your browser's addres
 2. **Calendar → Settings → Accounts → +**.
 3. Pick **Other CalDAV Account…**, click **Continue**.
 4. Account Type: **Automatic**.
-5. Username: your TinyCld username or email.
+5. Username: your TinyCld username.
 6. Password: your TinyCld password.
 7. Server address: `{{server-host}}` (no `https://`, no path — Calendar auto-discovers via `/.well-known/caldav`).
 8. Click **Sign In**.
@@ -42,7 +42,7 @@ Each TinyCld calendar you're a member of appears in the sidebar under the new ac
 
 1. **Settings → Calendar → Accounts → Add Account → Other → Add CalDAV Account**.
 2. Server: `{{server-host}}`.
-3. User Name: your TinyCld username or email.
+3. User Name: your TinyCld username.
 4. Password: your TinyCld password.
 5. Description: anything you like (e.g. "TinyCld").
 6. Tap **Next** — iOS validates and finishes setup.
@@ -54,7 +54,7 @@ DAVx5 is the standard third-party CalDAV/CardDAV client for Android.
 1. Open **DAVx5** and tap **+ Add account**.
 2. Choose **Login with URL and user name**.
 3. Base URL: `https://{{server-host}}/calendar/`.
-4. User name: your TinyCld username or email.
+4. User name: your TinyCld username.
 5. Password: your TinyCld password.
 6. Tap **Login**, then **Create account**.
 7. Open the account's **CALDAV** tab and enable the calendars you want synced.
@@ -64,7 +64,7 @@ DAVx5 exposes them to Android's system calendar; any calendar app picks them up.
 ## Connecting Thunderbird
 
 1. **Calendar → New Calendar → On the Network**.
-2. Username: your TinyCld username or email.
+2. Username: your TinyCld username.
 3. Location: `https://{{server-host}}/calendar/`.
 4. Click **Find Calendars**, enter your password when prompted.
 5. Tick the calendars to subscribe to, then **Subscribe**.
@@ -74,7 +74,7 @@ DAVx5 exposes them to Android's system calendar; any calendar app picks them up.
 1. Open **Evolution** (or **GNOME Online Accounts** in Settings).
 2. **Edit → Accounts → Add → CalDAV**.
 3. URL: `https://{{server-host}}/calendar/`.
-4. Username: your TinyCld username or email.
+4. Username: your TinyCld username.
 5. Click **Find** to discover the calendars, then check the ones you want.
 
 GNOME Calendar reads from Evolution's calendars, so they appear there automatically.
@@ -87,7 +87,7 @@ Membership and roles are **not** manageable over CalDAV — invite people and ch
 
 ## Troubleshooting
 
-- **Auth failed** — use your TinyCld sign-in credentials (username or email, and your regular password). There is no separate "CalDAV password". With two-step verification on, use an [app password](help://core:security-app-passwords).
+- **Auth failed** — use your TinyCld sign-in credentials (username, and your regular password). There is no separate "CalDAV password". With two-step verification on, use an [app password](help://core:security-app-passwords).
 - **Client can't find the account** — enter the server as `{{server-host}}` with no path and let the client auto-discover, or give the full endpoint `https://{{server-host}}/calendar/` in clients that want a URL.
 - **Edits are refused on one calendar** — check your role there: viewers can read but not write. A deployment can also [restrict CalDAV writes with a server-side hook](help://calendar:caldav-hooks).
 
