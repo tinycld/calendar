@@ -1,7 +1,7 @@
 import {
+    ButtonGroup,
     FormErrorSummary,
     NumberInput,
-    SelectInput,
     TextAreaInput,
     TextInput,
     Toggle,
@@ -94,14 +94,14 @@ export function EventForm({
                 increment={5}
             />
 
-            <SelectInput
+            <ButtonGroup
                 control={control}
                 name="calendar"
                 label="Calendar"
                 options={calendarOptions}
             />
 
-            <SelectInput
+            <ButtonGroup
                 control={control}
                 name="busy_status"
                 label="Status"
@@ -112,7 +112,7 @@ export function EventForm({
                 horizontal
             />
 
-            <SelectInput
+            <ButtonGroup
                 control={control}
                 name="visibility"
                 label="Visibility"
