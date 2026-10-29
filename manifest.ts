@@ -1,7 +1,7 @@
 const manifest = {
     name: 'Calendar',
     slug: 'calendar',
-    version: '0.5.3',
+    version: '0.5.4',
     description: 'Shared calendars, events and reminders',
     routes: { directory: 'screens' },
     nav: { label: 'Calendar', icon: 'calendar', order: 8, shortcut: 'c' },
