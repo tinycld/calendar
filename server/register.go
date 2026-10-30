@@ -108,7 +108,7 @@ func Register(app *pocketbase.PocketBase) {
 	// A rejected prefix leaves CalDAV unmounted rather than shadowing the REST
 	// API or panicking the ServeMux; the rest of the package still works, so
 	// log it instead of taking the process down.
-	if _, err := caldav.Register(app, []caldav.Source{calDAVSource}, coreserver.CalDAVHostBindings()); err != nil {
+	if _, err := caldav.Register(app, []caldav.Source{calDAVSource}, coreserver.CalDAVHostBindings(app)); err != nil {
 		app.Logger().Error("calendar: CalDAV registration failed", "error", err)
 	}
 }
