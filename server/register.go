@@ -397,7 +397,7 @@ const inviteNotifyDroppedMsg = "calendar invite notification dropped: the server
 func notifyCalendarInviteWhenWritable(ctx context.Context, app core.App, member *core.Record) {
 	waitCtx, cancel := context.WithTimeout(ctx, readonly.TailWait)
 	defer cancel()
-	err := readonly.WhenWritable(waitCtx, func() error {
+	err := readonly.WhenWritable(waitCtx, app, func() error {
 		notifyCalendarInvite(app, member)
 		return nil
 	})
@@ -453,7 +453,7 @@ const immediateSyncDroppedMsg = "calendar subscription sync dropped: the server 
 func syncSubscriptionNowWhenWritable(ctx context.Context, app core.App, calID string) {
 	waitCtx, cancel := context.WithTimeout(ctx, readonly.TailWait)
 	defer cancel()
-	err := readonly.WhenWritable(waitCtx, func() error {
+	err := readonly.WhenWritable(waitCtx, app, func() error {
 		rec, err := app.FindRecordById("calendar_calendars", calID)
 		if err != nil {
 			return nil

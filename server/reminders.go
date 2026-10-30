@@ -63,7 +63,7 @@ func newReminderScheduler(start time.Time) *reminderScheduler {
 }
 
 func (s *reminderScheduler) tick(app core.App, now time.Time) {
-	if readonly.Active() {
+	if readonly.Active(app) {
 		return
 	}
 	from := now
@@ -129,7 +129,7 @@ func checkReminders(app core.App, from, now time.Time) (time.Time, bool) {
 
 			// Before the dedup mark: a reminder skipped here must still be
 			// sent by the catch-up after the pause.
-			if readonly.Active() {
+			if readonly.Active(app) {
 				return windowEnd, false
 			}
 			dedup := fmt.Sprintf("%s-%d", event.Id, fireTime.Unix()/60)

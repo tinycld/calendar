@@ -65,7 +65,7 @@ var errSyncSkippedReadOnly = errors.New("calendar subscription sync skipped: the
 // request is waiting on it, and the next run re-syncs every calendar, so a
 // skipped run loses nothing.
 func syncAllSubscriptions(ctx context.Context, app core.App) {
-	if readonly.Active() {
+	if readonly.Active(app) {
 		return
 	}
 	now := time.Now().UTC()
@@ -85,7 +85,7 @@ func syncAllSubscriptions(ctx context.Context, app core.App) {
 	}
 
 	for _, record := range records {
-		if ctx.Err() != nil || readonly.Active() {
+		if ctx.Err() != nil || readonly.Active(app) {
 			return
 		}
 		if err := syncAndRecord(ctx, app, record); errors.Is(err, errSyncSkippedReadOnly) {
@@ -113,7 +113,7 @@ func recordSyncFailure(ctx context.Context, app core.App, calRecord *core.Record
 	if ctx.Err() != nil {
 		return nil
 	}
-	if readonly.Active() {
+	if readonly.Active(app) {
 		return errSyncSkippedReadOnly
 	}
 	app.Logger().Warn("subscription: sync failed",
@@ -200,7 +200,7 @@ func syncSubscription(ctx context.Context, app core.App, calRecord *core.Record)
 // The read-only check is here, at the write, not at the start of the sync:
 // the fetch can take up to fetchTimeout, and the mode can begin during it.
 func applyFeed(app core.App, calRecord *core.Record, filteredEvents []ical.Event) error {
-	if readonly.Active() {
+	if readonly.Active(app) {
 		return errSyncSkippedReadOnly
 	}
 	return app.RunInTransaction(func(txApp core.App) error {
