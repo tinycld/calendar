@@ -264,7 +264,7 @@ export default function EventEditorScreen() {
     }
 
     const activeMutation = isNew ? createEvent : updateEvent
-    const onSubmit = handleSubmit(data => activeMutation.mutate(data))
+    const onSubmit = () => void handleSubmit(data => activeMutation.mutate(data))()
     // For new events, the calendar field is seeded from defaultCalendar once
     // the calendars load; a save before then would report "Choose a
     // calendar" for a field that is about to fill in by itself.

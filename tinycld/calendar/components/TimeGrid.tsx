@@ -6,6 +6,7 @@ import {
     type LayoutChangeEvent,
     Pressable,
     ScrollView,
+    type ScrollViewInstance,
     StyleSheet,
     Text,
     View,
@@ -80,7 +81,7 @@ export function TimeGrid({
     const dayMoveEnabled = columns.length > 1
 
     const scrollRef = useCallback(
-        (node: ScrollView | null) => {
+        (node: ScrollViewInstance | null) => {
             if (!node) return
             const now = new Date()
             const currentHour = now.getHours()
