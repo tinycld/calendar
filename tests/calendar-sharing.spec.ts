@@ -17,7 +17,7 @@ function pickPersonalCalendar(calendars: CalDAVCalendar[]): CalDAVCalendar {
 
 // PB sits behind the dev.ts proxy on the test Expo port. /api/* and /calendar/*
 // route through to PB transparently — see scripts/dev.ts::isPbPath.
-const PB_URL = 'http://127.0.0.1:7200'
+const PB_URL = `http://127.0.0.1:${process.env.E2E_PORT ?? 7200}`
 
 /**
  * Issue an authenticated PROPFIND on /calendar/u/cal/ as the given user.

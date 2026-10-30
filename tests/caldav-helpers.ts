@@ -5,7 +5,7 @@ import ICAL from 'ical.js'
 // playwright.config.ts), which fans /calendar to the same PB instance the
 // app is talking to. Same-origin via the proxy keeps cookies/auth aligned
 // with the browser context.
-const CALDAV_BASE = 'http://127.0.0.1:7200/calendar'
+const CALDAV_BASE = `http://127.0.0.1:${process.env.E2E_PORT ?? 7200}/calendar`
 
 export interface CalDAVCalendar {
     id: string
