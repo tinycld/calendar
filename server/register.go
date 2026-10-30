@@ -87,10 +87,7 @@ var calDAVSource = caldav.Source{
 	// stack survive. Not-found (which every unauthorized probe resolves to) is
 	// filtered by core before it gets here.
 	OnError: func(ctx context.Context, op string, err error) {
-		hub := sentry.GetHubFromContext(ctx)
-		if hub == nil {
-			hub = sentry.CurrentHub()
-		}
+		hub := logging.HubFromContext(ctx)
 		hub.WithScope(func(scope *sentry.Scope) {
 			scope.SetTag("caldav.op", op)
 			hub.CaptureException(err)
