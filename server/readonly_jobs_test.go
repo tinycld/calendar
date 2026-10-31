@@ -91,10 +91,10 @@ func subscriptionError(t *testing.T, env *calTenantEnv) string {
 	return rec.GetString("subscription_error")
 }
 
-func enterReadOnly(t *testing.T) {
+func enterReadOnly(t *testing.T, app core.App) {
 	t.Helper()
-	readonly.Enter()
-	t.Cleanup(readonly.Leave)
+	readonly.Enter(app)
+	t.Cleanup(func() { readonly.Leave(app) })
 }
 
 // runUntilWaiting starts fn and returns once fn has reached the read-only
@@ -143,7 +143,7 @@ func assertDroppedLog(t *testing.T, logs func() []readonlytest.Record, msg, key,
 func TestInviteNotify_WaitsForReadOnlyToEnd(t *testing.T) {
 	env := setupReadOnlyEnv(t)
 	member := viewerMembership(t, env)
-	enterReadOnly(t)
+	enterReadOnly(t, env.app)
 
 	done := runUntilWaiting(t, "invite notification", func(ctx context.Context) {
 		notifyCalendarInviteWhenWritable(ctx, env.app, member)
@@ -152,7 +152,7 @@ func TestInviteNotify_WaitsForReadOnlyToEnd(t *testing.T) {
 		t.Fatal("an invite notification was written while read-only")
 	}
 
-	readonly.Leave()
+	readonly.Leave(env.app)
 	waitDone(t, "invite notification", done)
 	if countNotifications(t, env.app, "calendar_invite") != 1 {
 		t.Fatal("expected the invite notification after read-only mode ended")
@@ -163,7 +163,7 @@ func TestInviteNotify_DroppedAndLoggedWhenReadOnlyOutlastsTheWait(t *testing.T) 
 	env := setupReadOnlyEnv(t)
 	member := viewerMembership(t, env)
 	logs := readonlytest.CaptureLogs(t)
-	enterReadOnly(t)
+	enterReadOnly(t, env.app)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -180,7 +180,7 @@ func TestInviteNotify_DroppedAndLoggedWhenReadOnlyOutlastsTheWait(t *testing.T) 
 func TestImmediateSync_WaitsForReadOnlyToEnd(t *testing.T) {
 	env := setupReadOnlyEnv(t)
 	subscribe(t, env)
-	enterReadOnly(t)
+	enterReadOnly(t, env.app)
 
 	done := runUntilWaiting(t, "subscription sync", func(ctx context.Context) {
 		syncSubscriptionNowWhenWritable(ctx, env.app, env.calendar.Id)
@@ -189,7 +189,7 @@ func TestImmediateSync_WaitsForReadOnlyToEnd(t *testing.T) {
 		t.Fatalf("the sync stored %q while read-only", got)
 	}
 
-	readonly.Leave()
+	readonly.Leave(env.app)
 	waitDone(t, "subscription sync", done)
 	if got := subscriptionError(t, env); !strings.Contains(got, "private/internal") {
 		t.Fatalf("expected the failed fetch stored after read-only mode ended, got %q", got)
@@ -203,7 +203,7 @@ func TestImmediateSync_DroppedAndLoggedWhenReadOnlyOutlastsTheWait(t *testing.T)
 	env := setupReadOnlyEnv(t)
 	subscribe(t, env)
 	logs := readonlytest.CaptureLogs(t)
-	enterReadOnly(t)
+	enterReadOnly(t, env.app)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -220,14 +220,14 @@ func TestImmediateSync_DroppedAndLoggedWhenReadOnlyOutlastsTheWait(t *testing.T)
 func TestSubscriptionTicker_SkipsWhileReadOnly(t *testing.T) {
 	env := setupReadOnlyEnv(t)
 	subscribe(t, env)
-	enterReadOnly(t)
+	enterReadOnly(t, env.app)
 
 	syncAllSubscriptions(context.Background(), env.app)
 	if got := subscriptionError(t, env); got != "" {
 		t.Fatalf("the ticker stored %q while read-only", got)
 	}
 
-	readonly.Leave()
+	readonly.Leave(env.app)
 	syncAllSubscriptions(context.Background(), env.app)
 	if got := subscriptionError(t, env); !strings.Contains(got, "private/internal") {
 		t.Fatalf("expected the next run after read-only to sync, got %q", got)
@@ -239,7 +239,7 @@ func TestSubscriptionTicker_SkipsWhileReadOnly(t *testing.T) {
 func TestSyncWrites_SkippedWhenReadOnlyBeginsMidSync(t *testing.T) {
 	env := setupReadOnlyEnv(t)
 	subscribe(t, env)
-	enterReadOnly(t)
+	enterReadOnly(t, env.app)
 
 	if err := applyFeed(env.app, env.calendar, feedWith(t, "feed-1")); !errors.Is(err, errSyncSkippedReadOnly) {
 		t.Fatalf("applyFeed while read-only = %v, want errSyncSkippedReadOnly", err)
@@ -290,14 +290,14 @@ func TestReminders_SkippedWhileReadOnlyAndSentAfter(t *testing.T) {
 	t0 := time.Now().UTC().Truncate(time.Second)
 	seedReminderEvent(t, env, t0.Add(30*time.Second))
 	s := newReminderScheduler(t0)
-	enterReadOnly(t)
+	enterReadOnly(t, env.app)
 
 	s.tick(env.app, t0)
 	if countNotifications(t, env.app, "calendar_reminder") != 0 {
 		t.Fatal("a reminder was written while read-only")
 	}
 
-	readonly.Leave()
+	readonly.Leave(env.app)
 	s.tick(env.app, t0.Add(60*time.Second))
 	// The owner and the viewer are both members.
 	if got := countNotifications(t, env.app, "calendar_reminder"); got != 2 {
@@ -312,10 +312,10 @@ func TestReminders_CatchUpIsBounded(t *testing.T) {
 	t0 := time.Now().UTC().Truncate(time.Second)
 	seedReminderEvent(t, env, t0.Add(30*time.Second))
 	s := newReminderScheduler(t0)
-	enterReadOnly(t)
+	enterReadOnly(t, env.app)
 
 	s.tick(env.app, t0)
-	readonly.Leave()
+	readonly.Leave(env.app)
 	s.tick(env.app, t0.Add(30*time.Second+reminderMaxCatchUp+time.Minute))
 	if got := countNotifications(t, env.app, "calendar_reminder"); got != 0 {
 		t.Fatalf("a reminder past the catch-up bound was sent, got %d", got)

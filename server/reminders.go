@@ -9,14 +9,21 @@ import (
 
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/teambition/rrule-go"
+	"tinycld.org/core/appstate"
 	"tinycld.org/core/caldav"
 	"tinycld.org/core/notify"
 	"tinycld.org/core/readonly"
 )
 
-// sentReminders dedups reminders so the same event-fire-minute isn't
-// notified twice across overlapping ticker windows.
-var sentReminders sync.Map // key: "eventID-fireMinute" → time.Time
+// sentRemindersKey holds the app's dedupe of sent reminders, so the same
+// event-fire-minute isn't notified twice across overlapping ticker windows.
+// key: "eventID-fireMinute" → time.Time. Per app: an event id is unique only
+// in its app.
+var sentRemindersKey = appstate.NewKey[*sync.Map]("calendar.sentReminders")
+
+func sentRemindersFor(app core.App) *sync.Map {
+	return sentRemindersKey.GetOrInit(app, func() *sync.Map { return &sync.Map{} })
+}
 
 // reminderWindow is how far past each check a reminder may fire and still be
 // sent by it: wider than the ticker's interval, so consecutive windows
@@ -43,7 +50,7 @@ func startReminderScheduler(ctx context.Context, app core.App) {
 			return
 		case <-ticker.C:
 			s.tick(app, time.Now().UTC())
-			cleanExpiredReminderEntries()
+			cleanExpiredReminderEntries(app)
 		}
 	}
 }
@@ -63,7 +70,7 @@ func newReminderScheduler(start time.Time) *reminderScheduler {
 }
 
 func (s *reminderScheduler) tick(app core.App, now time.Time) {
-	if readonly.Active() {
+	if readonly.Active(app) {
 		return
 	}
 	from := now
@@ -129,11 +136,11 @@ func checkReminders(app core.App, from, now time.Time) (time.Time, bool) {
 
 			// Before the dedup mark: a reminder skipped here must still be
 			// sent by the catch-up after the pause.
-			if readonly.Active() {
+			if readonly.Active(app) {
 				return windowEnd, false
 			}
 			dedup := fmt.Sprintf("%s-%d", event.Id, fireTime.Unix()/60)
-			if _, loaded := sentReminders.LoadOrStore(dedup, time.Now()); loaded {
+			if _, loaded := sentRemindersFor(app).LoadOrStore(dedup, time.Now()); loaded {
 				continue
 			}
 
@@ -236,11 +243,12 @@ func notifyReminderMembers(app core.App, event *core.Record, reminderMinutes flo
 	}
 }
 
-func cleanExpiredReminderEntries() {
+func cleanExpiredReminderEntries(app core.App) {
 	cutoff := time.Now().Add(-24 * time.Hour)
-	sentReminders.Range(func(key, value any) bool {
+	sent := sentRemindersFor(app)
+	sent.Range(func(key, value any) bool {
 		if t, ok := value.(time.Time); ok && t.Before(cutoff) {
-			sentReminders.Delete(key)
+			sent.Delete(key)
 		}
 		return true
 	})
