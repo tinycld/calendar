@@ -57,7 +57,7 @@ func handleUserCreated(app core.App, user *core.Record) {
 		cal := core.NewRecord(calCollection)
 		cal.Set("name", userName)
 		cal.Set("description", "")
-		cal.Set("color", "blue")
+		cal.Set("color", defaultCalendarColor)
 		if err := txApp.Save(cal); err != nil {
 			return fmt.Errorf("create personal calendar: %w", err)
 		}

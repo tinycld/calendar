@@ -565,3 +565,8 @@ func normalizeHexColor(raw string) (string, error) {
 }
 
 var hexColorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+
+// defaultCalendarColor is the colour a new calendar starts with. It must match
+// DEFAULT_CALENDAR_COLOR in components/calendar-colors.ts and the default in
+// migration 1830000011, so a server-made calendar looks like a client-made one.
+const defaultCalendarColor = "#3b82f6"
