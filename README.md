@@ -56,7 +56,7 @@ This package contributes:
 - **Go server module** — the CalDAV field map core's protocol server is driven by (`tinycld.org/core/caldav`), plus the subscription poller, reminder scheduler, and membership guards, wired into the app shell's PocketBase binary. It also registers the federated search source (`server/search.go`), the iCalendar export/import routes (`server/ics_endpoints.go`), and the package's OAuth scopes (`server/oauth_scopes.go`).
 - **TS hook points** — `caldavHook({ beforeWrite, beforeDelete, canRead, filterList })` for customizing CalDAV without forking the Go. See `help/caldav-hooks.md`.
 
-The package depends on `@tinycld/core` at runtime (React, pbtsdb, `~/lib/*`). The app shell has no knowledge of this package at compile time — everything is discovered at generator time by scanning the workspace members.
+The package depends on `@tinycld/core` at runtime (React, pbtsdb, `@tinycld/core/lib/*`). The app shell has no knowledge of this package at compile time — everything is discovered at generator time by scanning the workspace members.
 
 ## Installation
 
