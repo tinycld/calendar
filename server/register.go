@@ -214,35 +214,7 @@ func registerShared(app *pocketbase.PocketBase) {
 
 	registerInviteNotification(app)
 
-	// Authorize calendar_members create at the Go layer. An owner-check PB rule
-	// has to traverse the calendar_members back-relation, which PocketBase
-	// evaluated inconsistently for non-superuser creates (always 400, even when
-	// the auth user IS an owner) — that is why migration 1715400000 relaxed the
-	// rule to a bare authenticated check. This hook is the real gate: only
-	// owners of the calendar can add members.
-	app.OnRecordCreateRequest("calendar_members").BindFunc(func(e *core.RecordRequestEvent) error {
-		auth := e.Auth
-		if auth == nil {
-			return apis.NewUnauthorizedError("Authentication required.", nil)
-		}
-		// Superusers bypass: the seed script and admin tooling create
-		// memberships without going through the calendar-owner flow.
-		if auth.Collection().Name == core.CollectionNameSuperusers {
-			return e.Next()
-		}
-		calendarID := e.Record.GetString("calendar")
-		if calendarID == "" {
-			return apis.NewBadRequestError("calendar is required.", nil)
-		}
-		isOwner, err := userIsOwner(app, calendarID, auth.Id)
-		if err != nil {
-			return err
-		}
-		if !isOwner {
-			return apis.NewForbiddenError("Only calendar owners can add members.", nil)
-		}
-		return e.Next()
-	})
+	registerCalendarMemberCreateAuthz(app)
 
 	registerCalendarMemberAuthz(app)
 
@@ -273,34 +245,79 @@ func registerShared(app *pocketbase.PocketBase) {
 // Split out from registerShared so tenant-shaped tests can bind it in
 // isolation (same rationale as registerCalendarMemberAuthz). Takes core.App so
 // a tests.TestApp can bind it directly.
+//
+// The calendar and its owner membership are saved in one transaction, so a
+// calendar never exists without its owner: a failed membership save fails the
+// create. In a batch e.App is already the batch's transaction and this joins
+// it. Later operations of the same batch run inside e.Next(), before the
+// membership exists, so a batch cannot create a calendar and also add members
+// to it; the owner check refuses that batch.
 func registerOwnerMembershipBootstrap(app core.App) {
 	app.OnRecordCreateRequest("calendar_calendars").BindFunc(func(e *core.RecordRequestEvent) error {
-		if err := e.Next(); err != nil {
-			return err
-		}
-
 		// A superuser is not a users record and cannot be a member; a
 		// superuser caller (the seed) writes the memberships it wants itself.
 		auth := e.Auth
 		if auth == nil || auth.IsSuperuser() {
-			return nil
+			return e.Next()
 		}
 
-		memberCollection, err := app.FindCollectionByNameOrId("calendar_members")
+		original := e.App
+		defer func() { e.App = original }()
+		return original.RunInTransaction(func(tx core.App) error {
+			e.App = tx
+			if err := e.Next(); err != nil {
+				return err
+			}
+			memberCollection, err := tx.FindCollectionByNameOrId("calendar_members")
+			if err != nil {
+				return fmt.Errorf("calendar: find calendar_members: %w", err)
+			}
+			member := core.NewRecord(memberCollection)
+			member.Set("calendar", e.Record.Id)
+			member.Set("user", auth.Id)
+			member.Set("role", "owner")
+			if err := tx.Save(member); err != nil {
+				return fmt.Errorf("calendar: create the owner membership of %s: %w", e.Record.Id, err)
+			}
+			return nil
+		})
+	})
+}
+
+// registerCalendarMemberCreateAuthz authorizes calendar_members create at the
+// Go layer. An owner-check PB rule has to traverse the calendar_members
+// back-relation, which PocketBase evaluated inconsistently for non-superuser
+// creates (always 400, even when the auth user IS an owner) — that is why
+// migration 1715400000 relaxed the rule to a bare authenticated check. This
+// hook is the real gate: only owners of the calendar can add members.
+//
+// Split out so a test can bind it alone. Takes core.App so a tests.TestApp can
+// bind it directly.
+func registerCalendarMemberCreateAuthz(app core.App) {
+	app.OnRecordCreateRequest("calendar_members").BindFunc(func(e *core.RecordRequestEvent) error {
+		auth := e.Auth
+		if auth == nil {
+			return apis.NewUnauthorizedError("Authentication required.", nil)
+		}
+		// Superusers bypass: the seed script and admin tooling create
+		// memberships without going through the calendar-owner flow.
+		if auth.Collection().Name == core.CollectionNameSuperusers {
+			return e.Next()
+		}
+		calendarID := e.Record.GetString("calendar")
+		if calendarID == "" {
+			return apis.NewBadRequestError("calendar is required.", nil)
+		}
+		// e.App, not app: in a batch e.App is the batch's transaction, and
+		// only it sees a membership the batch already removed or added.
+		isOwner, err := userIsOwner(e.App, calendarID, auth.Id)
 		if err != nil {
-			return nil
+			return err
 		}
-
-		member := core.NewRecord(memberCollection)
-		member.Set("calendar", e.Record.Id)
-		member.Set("user", auth.Id)
-		member.Set("role", "owner")
-		if err := app.Save(member); err != nil {
-			app.Logger().Warn("calendar: failed to auto-create owner membership",
-				"calendar", e.Record.Id, "error", err)
+		if !isOwner {
+			return apis.NewForbiddenError("Only calendar owners can add members.", nil)
 		}
-
-		return nil
+		return e.Next()
 	})
 }
 
@@ -318,7 +335,9 @@ func registerCalendarMemberAuthz(app core.App) {
 	app.OnRecordDeleteRequest("calendar_members").BindFunc(func(e *core.RecordRequestEvent) error {
 		if e.Record.GetString("role") == "owner" {
 			calId := e.Record.GetString("calendar")
-			if err := guardLastOwner(app, calId, e.Record.Id); err != nil {
+			// e.App, not app: two owner removals in one batch must each see
+			// the other, and only the batch's transaction does.
+			if err := guardLastOwner(e.App, calId, e.Record.Id); err != nil {
 				return err
 			}
 		}
@@ -331,7 +350,7 @@ func registerCalendarMemberAuthz(app core.App) {
 		// Block demotion away from owner when it would leave zero owners.
 		if original.GetString("role") == "owner" && e.Record.GetString("role") != "owner" {
 			calId := original.GetString("calendar")
-			if err := guardLastOwner(app, calId, e.Record.Id); err != nil {
+			if err := guardLastOwner(e.App, calId, e.Record.Id); err != nil {
 				return err
 			}
 		}
@@ -350,7 +369,7 @@ func registerCalendarMemberAuthz(app core.App) {
 				return apis.NewUnauthorizedError("Authentication required.", nil)
 			}
 			if auth.Collection().Name != core.CollectionNameSuperusers {
-				isOwner, err := userIsOwner(app, original.GetString("calendar"), auth.Id)
+				isOwner, err := userIsOwner(e.App, original.GetString("calendar"), auth.Id)
 				if err != nil {
 					return err
 				}
@@ -358,7 +377,7 @@ func registerCalendarMemberAuthz(app core.App) {
 					return apis.NewForbiddenError("Only calendar owners can change member roles or calendars.", nil)
 				}
 				if calendarChanged {
-					ownsTarget, err := userIsOwner(app, e.Record.GetString("calendar"), auth.Id)
+					ownsTarget, err := userIsOwner(e.App, e.Record.GetString("calendar"), auth.Id)
 					if err != nil {
 						return err
 					}
