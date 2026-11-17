@@ -73,10 +73,11 @@ test.describe('Calendar — Event popover dismissal', () => {
         await createTodayEvent(page, title)
         const popover = await openEventPopover(page, title)
 
-        // A mid-month day is unique in the mini calendar (no spill-over days
-        // from the months either side), and never today, so the press must
-        // also reach the control and move the view to it.
-        const day = new Date().getDate() < 15 ? 20 : 10
+        // Days 15-22 are unique in the mini calendar: a six-row grid can show
+        // up to 14 days of the next month and the last days of the previous
+        // one. The day is never today, so the press must also reach the
+        // control and move the view to it.
+        const day = new Date().getDate() === 18 ? 20 : 18
         await page
             .getByTestId('package-sidebar-mounted')
             .getByText(String(day), { exact: true })
