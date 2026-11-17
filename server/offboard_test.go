@@ -83,7 +83,7 @@ func requireAnonymized(t *testing.T, app core.App, user *core.Record, want bool)
 	if err != nil {
 		t.Fatalf("users row of %s is gone: %v", user.Email(), err)
 	}
-	if got := fresh.GetString("name") == "Deleted user"; got != want {
+	if got := offboard.IsOffboarded(fresh); got != want {
 		t.Errorf("anonymized = %v, want %v", got, want)
 	}
 }

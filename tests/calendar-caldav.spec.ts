@@ -11,13 +11,17 @@ import {
     rawCaldavRequest,
 } from './caldav-helpers'
 
-// RN-Web mounts each time-grid block twice under the same node — one copy
-// measures 0×0 (hidden), the other carries the real layout box. Which one is
-// .first() isn't stable, so match by visibility rather than order: the
-// filtered locator resolves to the single laid-out copy (same idea as
-// calendar-drag.spec.ts's measurableBox, expressed as a locator filter).
+// A view switch pushes a new screen, and the previous view stays mounted
+// (frozen, 0×0) with its own copy of the event. Match by visibility, not order.
 function visibleEventText(page: Page, summary: string) {
     return page.getByText(summary).filter({ visible: true })
+}
+
+// During the push both screens are laid out for a moment, so two copies are
+// visible. toBeVisible would fail at once on that strict-mode match;
+// toHaveCount retries until the old screen hides and one copy is left.
+async function expectOneVisibleEvent(page: Page, summary: string) {
+    await expect(visibleEventText(page, summary)).toHaveCount(1)
 }
 
 // Opens the calendar day view on the given event's local day, entirely via
@@ -72,7 +76,7 @@ test.describe('Calendar — CalDAV Integration', () => {
 
         await login(page)
         await openDayViewFor(page, start)
-        await expect(visibleEventText(page, summary)).toBeVisible({ timeout: 10_000 })
+        await expectOneVisibleEvent(page, summary)
     })
 
     test('Web UI event appears in CalDAV listing', async ({ page }) => {
@@ -132,7 +136,7 @@ test.describe('Calendar — CalDAV Integration', () => {
 
         await login(page)
         await openDayViewFor(page, start)
-        await expect(visibleEventText(page, summary)).toBeVisible({ timeout: 10_000 })
+        await expectOneVisibleEvent(page, summary)
 
         await deleteEvent(calId, uid)
 
@@ -201,6 +205,6 @@ test.describe('Calendar — CalDAV Integration', () => {
         // explicit regardless of any persisted preference.
         await navigateToPackage(page, 'calendar')
         await page.getByRole('button', { name: 'Week', exact: true }).click()
-        await expect(visibleEventText(page, summary)).toBeVisible({ timeout: 10_000 })
+        await expectOneVisibleEvent(page, summary)
     })
 })
