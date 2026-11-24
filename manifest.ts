@@ -33,7 +33,7 @@ const manifest = {
     // (see help/caldav-hooks.md).
     hooks: { directory: 'pb-hooks' },
     repository: { url: 'https://github.com/tinycld/calendar' },
-    peerVersions: { '@tinycld/core': '>=0.11.0 <0.12.0' },
+    peerVersions: { '@tinycld/core': '>=0.12.0 <0.13.0' },
 }
 
 export default manifest
